@@ -38,13 +38,21 @@ jobs:
           cp -R $GITHUB_WORKSPACE /Users/Shared/
           mv /Users/Shared/$(basename $GITHUB_WORKSPACE) /Users/Shared/telegram-ios
 
-      - name: Patch submodules for FFmpeg 7.x compat
+      - name: Patch submodules for FFmpeg 7.x and LuxGram compat
         run: |
           set -euo pipefail
           SOURCE_DIR=/Users/Shared/telegram-ios
           # reordered_opaque was removed from AVFrame/AVCodecContext in FFmpeg 7.x
           sed -i '' '/reordered_opaque/d' \
             "$SOURCE_DIR/third-party/webrtc/webrtc/modules/video_coding/codecs/h264/h264_decoder_impl.cc"
+          # Remove incompatible LuxSettingsUI dependency from PeerInfoScreen
+          sed -i '' '/LuxSettingsUI/d' \
+            "$SOURCE_DIR/submodules/TelegramUI/Components/PeerInfo/PeerInfoScreen/BUILD"
+          sed -i '' '/import LuxSettingsUI/d' \
+            "$SOURCE_DIR/submodules/TelegramUI/Components/PeerInfo/PeerInfoScreen/Sources/PeerInfoScreenSettingsActions.swift"
+          # Replace luxGramSettingsController call with no-op
+          sed -i '' 's/self.controller?.push(luxGramSettingsController(context: self.context))/\/\/ LuxGram settings disabled/' \
+            "$SOURCE_DIR/submodules/TelegramUI/Components/PeerInfo/PeerInfoScreen/Sources/PeerInfoScreenSettingsActions.swift"
 
       - name: Set up build configuration repository
         run: |
