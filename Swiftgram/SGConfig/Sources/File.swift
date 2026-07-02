@@ -6,6 +6,9 @@ public struct SGConfig: Codable {
     public var webappUrl: String = "https://my.swiftgram.app"
     public var botUsername: String = "SwiftgramBot"
     public var publicKey: String?
+    public var supportersApiUrl: String?
+    public var supportersAesKey: String?
+    public var supportersHmacKey: String?
     public var iaps: [String] = []
 }
 
