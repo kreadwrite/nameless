@@ -13,7 +13,7 @@ private func generateBorderImage(theme: PresentationTheme, bordered: Bool, selec
     return generateImage(CGSize(width: 30.0, height: 30.0), rotatedContext: { size, context in
         let bounds = CGRect(origin: CGPoint(), size: size)
         context.clear(bounds)
-        
+
         let lineWidth: CGFloat
         if selected {
             var accentColor = theme.list.itemAccentColor
@@ -26,7 +26,7 @@ private func generateBorderImage(theme: PresentationTheme, bordered: Bool, selec
             context.setStrokeColor(theme.list.disclosureArrowColor.withAlphaComponent(0.4).cgColor)
             lineWidth = 1.0 - UIScreenPixel
         }
-        
+
         if bordered || selected {
             context.setLineWidth(lineWidth)
             context.strokeEllipse(in: bounds.insetBy(dx: lineWidth / 2.0, dy: lineWidth / 2.0))
@@ -36,7 +36,7 @@ private func generateBorderImage(theme: PresentationTheme, bordered: Bool, selec
 
 class ThemeSettingsAppIconItem: ListViewItem, ItemListItem {
     var sectionId: ItemListSectionId
-    
+
     let theme: PresentationTheme
     let strings: PresentationStrings
     let systemStyle: ItemListSystemStyle
@@ -45,7 +45,7 @@ class ThemeSettingsAppIconItem: ListViewItem, ItemListItem {
     let currentIconName: String?
     let updated: (PresentationAppIcon) -> Void
     let tag: ItemListItemTag?
-    
+
     init(theme: PresentationTheme, strings: PresentationStrings, systemStyle: ItemListSystemStyle, sectionId: ItemListSectionId, icons: [PresentationAppIcon], isPremium: Bool, currentIconName: String?, updated: @escaping (PresentationAppIcon) -> Void, tag: ItemListItemTag? = nil) {
         self.theme = theme
         self.strings = strings
@@ -57,15 +57,15 @@ class ThemeSettingsAppIconItem: ListViewItem, ItemListItem {
         self.tag = tag
         self.sectionId = sectionId
     }
-    
+
     func nodeConfiguredForParams(async: @escaping (@escaping () -> Void) -> Void, params: ListViewItemLayoutParams, synchronousLoads: Bool, previousItem: ListViewItem?, nextItem: ListViewItem?, completion: @escaping (ListViewItemNode, @escaping () -> (Signal<Void, NoError>?, (ListViewItemApply) -> Void)) -> Void) {
         async {
             let node = ThemeSettingsAppIconItemNode()
             let (layout, apply) = node.asyncLayout()(self, params, itemListNeighbors(item: self, topItem: previousItem as? ItemListItem, bottomItem: nextItem as? ItemListItem))
-            
+
             node.contentSize = layout.contentSize
             node.insets = layout.insets
-            
+
             Queue.mainQueue().async {
                 completion(node, {
                     return (nil, { _ in apply() })
@@ -73,12 +73,12 @@ class ThemeSettingsAppIconItem: ListViewItem, ItemListItem {
             }
         }
     }
-    
+
     func updateNode(async: @escaping (@escaping () -> Void) -> Void, node: @escaping () -> ListViewItemNode, params: ListViewItemLayoutParams, previousItem: ListViewItem?, nextItem: ListViewItem?, animation: ListViewItemUpdateAnimation, completion: @escaping (ListViewItemNodeLayout, @escaping (ListViewItemApply) -> Void) -> Void) {
         Queue.mainQueue().async {
             if let nodeValue = node() as? ThemeSettingsAppIconItemNode {
                 let makeLayout = nodeValue.asyncLayout()
-                
+
                 async {
                     let (layout, apply) = makeLayout(self, params, itemListNeighbors(item: self, topItem: previousItem as? ItemListItem, bottomItem: nextItem as? ItemListItem))
                     Queue.mainQueue().async {
@@ -101,43 +101,43 @@ private final class ThemeSettingsAppIconNode : ASDisplayNode {
     fileprivate let lockNode: ASImageNode
     private let textNode: ImmediateTextNode
     private var action: (() -> Void)?
-    
+
     private let activateAreaNode: AccessibilityAreaNode
-    
+
     private var locked = false
-    
+
     override init() {
         self.iconNode = ASImageNode()
         self.iconNode.clipsToBounds = true
         self.iconNode.frame = CGRect(origin: CGPoint(), size: CGSize(width: 63.0, height: 63.0))
         self.iconNode.isLayerBacked = true
         self.iconNode.cornerRadius = 15.0
-        
+
         self.overlayNode = ASImageNode()
         self.overlayNode.frame = CGRect(origin: CGPoint(), size: CGSize(width: 63.0, height: 63.0))
         self.overlayNode.isLayerBacked = true
-        
+
         self.lockNode = ASImageNode()
         self.lockNode.contentMode = .scaleAspectFit
         self.lockNode.displaysAsynchronously = false
         self.lockNode.isUserInteractionEnabled = false
-        
+
         self.textNode = ImmediateTextNode()
         self.textNode.isUserInteractionEnabled = false
         self.textNode.displaysAsynchronously = false
-        
+
         self.activateAreaNode = AccessibilityAreaNode()
         self.activateAreaNode.accessibilityTraits = [.button]
-        
+
         super.init()
-        
+
         self.addSubnode(self.iconNode)
         self.addSubnode(self.overlayNode)
         self.addSubnode(self.textNode)
         self.addSubnode(self.lockNode)
         self.addSubnode(self.activateAreaNode)
     }
-    
+
     func setup(theme: PresentationTheme, icon: UIImage, title: NSAttributedString, locked: Bool, color: UIColor, bordered: Bool, selected: Bool, action: @escaping () -> Void) {
         self.locked = locked
         self.iconNode.image = icon
@@ -147,45 +147,45 @@ private final class ThemeSettingsAppIconNode : ASDisplayNode {
         self.action = {
             action()
         }
-        
+
         self.activateAreaNode.accessibilityLabel = title.string
         if locked {
             self.activateAreaNode.accessibilityTraits = [.button, .notEnabled]
         } else {
             self.activateAreaNode.accessibilityTraits = [.button]
         }
-        
+
         self.setNeedsLayout()
     }
-    
+
     override func didLoad() {
         super.didLoad()
-        
+
         self.view.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(self.tapGesture(_:))))
     }
-    
+
     @objc func tapGesture(_ recognizer: UITapGestureRecognizer) {
         if case .ended = recognizer.state {
             self.action?()
         }
     }
-    
+
     override func layout() {
         super.layout()
-        
+
         let bounds = self.bounds
         let iconSize = CGSize(width: 63.0, height: 63.0)
-        
+
         self.iconNode.frame = CGRect(origin: CGPoint(x: floorToScreenPixels((bounds.width - iconSize.width) / 2.0), y: 13.0), size: iconSize)
         self.overlayNode.frame = self.iconNode.frame
-        
+
         let textSize = self.textNode.updateLayout(CGSize(width: bounds.size.width + 8.0, height: bounds.size.height))
         let textFrame = CGRect(origin: CGPoint(x: floorToScreenPixels((bounds.width - textSize.width) / 2.0), y: 81.0), size: textSize)
         self.textNode.frame = textFrame
-        
+
         let badgeFinalSize = CGSize(width: badgeSize.width + badgeStrokeSize * 2.0, height: badgeSize.height + badgeStrokeSize * 2.0)
         self.lockNode.frame = CGRect(x: bounds.width - 24.0, y: 4.0, width: badgeFinalSize.width, height: badgeFinalSize.height)
-        
+
         self.activateAreaNode.frame = bounds
     }
 }
@@ -200,103 +200,103 @@ class ThemeSettingsAppIconItemNode: ListViewItemNode, ItemListItemNode {
     private let topStripeNode: ASDisplayNode
     private let bottomStripeNode: ASDisplayNode
     private let maskNode: ASImageNode
-    
+
     private let containerNode: ASDisplayNode
     private var nodes: [ThemeSettingsAppIconNode] = []
-        
+
     private var item: ThemeSettingsAppIconItem?
     private var layoutParams: ListViewItemLayoutParams?
-    
+
     var tag: ItemListItemTag? {
         return self.item?.tag
     }
-    
+
     private var lockImage: UIImage?
-    
+
     init() {
         self.backgroundNode = ASDisplayNode()
         self.backgroundNode.isLayerBacked = true
-        
+
         self.highlightNode = ASDisplayNode()
         self.highlightNode.isLayerBacked = true
-        
+
         self.topStripeNode = ASDisplayNode()
         self.topStripeNode.isLayerBacked = true
-        
+
         self.bottomStripeNode = ASDisplayNode()
         self.bottomStripeNode.isLayerBacked = true
-        
+
         self.maskNode = ASImageNode()
-        
+
         self.containerNode = ASDisplayNode()
-        
+
         super.init(layerBacked: false)
-        
+
         self.addSubnode(self.containerNode)
     }
-            
+
     public func displayHighlight() {
         if self.backgroundNode.supernode != nil {
             self.insertSubnode(self.highlightNode, aboveSubnode: self.backgroundNode)
         } else {
             self.insertSubnode(self.highlightNode, at: 0)
         }
-        
+
         Queue.mainQueue().after(1.2, {
             self.highlightNode.layer.animateAlpha(from: 1.0, to: 0.0, duration: 0.3, removeOnCompletion: false, completion: { _ in
                 self.highlightNode.removeFromSupernode()
             })
         })
     }
-    
+
     func asyncLayout() -> (_ item: ThemeSettingsAppIconItem, _ params: ListViewItemLayoutParams, _ neighbors: ItemListNeighbors) -> (ListViewItemNodeLayout, () -> Void) {
         return { item, params, neighbors in
             let contentSize: CGSize
             let insets: UIEdgeInsets
             let separatorHeight = UIScreenPixel
-            
+
             let nodeSize = CGSize(width: 74.0, height: 102.0)
             let height: CGFloat = nodeSize.height * ceil(CGFloat(item.icons.count) / 4.0) + 12.0
-            
+
             contentSize = CGSize(width: params.width, height: height)
             insets = itemListNeighborsGroupedInsets(neighbors, params)
-            
+
             let layout = ListViewItemNodeLayout(contentSize: contentSize, insets: insets)
             let layoutSize = layout.size
-            
+
             return (layout, { [weak self] in
                 if let strongSelf = self {
                     let previousItem = strongSelf.item
                     strongSelf.item = item
                     strongSelf.layoutParams = params
-                    
+
                     if previousItem?.theme !== item.theme {
                         strongSelf.lockImage = generateImage(CGSize(width: badgeSize.width + badgeStrokeSize, height: badgeSize.height + badgeStrokeSize), contextGenerator: { size, context in
                             context.clear(CGRect(origin: .zero, size: size))
-                            
+
                             context.setFillColor(item.theme.list.itemBlocksBackgroundColor.cgColor)
                             context.fillEllipse(in: CGRect(origin: .zero, size: size))
-                            
+
                             context.addEllipse(in: CGRect(origin: .zero, size: size).insetBy(dx: badgeStrokeSize, dy: badgeStrokeSize))
                             context.clip()
-                            
+
                             var locations: [CGFloat] = [0.0, 1.0]
                             let colors: [CGColor] = [UIColor(rgb: 0x9076FF).cgColor, UIColor(rgb: 0xB86DEA).cgColor]
                             let colorSpace = CGColorSpaceCreateDeviceRGB()
                             let gradient = CGGradient(colorsSpace: colorSpace, colors: colors as CFArray, locations: &locations)!
                             context.drawLinearGradient(gradient, start: CGPoint(x: 0.0, y: 0.0), end: CGPoint(x: size.width, y: 0.0), options: CGGradientDrawingOptions())
-                            
+
                             if let icon = generateTintedImage(image: UIImage(bundleImageName: "Chat/Input/Accessory Panels/TextLockIcon"), color: .white) {
                                 context.draw(icon.cgImage!, in: CGRect(origin: CGPoint(x: floorToScreenPixels((size.width - icon.size.width) / 2.0), y: floorToScreenPixels((size.height - icon.size.height) / 2.0)), size: icon.size), byTiling: false)
                             }
                         })
                     }
-                    
+
                     strongSelf.backgroundNode.backgroundColor = item.theme.list.itemBlocksBackgroundColor
                     strongSelf.topStripeNode.backgroundColor = item.theme.list.itemBlocksSeparatorColor
                     strongSelf.bottomStripeNode.backgroundColor = item.theme.list.itemBlocksSeparatorColor
                     strongSelf.highlightNode.backgroundColor = item.theme.list.itemSearchHighlightColor
-                    
+
                     if strongSelf.backgroundNode.supernode == nil {
                         strongSelf.insertSubnode(strongSelf.backgroundNode, at: 0)
                     }
@@ -309,7 +309,7 @@ class ThemeSettingsAppIconItemNode: ListViewItemNode, ItemListItemNode {
                     if strongSelf.maskNode.supernode == nil {
                         strongSelf.insertSubnode(strongSelf.maskNode, at: 3)
                     }
-                    
+
                     let hasCorners = itemListHasRoundedBlockLayout(params)
                     var hasTopCorners = false
                     var hasBottomCorners = false
@@ -333,24 +333,24 @@ class ThemeSettingsAppIconItemNode: ListViewItemNode, ItemListItemNode {
                             hasBottomCorners = true
                             strongSelf.bottomStripeNode.isHidden = hasCorners
                     }
-                    
+
                     strongSelf.maskNode.image = hasCorners ? PresentationResourcesItemList.cornersImage(item.theme, top: hasTopCorners, bottom: hasBottomCorners, glass: item.systemStyle == .glass) : nil
-                    
+
                     strongSelf.backgroundNode.frame = CGRect(origin: CGPoint(x: 0.0, y: -min(insets.top, separatorHeight)), size: CGSize(width: params.width, height: contentSize.height + min(insets.top, separatorHeight) + min(insets.bottom, separatorHeight)))
                     strongSelf.highlightNode.frame = CGRect(origin: CGPoint(x: 0.0, y: -min(insets.top, separatorHeight)), size: CGSize(width: params.width, height: contentSize.height + min(insets.top, separatorHeight) + min(insets.bottom, separatorHeight)))
                     strongSelf.maskNode.frame = strongSelf.backgroundNode.frame.insetBy(dx: params.leftInset, dy: 0.0)
                     strongSelf.topStripeNode.frame = CGRect(origin: CGPoint(x: 0.0, y: -min(insets.top, separatorHeight)), size: CGSize(width: layoutSize.width, height: separatorHeight))
                     strongSelf.bottomStripeNode.frame = CGRect(origin: CGPoint(x: bottomStripeInset, y: contentSize.height + bottomStripeOffset), size: CGSize(width: layoutSize.width - bottomStripeInset, height: separatorHeight))
-                    
+
                     strongSelf.containerNode.frame = CGRect(origin: CGPoint(x: params.leftInset, y: 2.0), size: CGSize(width: layoutSize.width - params.leftInset - params.rightInset, height: layoutSize.height))
-                    
+
                     let sideInset: CGFloat = 8.0
                     let spacing: CGFloat = floorToScreenPixels((params.width - sideInset * 2.0 - params.leftInset - params.rightInset - nodeSize.width * 4.0) / 3.0)
                     let verticalSpacing: CGFloat = 0.0
-                    
+
                     var x: CGFloat = sideInset
                     var y: CGFloat = 0.0
-                    
+
                     var i = 0
                     for icon in item.icons {
                         if i > 0 && i % 4 == 0 {
@@ -359,7 +359,7 @@ class ThemeSettingsAppIconItemNode: ListViewItemNode, ItemListItemNode {
                         }
                         let nodeFrame = CGRect(x: x, y: y, width: nodeSize.width, height: nodeSize.height)
                         x += nodeSize.width + spacing
-                        
+
                         let imageNode: ThemeSettingsAppIconNode
                         if strongSelf.nodes.count > i {
                             imageNode = strongSelf.nodes[i]
@@ -369,7 +369,7 @@ class ThemeSettingsAppIconItemNode: ListViewItemNode, ItemListItemNode {
                             strongSelf.containerNode.addSubnode(imageNode)
                         }
                         imageNode.lockNode.image = strongSelf.lockImage
-                        
+
                         if let image = UIImage(named: icon.imageName, in: getAppBundle(), compatibleWith: nil) ?? UIImage(bundleImageName: icon.imageName) {
                             let selected = icon.name == item.currentIconName
 
@@ -379,54 +379,14 @@ class ThemeSettingsAppIconItemNode: ListViewItemNode, ItemListItemNode {
                                 case "nameless":
                                     name = "nameless"
                                     bordered = false
-                                case "SGDefault":
-                                    name = item.strings.Appearance_AppIconDefault
+                                case "NamelessBlack":
+                                    name = "nameless"
                                     bordered = false
-                                case "SGBlack":
-                                    name = "Black"
+                                case "NamelessPink":
+                                    name = "nameless pink"
                                     bordered = false
-                                case "SGLegacy":
-                                    name = "Legacy"
-                                    bordered = false
-                                case "SGInverted":
-                                    name = "Inverted"
-                                case "SGWhite":
-                                    name = "White"
-                                case "SGNight":
-                                    name = "Night"
-                                    bordered = false
-                                case "SGSky":
-                                    name = "Sky"
-                                    bordered = false
-                                case "SGTitanium":
-                                    name = "Titanium"
-                                    bordered = false
-                                case "SGNeon":
-                                    name = "Neon"
-                                    bordered = false
-                                case "SGNeonBlue":
-                                    name = "Neon Blue"
-                                    bordered = false
-                                case "SGGlass":
-                                    name = "Glass"
-                                    bordered = false
-                                case "SGSparkling":
-                                    name = "Sparkling"
-                                    bordered = false
-                                case "SGBeta":
-                                    name = "β Beta"
-                                    bordered = false
-                                case "SGPro":
-                                    name = "Pro"
-                                    bordered = false
-                                case "SGGold":
-                                    name = "Gold"
-                                    bordered = false
-                                case "SGDucky":
-                                    name = "Ducky"
-                                    bordered = false
-                                case "SGDay":
-                                    name = "Day"
+                                case "NamelessSky":
+                                    name = "nameless sky"
                                     bordered = false
                                 case "BlueIcon":
                                     name = item.strings.Appearance_AppIconDefault
@@ -443,7 +403,7 @@ class ThemeSettingsAppIconItemNode: ListViewItemNode, ItemListItemNode {
                                     name = item.strings.Appearance_AppIconFilledX
                                     bordered = false
                                 case "WhiteFilled":
-                                    name = "⍺ White"
+                                    name = "вЌє White"
                                 case "New1":
                                     name = item.strings.Appearance_AppIconNew1
                                 case "New2":
@@ -457,25 +417,25 @@ class ThemeSettingsAppIconItemNode: ListViewItemNode, ItemListItemNode {
                                 default:
                                     name = icon.name
                             }
-                        
+
                             imageNode.setup(theme: item.theme, icon: image, title: NSAttributedString(string: name, font: selected ? selectedTextFont : textFont, textColor: selected  ? item.theme.list.itemAccentColor : item.theme.list.itemPrimaryTextColor, paragraphAlignment: .center), locked: !item.isPremium && icon.isSGPro, color: item.theme.list.itemPrimaryTextColor, bordered: bordered, selected: selected, action: {
                                 item.updated(icon)
                             })
                         }
-                        
+
                         imageNode.frame = nodeFrame
-                        
+
                         i += 1
                     }
                 }
             })
         }
     }
-    
+
     override func animateInsertion(_ currentTimestamp: Double, duration: Double, options: ListViewItemAnimationOptions) {
         self.layer.animateAlpha(from: 0.0, to: 1.0, duration: 0.4)
     }
-    
+
     override func animateRemoved(_ currentTimestamp: Double, duration: Double) {
         self.layer.animateAlpha(from: 1.0, to: 0.0, duration: 0.15, removeOnCompletion: false)
     }

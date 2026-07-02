@@ -967,7 +967,9 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
         }, getAvailableAlternateIcons: {
             if #available(iOS 10.3, *) {
                 return [
-                    PresentationAppIcon(name: "nameless", imageName: "NamelessSettings", isDefault: true)
+                    PresentationAppIcon(name: "nameless", imageName: "NamelessSettings", isDefault: true),
+                    PresentationAppIcon(name: "namelessPink", imageName: "NamelessPink"),
+                    PresentationAppIcon(name: "namelessSky", imageName: "NamelessSky")
                 ]
             } else {
                 return []
