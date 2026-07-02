@@ -29,6 +29,7 @@ import LocalizedPeerData
 import LegacyUI
 import LegacyMediaPickerUI
 import SettingsUI
+import VoiceMorpher
 #if canImport(SGFakeLocation)
 import SGFakeLocation
 #endif
@@ -118,6 +119,7 @@ private enum LuxGramSection: Int32, SGItemListSection {
     case appearance
     case liquidGlass
     case fontReplacement
+    case voiceMorpher
     case fakeLocation
     case onlineStatusRecording
     case other
@@ -131,6 +133,7 @@ private func tab(for section: LuxGramSection) -> LuxGramTab {
     case .localPremium, .interface, .appearance, .fontReplacement: return .appearance
     case .liquidGlass: return .liquidGlass
     case .messages, .chatList, .onlineStatus, .readReceipts, .content, .fakeLocation, .onlineStatusRecording: return .security
+    case .voiceMorpher: return .other
     case .other: return .other
     }
 }
@@ -188,6 +191,7 @@ private func luxGramRootEntries(presentationData: PresentationData, accounts: [A
     entries.append(LuxGramEntry.disclosureWithIcon(id: id.count, section: .functions, link: .securityTab, text: rootGhostTitle, iconRef: "LuxGramTabSecurity"))
     entries.append(LuxGramEntry.disclosureWithIcon(id: id.count, section: .functions, link: .otherTab, text: rootFeaturesTitle, iconRef: "LuxGramTabOther"))
     entries.append(LuxGramEntry.disclosureWithIcon(id: id.count, section: .functions, link: .namelessLiquidGlass, text: rootLiquidGlassTitle, iconRef: "LuxGramTabAppearance"))
+    entries.append(LuxGramEntry.disclosureWithIcon(id: id.count, section: .functions, link: .namelessCatalog, text: lang == "ru" ? "Поиск настроек" : "Settings search", iconRef: "Navigation/Search"))
     entries.append(.header(id: id.count, section: .links, text: rootAboutHeader, badge: nil))
     entries.append(LuxGramEntry.disclosureWithIcon(id: id.count, section: .links, link: .namelessChannel, text: lang == "ru" ? "Канал nameless" : "nameless channel", iconRef: "Settings/Menu/Channels"))
     entries.append(LuxGramEntry.disclosureWithIcon(id: id.count, section: .links, link: .namelessDeveloper, text: lang == "ru" ? "Разработчик glswee" : "Developer glswee", iconRef: "Settings/Menu/GroupChats"))
@@ -264,6 +268,7 @@ private enum SGBoolSetting: String, Hashable {
     case feelRichEnabled
     case giftIdEnabled
     case fakeProfileEnabled
+    case voiceMorpherEnabled
     case namelessLiquidGlassMessages
     case namelessLiquidGlassSettings
     case namelessLiquidGlassProfile
@@ -303,6 +308,8 @@ private enum LuxGramDisclosureLink: Hashable {
     case namelessDeveloper
     case namelessVpn
     case namelessLiquidGlass
+    case namelessCatalog
+    case voiceMorpherPreset
 }
 
 private typealias LuxGramEntry = SGItemListUIEntry<LuxGramSection, SGBoolSetting, LuxGramSliderSetting, LuxGramOneFromManySetting, LuxGramDisclosureLink, AnyHashable>
@@ -677,6 +684,15 @@ private func luxGramEntries(presentationData: PresentationData, contentSettingsC
     entries.append(.toggle(id: id.count, section: .other, settingName: .feelRichEnabled, value: SGSimpleSettings.shared.feelRichEnabled, text: feelRichTitle, enabled: true))
     entries.append(.disclosure(id: id.count, section: .other, link: .feelRichAmount, text: (lang == "ru" ? "Изменить сумму" : "Change amount") + " (\(SGSimpleSettings.shared.feelRichStarsAmount))"))
 
+    entries.append(.header(id: id.count, section: .voiceMorpher, text: (lang == "ru" ? "СМЕНА ГОЛОСА *" : "VOICE MORPHER *"), badge: nil))
+    let voiceMorpherEnabledTitle = (lang == "ru" ? "Включить смену голоса" : "Enable voice morphing")
+    let voiceMorpherNotice = (lang == "ru"
+        ? "* помечает частично реализованные функции; сейчас аудио проходит без изменения до подключения OpusBinding-bridge."
+        : "* marks partially implemented features; audio currently passes through unchanged until the OpusBinding bridge is wired.")
+    entries.append(.toggle(id: id.count, section: .voiceMorpher, settingName: .voiceMorpherEnabled, value: VoiceMorpherManager.shared.isEnabled, text: voiceMorpherEnabledTitle, enabled: true))
+    entries.append(.disclosure(id: id.count, section: .voiceMorpher, link: .voiceMorpherPreset, text: (lang == "ru" ? "Пресет" : "Preset") + ": \(VoiceMorpherManager.shared.selectedPreset.title(langIsRu: lang == "ru"))"))
+    entries.append(.notice(id: id.count, section: .voiceMorpher, text: voiceMorpherNotice))
+
     if accounts.count > 1 {
         let notifHeader = lang == "ru" ? "УВЕДОМЛЕНИЯ" : "NOTIFICATIONS"
         entries.append(.header(id: id.count, section: .notifications, text: notifHeader, badge: nil))
@@ -930,6 +946,8 @@ public func luxGramSettingsController(context: AccountContext) -> ViewController
                 SGSimpleSettings.shared.giftIdEnabled = value
             case .fakeProfileEnabled:
                 SGSimpleSettings.shared.fakeProfileEnabled = value
+            case .voiceMorpherEnabled:
+                VoiceMorpherManager.shared.isEnabled = value
             default:
                 break
             }
@@ -996,6 +1014,35 @@ public func luxGramSettingsController(context: AccountContext) -> ViewController
                     let pd = context.sharedContext.currentPresentationData.with { $0 }
                     context.sharedContext.openExternalUrl(context: context, urlContext: .generic, url: url, forceExternal: false, presentationData: pd, navigationController: nil, dismissInput: {})
                 }
+                return
+            }
+            if link == .namelessCatalog {
+                pushControllerImpl?(buildLuxGramCatalogController(args: argumentsRef!))
+                return
+            }
+            if link == .voiceMorpherPreset {
+                let presentationData = context.sharedContext.currentPresentationData.with { $0 }
+                let langIsRu = presentationData.strings.baseLanguageCode == "ru"
+                let actionSheet = ActionSheetController(presentationData: presentationData)
+                var items: [ActionSheetItem] = []
+                for preset in VoiceMorpherManager.VoicePreset.allCases {
+                    let title = preset.title(langIsRu: langIsRu)
+                    let subtitle = preset.subtitle(langIsRu: langIsRu)
+                    items.append(ActionSheetButtonItem(title: "\(title) — \(subtitle)", color: .accent, action: { [weak actionSheet] in
+                        actionSheet?.dismissAnimated()
+                        VoiceMorpherManager.shared.selectedPresetId = preset.rawValue
+                        reloadPromise.set(true)
+                    }))
+                }
+                actionSheet.setItemGroups([
+                    ActionSheetItemGroup(items: items),
+                    ActionSheetItemGroup(items: [
+                        ActionSheetButtonItem(title: presentationData.strings.Common_Cancel, color: .accent, font: .bold, action: { [weak actionSheet] in
+                            actionSheet?.dismissAnimated()
+                        })
+                    ])
+                ])
+                presentControllerImpl?(actionSheet, ViewControllerPresentationArguments(presentationAnimation: .modalSheet))
                 return
             }
             if link == .fakeLocationPicker {
@@ -1334,7 +1381,39 @@ public func luxGramSettingsController(context: AccountContext) -> ViewController
         tabController.navigationItem.leftBarButtonItem = makeBackBarButtonItem(presentationData: context.sharedContext.currentPresentationData.with({ $0 }), controller: tabController)
         return tabController
     }
-    
+
+    func buildLuxGramCatalogController(args: SGItemListArguments<SGBoolSetting, LuxGramSliderSetting, LuxGramOneFromManySetting, LuxGramDisclosureLink, AnyHashable>) -> ViewController {
+        let catalogSignal = combineLatest(reloadPromise.get(), statePromise.get(), context.sharedContext.presentationData, contentSettingsConfigurationPromise.get(), context.sharedContext.activeAccountsWithInfo)
+        |> map { _, state, presentationData, contentSettingsConfiguration, accountsWithInfo -> (ItemListControllerState, (ItemListNodeState, SGItemListArguments<SGBoolSetting, LuxGramSliderSetting, LuxGramOneFromManySetting, LuxGramDisclosureLink, AnyHashable>)) in
+            let controllerState = ItemListControllerState(
+                presentationData: ItemListPresentationData(presentationData),
+                title: .text(presentationData.strings.baseLanguageCode == "ru" ? "Поиск nameless" : "nameless search"),
+                leftNavigationButton: nil,
+                rightNavigationButton: nil,
+                backNavigationButton: ItemListBackButton(title: presentationData.strings.Common_Back)
+            )
+            let accounts: [AccountInfo] = accountsWithInfo.accounts.map { info in
+                let recordId = info.account.id.int64
+                let peerId = info.account.peerId.id._internalGetInt64Value()
+                let name = EnginePeer(info.peer).displayTitle(strings: presentationData.strings, displayOrder: presentationData.nameDisplayOrder)
+                return (recordId: recordId, peerId: peerId, name: name)
+            }
+            let entries = luxGramEntries(presentationData: presentationData, contentSettingsConfiguration: contentSettingsConfiguration, state: state, mediaBoxBasePath: context.account.postbox.mediaBox.basePath, accounts: accounts)
+            let listState = ItemListNodeState(
+                presentationData: ItemListPresentationData(presentationData),
+                entries: entries,
+                style: .blocks,
+                ensureVisibleItemTag: nil,
+                footerItem: nil,
+                initialScrollToItem: nil
+            )
+            return (controllerState, (listState, args))
+        }
+        let controller = ItemListController(context: context, state: catalogSignal)
+        controller.navigationItem.leftBarButtonItem = makeBackBarButtonItem(presentationData: context.sharedContext.currentPresentationData.with({ $0 }), controller: controller)
+        return controller
+    }
+
     let signal: Signal<(ItemListControllerState, (ItemListNodeState, SGItemListArguments<SGBoolSetting, LuxGramSliderSetting, LuxGramOneFromManySetting, LuxGramDisclosureLink, AnyHashable>)), NoError> = combineLatest(reloadPromise.get(), context.sharedContext.presentationData, context.sharedContext.activeAccountsWithInfo)
     |> map { _, presentationData, accountsWithInfo -> (ItemListControllerState, (ItemListNodeState, SGItemListArguments<SGBoolSetting, LuxGramSliderSetting, LuxGramOneFromManySetting, LuxGramDisclosureLink, AnyHashable>)) in
         SGSimpleSettings.shared.currentAccountPeerId = "\(context.account.peerId.id._internalGetInt64Value())"
