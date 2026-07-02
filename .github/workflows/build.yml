@@ -91,6 +91,32 @@ jobs:
 
           python3 build-system/Make/ImportCertificates.py --path build-system/fake-codesigning/certs
 
+          # Regenerate provisioning profiles with the fake certificate embedded,
+          # then fix the keychain search list (GenerateProfiles creates/deletes
+          # a temp keychain but leaves it in the search list)
+          python3 -c "
+          import sys, os, shutil, tempfile
+          sys.path.insert(0, 'build-system/Make')
+          import GenerateProfiles
+          tmpdir = tempfile.mkdtemp()
+          try:
+              GenerateProfiles.generate_provisioning_profiles(
+                  source_path='build-system/fake-codesigning/profiles',
+                  destination_path=tmpdir,
+                  certs_path='build-system/fake-codesigning/certs'
+              )
+              for f in os.listdir(tmpdir):
+                  if f.endswith('.mobileprovision'):
+                      shutil.copy2(os.path.join(tmpdir, f), 'build-system/fake-codesigning/profiles/' + f)
+              print('Regenerated profiles with fake certificate')
+          finally:
+              shutil.rmtree(tmpdir)
+          "
+          # Fix keychain search list: remove the deleted temp keychain reference
+          security list-keychains -d user | tr -d '"' | tr ' ' '\n' | sort -u | while read kc; do
+            [ -f "$kc" ] && printf '%s\n' "$kc"
+          done | xargs security list-keychains -d user -s
+
           python3 -u build-system/Make/Make.py \
             --bazelUserRoot="$BAZEL_USER_ROOT" \
             build \
@@ -98,7 +124,6 @@ jobs:
             --codesigningInformationPath=build-system/fake-codesigning \
             --configuration=release_arm64 \
             --buildNumber="$BUILD_NUMBER" \
-            --disableProvisioningProfiles \
 
           # collect ipa
           OUTPUT_PATH="build/artifacts"
