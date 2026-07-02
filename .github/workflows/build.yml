@@ -57,7 +57,7 @@ jobs:
           sed -i '' 's/PresentationResourcesSettings.nameless.withRenderingMode(.alwaysOriginal)/PresentationResourcesSettings.nameless?.withRenderingMode(.alwaysOriginal)/' \
             "$SOURCE_DIR/submodules/TelegramUI/Components/PeerInfo/PeerInfoScreen/Sources/ListItems/PeerInfoScreenCommentItem.swift"
           # Fix sgWebSettings not in scope in PeerInfoSettingsItems
-          sed -i '' 's/sgWebSettings\.global\.canGrant/context.currentAppConfiguration.with { $0 }.sgWebSettings.global.canGrant/' \
+          sed -i '' 's/sgWebSettings\.global\.canGrant/(context.currentAppConfiguration.with { $0 }).sgWebSettings.global.canGrant/' \
             "$SOURCE_DIR/submodules/TelegramUI/Components/PeerInfo/PeerInfoScreen/Sources/PeerInfoSettingsItems.swift"
 
       - name: Set up build configuration repository
