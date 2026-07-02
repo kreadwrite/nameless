@@ -694,6 +694,8 @@ def build(bazel, arguments):
             print('TelegramBuild: warning: --embedWatchApp requires a device configuration (debug_arm64 or release_arm64); ignored for simulator builds.')
     bazel_command_line.set_build_number(arguments.buildNumber)
     bazel_command_line.set_custom_target(arguments.target)
+    if arguments.disableProvisioningProfiles:
+        bazel_command_line.set_disable_provisioning_profiles()
     bazel_command_line.set_continue_on_error(arguments.continueOnError)
     bazel_command_line.set_show_actions(arguments.showActions)
     bazel_command_line.set_enable_sandbox(arguments.sandbox)
@@ -1125,6 +1127,13 @@ if __name__ == '__main__':
         type=str,
         help='Absolute path to the watchkitapp .mobileprovision file.',
         metavar='path'
+    )
+
+    buildParser.add_argument(
+        '--disableProvisioningProfiles',
+        action='store_true',
+        default=False,
+        help='Disable provisioning profiles (for unsigned builds).'
     )
 
     remote_build_parser = subparsers.add_parser('remote-build', help='Build the app using a remote environment.')

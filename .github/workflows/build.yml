@@ -91,47 +91,27 @@ jobs:
 
           python3 build-system/Make/ImportCertificates.py --path build-system/fake-codesigning/certs
 
-          # Regenerate provisioning profiles with the fake certificate embedded
-          # so Bazel ProcessAndSign can match the identity in the keychain
-          python3 -c "
-          import sys, os, shutil, tempfile
-          sys.path.insert(0, 'build-system/Make')
-          import GenerateProfiles
-          tmpdir = tempfile.mkdtemp()
-          try:
-              GenerateProfiles.generate_provisioning_profiles(
-                  source_path='build-system/fake-codesigning/profiles',
-                  destination_path=tmpdir,
-                  certs_path='build-system/fake-codesigning/certs'
-              )
-              for f in os.listdir(tmpdir):
-                  if f.endswith('.mobileprovision'):
-                      shutil.copy2(os.path.join(tmpdir, f), 'build-system/fake-codesigning/profiles/' + f)
-              print('Regenerated profiles with fake certificate')
-          finally:
-              shutil.rmtree(tmpdir)
-          "
-
           python3 -u build-system/Make/Make.py \
             --bazelUserRoot="$BAZEL_USER_ROOT" \
             build \
             --configurationPath="build-system/appstore-configuration.json" \
             --codesigningInformationPath=build-system/fake-codesigning \
             --configuration=release_arm64 \
-            --buildNumber="$BUILD_NUMBER"
+            --buildNumber="$BUILD_NUMBER" \
+            --disableProvisioningProfiles \
 
           # collect ipa
           OUTPUT_PATH="build/artifacts"
           rm -rf "$OUTPUT_PATH"
           mkdir -p "$OUTPUT_PATH"
           shopt -s nullglob
-          ipa_files=(bazel-out/applebin_ios-ios_arm*-opt-ST-*/bin/Telegram/Telegram.ipa)
+          ipa_files=(bazel-out/applebin_ios-ios_arm*-opt-ST-*/bin/Telegram/Swiftgram.ipa)
           if [ ${#ipa_files[@]} -eq 0 ]; then
-            echo "::error::Telegram.ipa was not produced"
+            echo "::error::Swiftgram.ipa was not produced"
             find bazel-out -name '*.ipa' -print || true
             exit 1
           fi
-          for f in bazel-out/applebin_ios-ios_arm*-opt-ST-*/bin/Telegram/Telegram.ipa; do
+          for f in bazel-out/applebin_ios-ios_arm*-opt-ST-*/bin/Telegram/Swiftgram.ipa; do
             cp "$f" "$OUTPUT_PATH/nameless.ipa"
           done
 
