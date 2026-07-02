@@ -46,6 +46,26 @@ jobs:
           sed -i '' '/reordered_opaque/d' \
             "$SOURCE_DIR/third-party/webrtc/webrtc/modules/video_coding/codecs/h264/h264_decoder_impl.cc"
 
+      - name: Set up build configuration repository
+        run: |
+          set -euo pipefail
+          SOURCE_DIR=/Users/Shared/telegram-ios
+          CONFIG_REPO="$SOURCE_DIR/build-input/configuration-repository"
+          mkdir -p "$CONFIG_REPO/provisioning"
+          echo 'module(name = "build_configuration",)' > "$CONFIG_REPO/MODULE.bazel"
+          touch "$CONFIG_REPO/WORKSPACE" "$CONFIG_REPO/BUILD"
+          cp "$SOURCE_DIR/build-system/fake-codesigning/profiles/"*.mobileprovision "$CONFIG_REPO/provisioning/"
+          cd "$CONFIG_REPO/provisioning"
+          printf 'exports_files([\n' > BUILD
+          for f in *.mobileprovision; do printf '    "%s",\n' "$f" >> BUILD; done
+          printf '])\n' >> BUILD
+          cat > "$CONFIG_REPO/variables.bzl" << 'BZLEOF'
+          def get_aps_environment():
+              return "production"
+          def use_xcode_managed_codesigning():
+              return False
+          BZLEOF
+
       - name: Build the App
         run: |
           set -euo pipefail
@@ -74,8 +94,7 @@ jobs:
             --configurationPath="build-system/appstore-configuration.json" \
             --codesigningInformationPath=build-system/fake-codesigning \
             --configuration=release_arm64 \
-            --buildNumber="$BUILD_NUMBER" \
-            --disableProvisioningProfiles
+            --buildNumber="$BUILD_NUMBER"
 
           # collect ipa
           OUTPUT_PATH="build/artifacts"

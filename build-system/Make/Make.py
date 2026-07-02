@@ -701,9 +701,6 @@ def build(bazel, arguments):
 
     bazel_command_line.set_split_swiftmodules(arguments.enableParallelSwiftmoduleGeneration)
 
-    if arguments.disableProvisioningProfiles:
-        bazel_command_line.set_disable_provisioning_profiles()
-
     bazel_command_line.invoke_build()
 
     if arguments.outputBuildArtifactsPath is not None:
@@ -1035,12 +1032,6 @@ if __name__ == '__main__':
         metavar='number'
     )
     add_project_and_build_common_arguments(buildParser)
-    buildParser.add_argument(
-        '--disableProvisioningProfiles',
-        action='store_true',
-        default=False,
-        help='Disable provisioning profiles for CI builds with fake codesigning.'
-    )
     buildParser.add_argument(
         '--configuration',
         choices=[
