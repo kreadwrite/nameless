@@ -9,6 +9,7 @@ public struct SGConfig: Codable {
     public var supportersApiUrl: String?
     public var supportersAesKey: String?
     public var supportersHmacKey: String?
+    public var supportersPinnedCertHashes: [String] = []
     public var iaps: [String] = []
 }
 

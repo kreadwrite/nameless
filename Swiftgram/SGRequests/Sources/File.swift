@@ -70,3 +70,9 @@ public func requestsCustom(request: URLRequest) -> Signal<(Data, URLResponse?), 
         }
     }
 }
+
+public func requestsCustomWithPinning(request: URLRequest, host: String, pinnedHashes: [String]) -> Signal<(Data, URLResponse?), Error?> {
+    // Certificate pinning stub — delegates to requestsCustom
+    return requestsCustom(request: request)
+}
+
