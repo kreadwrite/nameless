@@ -50,9 +50,15 @@ jobs:
             "$SOURCE_DIR/submodules/TelegramUI/Components/PeerInfo/PeerInfoScreen/BUILD"
           sed -i '' '/import LuxSettingsUI/d' \
             "$SOURCE_DIR/submodules/TelegramUI/Components/PeerInfo/PeerInfoScreen/Sources/PeerInfoScreenSettingsActions.swift"
-          # Replace luxGramSettingsController call with no-op
-          sed -i '' 's/self.controller?.push(luxGramSettingsController(context: self.context))/\/\/ LuxGram settings disabled/' \
+          # Replace luxGramSettingsController call with break (empty case is invalid Swift)
+          sed -i '' 's/self.controller?.push(luxGramSettingsController(context: self.context))/break/' \
             "$SOURCE_DIR/submodules/TelegramUI/Components/PeerInfo/PeerInfoScreen/Sources/PeerInfoScreenSettingsActions.swift"
+          # Fix optional UIImage in PeerInfoScreenCommentItem
+          sed -i '' 's/PresentationResourcesSettings.nameless.withRenderingMode(.alwaysOriginal)/PresentationResourcesSettings.nameless?.withRenderingMode(.alwaysOriginal)/' \
+            "$SOURCE_DIR/submodules/TelegramUI/Components/PeerInfo/PeerInfoScreen/Sources/ListItems/PeerInfoScreenCommentItem.swift"
+          # Fix sgWebSettings not in scope in PeerInfoSettingsItems
+          sed -i '' 's/sgWebSettings\.global\.canGrant/context.currentAppConfiguration.with { $0 }.sgWebSettings.global.canGrant/' \
+            "$SOURCE_DIR/submodules/TelegramUI/Components/PeerInfo/PeerInfoScreen/Sources/PeerInfoSettingsItems.swift"
 
       - name: Set up build configuration repository
         run: |
