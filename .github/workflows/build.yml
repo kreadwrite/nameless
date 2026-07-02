@@ -65,6 +65,8 @@ jobs:
           def use_xcode_managed_codesigning():
               return False
           BZLEOF
+          # Delete Bazel lockfile to force re-resolution with local override
+          rm -f "$SOURCE_DIR/MODULE.bazel.lock"
 
       - name: Build the App
         run: |
