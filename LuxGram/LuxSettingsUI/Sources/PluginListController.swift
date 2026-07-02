@@ -222,13 +222,7 @@ public func PluginListController(context: AccountContext, onPluginsChanged: @esc
             }
         },
         openSettings: { pluginId in
-            let plugins = loadInstalledPlugins()
-            guard let plugin = plugins.first(where: { $0.metadata.id == pluginId }) else { return }
-            let settingsController = PluginSettingsController(context: context, plugin: plugin, onSave: {
-                reloadPromise.set(true)
-                onPluginsChanged()
-            })
-            pushControllerImpl?(settingsController)
+            // Plugin settings not yet implemented
         },
         deletePlugin: { pluginId in
             var plugins = loadInstalledPlugins()

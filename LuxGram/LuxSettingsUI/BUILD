@@ -5,6 +5,14 @@ swift_library(
     module_name = "LuxSettingsUI",
     srcs = glob([
         "Sources/**/*.swift",
+    ], exclude=[
+        "Sources/DoubleBottomSettingsController.swift",
+        "Sources/FakeProfileSettingsController.swift",
+        "Sources/LuxGramHeaderItem.swift",
+        "Sources/LuxGramSettingsController.swift",
+        "Sources/PluginCodeEditorController.swift",
+        "Sources/PluginRunner.swift",
+        "Sources/PluginSettingsController.swift",
     ]),
     copts = [
         "-warnings-as-errors",
