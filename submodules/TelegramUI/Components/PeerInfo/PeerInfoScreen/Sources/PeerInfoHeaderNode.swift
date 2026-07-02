@@ -146,7 +146,12 @@ final class PeerInfoHeaderNode: ASDisplayNode {
     var verifiedIconSize: CGSize?
     let titleExpandedVerifiedIconView: ComponentHostView<Empty>
     var titleExpandedVerifiedIconSize: CGSize?
-    
+
+    let titleNamelessIconView: UIImageView
+    var namelessIconSize: CGSize?
+    let titleExpandedNamelessIconView: UIImageView
+    var titleExpandedNamelessIconSize: CGSize?
+
     let titleStatusIconView: ComponentHostView<Empty>
     var statusIconSize: CGSize?
     let titleExpandedStatusIconView: ComponentHostView<Empty>
@@ -258,6 +263,14 @@ final class PeerInfoHeaderNode: ASDisplayNode {
         
         self.titleExpandedVerifiedIconView = ComponentHostView<Empty>()
         self.titleNode.stateNode(forKey: TitleNodeStateExpanded)?.view.addSubview(self.titleExpandedVerifiedIconView)
+
+        self.titleNamelessIconView = UIImageView()
+        self.titleNamelessIconView.contentMode = .scaleAspectFit
+        self.titleNode.stateNode(forKey: TitleNodeStateRegular)?.view.addSubview(self.titleNamelessIconView)
+
+        self.titleExpandedNamelessIconView = UIImageView()
+        self.titleExpandedNamelessIconView.contentMode = .scaleAspectFit
+        self.titleNode.stateNode(forKey: TitleNodeStateExpanded)?.view.addSubview(self.titleExpandedNamelessIconView)
         
         self.titleStatusIconView = ComponentHostView<Empty>()
         self.titleNode.stateNode(forKey: TitleNodeStateRegular)?.view.addSubview(self.titleStatusIconView)
@@ -1215,6 +1228,14 @@ final class PeerInfoHeaderNode: ASDisplayNode {
         let titleShadowColor: UIColor? = nil
         
         var displayStandardTitle = false
+        let showNamelessBrandIcon = isNamelessOfficialPeer(peer)
+        if showNamelessBrandIcon {
+            self.titleNamelessIconView.image = PresentationResourcesSettings.nameless
+            self.titleExpandedNamelessIconView.image = PresentationResourcesSettings.nameless
+        } else {
+            self.titleNamelessIconView.image = nil
+            self.titleExpandedNamelessIconView.image = nil
+        }
         
         if let peer = peer {
             var title: String
@@ -1548,7 +1569,13 @@ final class PeerInfoHeaderNode: ASDisplayNode {
         var titleExpandedHorizontalOffset: CGFloat = 0.0
         var nextIconX: CGFloat = titleSize.width
         var nextExpandedIconX: CGFloat = titleExpandedSize.width
-        
+        let namelessBrandIconSize = showNamelessBrandIcon ? CGSize(width: 16.0, height: 16.0) : nil
+        let namelessBrandExpandedIconSize = showNamelessBrandIcon ? CGSize(width: 18.0, height: 18.0) : nil
+        if let namelessBrandIconSize, let namelessBrandExpandedIconSize {
+            titleHorizontalOffset += (namelessBrandIconSize.width + 5.0) / 2.0
+            titleExpandedHorizontalOffset += (namelessBrandExpandedIconSize.width + 5.0) / 2.0
+        }
+
         if let statusIconSize = self.statusIconSize, let titleExpandedStatusIconSize = self.titleExpandedStatusIconSize, statusIconSize.width > 0.0 {
             let offset = (statusIconSize.width + 4.0) / 2.0
            
@@ -2132,6 +2159,15 @@ final class PeerInfoHeaderNode: ASDisplayNode {
                 
                 let rawTitleFrame = CGRect(origin: CGPoint(x: titleCenter.x - titleFrame.size.width * neutralTitleScale / 2.0, y: titleCenter.y - titleFrame.size.height * neutralTitleScale / 2.0), size: CGSize(width: titleFrame.size.width * neutralTitleScale, height: titleFrame.size.height * neutralTitleScale))
                 self.titleNodeRawContainer.frame = rawTitleFrame
+                if let namelessBrandIconSize, let namelessBrandExpandedIconSize {
+                    let regularIconFrame = CGRect(origin: CGPoint(x: -namelessBrandIconSize.width - 5.0, y: floor((titleSize.height - namelessBrandIconSize.height) / 2.0)), size: namelessBrandIconSize)
+                    let expandedIconFrame = CGRect(origin: CGPoint(x: -namelessBrandExpandedIconSize.width - 5.0, y: floor((titleExpandedSize.height - namelessBrandExpandedIconSize.height) / 2.0) + 1.0), size: namelessBrandExpandedIconSize)
+                    transition.updateFrame(view: self.titleNamelessIconView, frame: regularIconFrame)
+                    transition.updateFrame(view: self.titleExpandedNamelessIconView, frame: expandedIconFrame)
+                } else {
+                    transition.updateFrame(view: self.titleNamelessIconView, frame: .zero)
+                    transition.updateFrame(view: self.titleExpandedNamelessIconView, frame: .zero)
+                }
                 transition.updateFrameAdditiveToCenter(node: self.titleNodeContainer, frame: CGRect(origin: rawTitleFrame.center, size: CGSize()))
                 transition.updateFrame(node: self.titleNode, frame: CGRect(origin: CGPoint(), size: CGSize()))
                 let rawSubtitleFrame = CGRect(origin: CGPoint(x: subtitleCenter.x - subtitleFrame.size.width / 2.0, y: subtitleCenter.y - subtitleFrame.size.height / 2.0), size: subtitleFrame.size)
@@ -2174,6 +2210,15 @@ final class PeerInfoHeaderNode: ASDisplayNode {
                 
                 let rawTitleFrame = titleFrame.offsetBy(dx: self.isAvatarExpanded ? titleExpandedHorizontalOffset : titleHorizontalOffset * titleScale, dy: 0.0)
                 self.titleNodeRawContainer.frame = rawTitleFrame
+                if let namelessBrandIconSize, let namelessBrandExpandedIconSize {
+                    let regularIconFrame = CGRect(origin: CGPoint(x: -namelessBrandIconSize.width - 5.0, y: floor((titleSize.height - namelessBrandIconSize.height) / 2.0)), size: namelessBrandIconSize)
+                    let expandedIconFrame = CGRect(origin: CGPoint(x: -namelessBrandExpandedIconSize.width - 5.0, y: floor((titleExpandedSize.height - namelessBrandExpandedIconSize.height) / 2.0) + 1.0), size: namelessBrandExpandedIconSize)
+                    self.titleNamelessIconView.frame = regularIconFrame
+                    self.titleExpandedNamelessIconView.frame = expandedIconFrame
+                } else {
+                    self.titleNamelessIconView.frame = .zero
+                    self.titleExpandedNamelessIconView.frame = .zero
+                }
                 transition.updateFrame(node: self.titleNode, frame: CGRect(origin: CGPoint(), size: CGSize()))
                 let rawSubtitleFrame = subtitleFrame
                 self.subtitleNodeRawContainer.frame = rawSubtitleFrame
