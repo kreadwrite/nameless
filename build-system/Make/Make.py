@@ -138,6 +138,9 @@ class BazelCommandLine:
     def set_disable_provisioning_profiles(self):
         self.disable_provisioning_profiles = True
 
+    def set_disable_extensions(self):
+        self.disable_extensions = True
+
     def set_profile_swift(self, value):
         self.profile_swift = value
 
@@ -298,6 +301,8 @@ class BazelCommandLine:
 
         if self.disable_provisioning_profiles:
             combined_arguments += ['--//Telegram:disableProvisioningProfiles']
+        if self.disable_extensions:
+            combined_arguments += ['--//Telegram:disableExtensions']
 
         combined_arguments += self.common_args
         combined_arguments += self.common_build_args
@@ -406,6 +411,8 @@ class BazelCommandLine:
 
         if self.disable_provisioning_profiles:
             combined_arguments += ['--//Telegram:disableProvisioningProfiles']
+        if self.disable_extensions:
+            combined_arguments += ['--//Telegram:disableExtensions']
 
         combined_arguments += self.common_args
         combined_arguments += self.common_build_args
@@ -696,6 +703,8 @@ def build(bazel, arguments):
     bazel_command_line.set_custom_target(arguments.target)
     if arguments.disableProvisioningProfiles:
         bazel_command_line.set_disable_provisioning_profiles()
+    if arguments.disableExtensions:
+        bazel_command_line.set_disable_extensions()
     bazel_command_line.set_continue_on_error(arguments.continueOnError)
     bazel_command_line.set_show_actions(arguments.showActions)
     bazel_command_line.set_enable_sandbox(arguments.sandbox)
@@ -1134,6 +1143,13 @@ if __name__ == '__main__':
         action='store_true',
         default=False,
         help='Disable provisioning profiles (for unsigned builds).'
+    )
+
+    buildParser.add_argument(
+        '--disableExtensions',
+        action='store_true',
+        default=False,
+        help='Disable building extensions (no extension signing needed).'
     )
 
     remote_build_parser = subparsers.add_parser('remote-build', help='Build the app using a remote environment.')
