@@ -309,6 +309,7 @@ private enum LuxGramDisclosureLink: Hashable {
     case namelessVpn
     case namelessLiquidGlass
     case namelessCatalog
+    case rollbackNamelessSettings
     case voiceMorpherPreset
 }
 
@@ -693,6 +694,10 @@ private func luxGramEntries(presentationData: PresentationData, contentSettingsC
     entries.append(.disclosure(id: id.count, section: .voiceMorpher, link: .voiceMorpherPreset, text: (lang == "ru" ? "Пресет" : "Preset") + ": \(VoiceMorpherManager.shared.selectedPreset.title(langIsRu: lang == "ru"))"))
     entries.append(.notice(id: id.count, section: .voiceMorpher, text: voiceMorpherNotice))
 
+    entries.append(.header(id: id.count, section: .other, text: lang == "ru" ? "МГНОВЕННЫЙ ОТКАТ" : "ROLLBACK", badge: nil))
+    entries.append(.action(id: id.count, section: .other, actionType: "rollbackNamelessSettings" as AnyHashable, text: lang == "ru" ? "Откатить изменения" : "Restore changes", kind: .destructive))
+    entries.append(.notice(id: id.count, section: .other, text: lang == "ru" ? "Возвращает nameless-настройки к состоянию при открытии экрана." : "Restores nameless settings to the state when the screen was opened."))
+
     if accounts.count > 1 {
         let notifHeader = lang == "ru" ? "УВЕДОМЛЕНИЯ" : "NOTIFICATIONS"
         entries.append(.header(id: id.count, section: .notifications, text: notifHeader, badge: nil))
@@ -749,6 +754,7 @@ public func luxGramSettingsController(context: AccountContext) -> ViewController
     #endif
     
     let reloadPromise = ValuePromise(true, ignoreRepeated: false)
+    SGSimpleSettings.shared.beginNamelessRollbackSnapshot()
     var fontNotifyWorkItem: DispatchWorkItem?
     let initialState = LuxGramSettingsControllerState()
     let statePromise = ValuePromise(initialState, ignoreRepeated: true)
@@ -1292,6 +1298,17 @@ public func luxGramSettingsController(context: AccountContext) -> ViewController
                     ]
                 )
                 presentControllerImpl?(alertController, nil)
+            }
+
+            if actionString == "rollbackNamelessSettings" {
+                if SGSimpleSettings.shared.restoreNamelessRollbackSnapshot() {
+                    NotificationCenter.default.post(name: .luxgramLiquidGlassDidChange, object: nil)
+                    NotificationCenter.default.post(name: .namelessVideoBackgroundDidChange, object: nil)
+                    NotificationCenter.default.post(name: VoiceMorpherManager.settingsChangedNotification, object: nil)
+                    context.sharedContext.notifyFontSettingsChanged()
+                    reloadPromise.set(true)
+                }
+                return
             }
 
             if actionString == "markAllReadLocal" {

@@ -94,6 +94,11 @@ private enum NamelessSettingsKey {
     static let roundProfileButtons = "nameless.roundProfileButtons"
 }
 
+private enum NamelessRollbackStorage {
+    static let snapshotKey = "nameless.rollback.snapshot.v1"
+    static let managedPrefixes = ["nameless.", "VoiceMorpher."]
+}
+
 private extension UserDefaults {
     func namelessBool(_ key: String, default defaultValue: Bool = false) -> Bool {
         if self.object(forKey: key) == nil {
@@ -141,6 +146,46 @@ public extension Notification.Name {
 public extension SGSimpleSettings {
     private var storage: UserDefaults {
         return .standard
+    }
+
+    func beginNamelessRollbackSnapshot() {
+        let values = storage.dictionaryRepresentation().filter { key, _ in
+            for prefix in NamelessRollbackStorage.managedPrefixes {
+                if key.hasPrefix(prefix) {
+                    return true
+                }
+            }
+            return false
+        }
+
+        if let data = try? JSONSerialization.data(withJSONObject: values, options: []) {
+            storage.set(data, forKey: NamelessRollbackStorage.snapshotKey)
+        }
+    }
+
+    @discardableResult
+    func restoreNamelessRollbackSnapshot() -> Bool {
+        guard let data = storage.data(forKey: NamelessRollbackStorage.snapshotKey),
+              let values = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] else {
+            return false
+        }
+
+        let existing = storage.dictionaryRepresentation()
+        for key in existing.keys {
+            for prefix in NamelessRollbackStorage.managedPrefixes {
+                if key.hasPrefix(prefix) {
+                    storage.removeObject(forKey: key)
+                    break
+                }
+            }
+        }
+
+        for (key, value) in values {
+            storage.set(value, forKey: key)
+        }
+
+        storage.synchronize()
+        return true
     }
 
     var showDeletedMessages: Bool { get { storage.namelessBool(NamelessSettingsKey.showDeletedMessages) } set { storage.set(newValue, forKey: NamelessSettingsKey.showDeletedMessages) } }
