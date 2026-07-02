@@ -38,6 +38,14 @@ jobs:
           cp -R $GITHUB_WORKSPACE /Users/Shared/
           mv /Users/Shared/$(basename $GITHUB_WORKSPACE) /Users/Shared/telegram-ios
 
+      - name: Patch submodules for FFmpeg 7.x compat
+        run: |
+          set -euo pipefail
+          SOURCE_DIR=/Users/Shared/telegram-ios
+          # reordered_opaque was removed from AVFrame/AVCodecContext in FFmpeg 7.x
+          sed -i '' '/reordered_opaque/d' \
+            "$SOURCE_DIR/third-party/webrtc/webrtc/modules/video_coding/codecs/h264/h264_decoder_impl.cc"
+
       - name: Build the App
         run: |
           set -euo pipefail
