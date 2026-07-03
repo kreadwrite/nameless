@@ -82,6 +82,24 @@ jobs:
           # Delete Bazel lockfile to force re-resolution with local override
           rm -f "$SOURCE_DIR/MODULE.bazel.lock"
 
+      - name: Regenerate provisioning profiles with self-signed cert
+        run: |
+          set -euo pipefail
+          SOURCE_DIR=/Users/Shared/telegram-ios
+          cd $SOURCE_DIR
+          # GenerateProfiles has no __main__, call it via python3 -c
+          python3 -c "
+          import sys; sys.path.insert(0, 'build-system/Make')
+          from GenerateProfiles import generate_provisioning_profiles
+          generate_provisioning_profiles(
+            source_path='build-system/fake-codesigning/profiles',
+            destination_path='build-input/configuration-repository/provisioning',
+            certs_path='build-system/fake-codesigning/certs'
+          )
+          "
+          # Clean up stale keychain references left by GenerateProfiles
+          security list-keychains -d user -s "$HOME/Library/Keychains/login.keychain-db"
+
       - name: Build the App
         run: |
           set -euo pipefail
