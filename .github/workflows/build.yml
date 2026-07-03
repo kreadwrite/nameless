@@ -71,9 +71,7 @@ jobs:
           export BUILD_NUMBER="$COMMIT_COUNT"
           echo "BUILD_NUMBER=$(echo $BUILD_NUMBER)" >> $GITHUB_ENV
           echo "APP_VERSION=$(echo $APP_VERSION)" >> $GITHUB_ENV
-          echo "=== DIAG: pwd=$(pwd) ls ci-config=$(ls build-system/ci-configuration.json 2>&1) ==="
           python3 -u build-system/Make/Make.py --bazelUserRoot="$BAZEL_USER_ROOT" build --configurationPath="build-system/ci-configuration.json" --codesigningInformationPath=build-system/fake-codesigning --disableProvisioningProfiles --configuration=release_arm64 --buildNumber="$BUILD_NUMBER" --disableExtensions 2>&1 || echo "=== Make.py exited with code $? ==="
-          echo "=== DIAG: build done ==="
           OUTPUT_PATH="build/artifacts"
           rm -rf "$OUTPUT_PATH"
           mkdir -p "$OUTPUT_PATH"
