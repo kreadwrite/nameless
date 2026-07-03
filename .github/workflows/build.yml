@@ -84,7 +84,6 @@ jobs:
 
       - name: Setup code signing
         run: |
-          set -euo pipefail
           SOURCE_DIR=/Users/Shared/telegram-ios
           cd $SOURCE_DIR
 
@@ -112,8 +111,10 @@ jobs:
           security list-keychains -d user -s "$KEYCHAIN_PATH"
 
           # Regenerate provisioning profiles with self-signed cert
-          CERT_B64=$(openssl pkcs12 -in build-system/fake-codesigning/certs/SelfSigned.p12 -passin pass: -nokeys -legacy 2>/dev/null | openssl x509 -outform DER 2>/dev/null | base64)
-          SIGNING_ID=$(openssl pkcs12 -in build-system/fake-codesigning/certs/SelfSigned.p12 -passin pass: -nokeys -legacy 2>/dev/null | openssl x509 -noout -subject -nameopt oneline,-esc_msb 2>/dev/null | sed 's/.*CN = //' | sed 's/,.*//')
+          CERT_B64=$(openssl pkcs12 -in build-system/fake-codesigning/certs/SelfSigned.p12 -passin pass: -nokeys -legacy | openssl x509 -outform DER | base64) || { echo "FAIL: extracting cert"; exit 1; }
+          echo "Cert B64 length: ${#CERT_B64}"
+          SIGNING_ID=$(openssl pkcs12 -in build-system/fake-codesigning/certs/SelfSigned.p12 -passin pass: -nokeys -legacy | openssl x509 -noout -subject -nameopt oneline,-esc_msb | sed 's/.*CN = //' | sed 's/,.*//') || { echo "FAIL: extracting identity"; exit 1; }
+          echo "Signing identity: $SIGNING_ID" 
 
           for pf in build-system/fake-codesigning/profiles/*.mobileprovision; do
             echo "Regenerating $(basename $pf) with identity: $SIGNING_ID"
