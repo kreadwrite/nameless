@@ -24,7 +24,7 @@ public final class DefaultPluginRuntime: PluginRuntime, @unchecked Sendable {
     public init() {}
     
     public func parseMetadata(content: String) -> PluginMetadata? {
-        PluginMetadataParser.parse(content: content)
+        PluginMetadataParser.parse(content: content) ?? PluginMetadataParser.parseJavaScript(content: content)
     }
     
     public func hasCreateSettings(content: String) -> Bool {

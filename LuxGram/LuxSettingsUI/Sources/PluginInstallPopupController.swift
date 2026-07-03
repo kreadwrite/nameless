@@ -139,7 +139,10 @@ public final class PluginInstallPopupController: ViewController {
         let fileManager = FileManager.default
         guard let supportURL = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else { return }
         let pluginsDir = supportURL.appendingPathComponent("Plugins", isDirectory: true)
-        let destPath = pluginsDir.appendingPathComponent("\(metadata.id).plugin").path
+        let sourceName = file.fileName ?? metadata.name
+        let sourceExt = (sourceName as NSString).pathExtension.lowercased()
+        let targetExt = ["js", "mjs", "cjs"].contains(sourceExt) ? sourceExt : "plugin"
+        let destPath = pluginsDir.appendingPathComponent("\(metadata.id).\(targetExt)").path
         do {
             try fileManager.createDirectory(at: pluginsDir, withIntermediateDirectories: true)
             let destURL = URL(fileURLWithPath: destPath)
@@ -353,4 +356,3 @@ private final class PluginInstallPopupContentNode: ViewControllerTracingNode {
         layoutContent()
     }
 }
-

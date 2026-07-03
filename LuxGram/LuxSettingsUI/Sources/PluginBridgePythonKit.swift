@@ -24,7 +24,7 @@ public final class PythonPluginRuntime: PluginRuntime, @unchecked Sendable {
         // Optional: use Python builtins.exec(content, globals, locals) with stubbed
         // base_plugin, java, ui, etc., then read __name__, __id__, ... from globals.
         // For now use regex so it works without a full Python stub environment.
-        return PluginMetadataParser.parse(content: content)
+        return PluginMetadataParser.parse(content: content) ?? PluginMetadataParser.parseJavaScript(content: content)
     }
     
     public func hasCreateSettings(content: String) -> Bool {
