@@ -517,24 +517,39 @@ def resolve_configuration(base_path, bazel_command_line: BazelCommandLine, argum
         shutil.rmtree(provisioning_path)
     os.makedirs(provisioning_path, exist_ok=True)
 
+    # Skip copying provisioning profiles if --disableProvisioningProfiles is set
+    provisioning_profiles_path_to_use = provisioning_path if not (arguments.disableProvisioningProfiles) else None
+
     codesigning_data = resolve_codesigning(
         arguments=arguments,
         base_path=base_path,
         build_configuration=build_configuration,
-        provisioning_profiles_path=provisioning_path,
+        provisioning_profiles_path=provisioning_profiles_path_to_use,
         additional_codesigning_output_path=additional_codesigning_output_path
     )
     if codesigning_data.aps_environment is None:
-        print('Could not find a valid aps-environment entitlement in the provided provisioning profiles')
-        sys.exit(1)
+        print('Warning: Could not find a valid aps-environment entitlement in the provided provisioning profiles, using empty string')
+        codesigning_data.aps_environment = ""
 
     if bazel_command_line is not None:
         build_configuration.write_to_variables_file(bazel_path=bazel_command_line.bazel, use_xcode_managed_codesigning=codesigning_data.use_xcode_managed_codesigning, aps_environment=codesigning_data.aps_environment, path=configuration_repository_path + '/variables.bzl')
 
+    # Always create BUILD file (even if empty) so Bazel doesn't complain about missing package
     provisioning_profile_files = []
-    for file_name in os.listdir(provisioning_path):
-        if file_name.endswith('.mobileprovision'):
-            provisioning_profile_files.append(file_name)
+    if not (arguments.disableProvisioningProfiles):
+        for file_name in os.listdir(provisioning_path):
+            if file_name.endswith('.mobileprovision'):
+                provisioning_profile_files.append(file_name)
+    elif arguments.disableProvisioningProfiles:
+        # Copy all provisioning profiles so Bazel can validate select() branches,
+        # even though the disableProvisioningProfilesSetting select will choose None
+        if arguments.codesigningInformationPath:
+            source_profiles_dir = os.path.join(arguments.codesigningInformationPath, 'profiles')
+            if os.path.isdir(source_profiles_dir):
+                for file_name in os.listdir(source_profiles_dir):
+                    if file_name.endswith('.mobileprovision'):
+                        shutil.copy2(os.path.join(source_profiles_dir, file_name), os.path.join(provisioning_path, file_name))
+                        provisioning_profile_files.append(file_name)
 
     with open(provisioning_path + '/BUILD', 'w+') as file:
         file.write('exports_files([\n')

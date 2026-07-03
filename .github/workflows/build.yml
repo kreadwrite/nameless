@@ -58,6 +58,11 @@ jobs:
           cd /Users/Shared/telegram-ios
           python3 build-system/Make/ImportCertificates.py --path build-system/fake-codesigning/certs
 
+      - name: Patch rules_apple for CI
+        run: |
+          cd /Users/Shared/telegram-ios
+          python3 build-system/patch-rules-apple.py
+
       - name: Build the App
         run: |
           set -euo pipefail
