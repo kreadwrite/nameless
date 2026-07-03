@@ -7,25 +7,31 @@ on:
 
 jobs:
   build:
-    runs-on: macos-26
+    runs-on: macos-15
     timeout-minutes: 360
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          submodules: 'recursive'
-          fetch-depth: '0'
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
 
       - name: Set active Xcode path
         run: |
           set -euo pipefail
-          XCODE_VERSION=$(cat versions.json | python3 -c 'import json,sys;obj=json.load(sys.stdin);print(obj["xcode"]);')
-          if [ -d "/Applications/Xcode_$XCODE_VERSION.app/Contents/Developer" ]; then
-            sudo xcode-select -s "/Applications/Xcode_$XCODE_VERSION.app/Contents/Developer"
+          XCODE_VERSION=$(python3 -c 'import json; d=json.load(open("versions.json")); print(d["xcode"])')
+          XCODE_PATH="/Applications/Xcode_${XCODE_VERSION}.app/Contents/Developer"
+          if [ -d "$XCODE_PATH" ]; then
+            sudo xcode-select -s "$XCODE_PATH"
           else
-            echo "::warning::Xcode_$XCODE_VERSION was not found. Available Xcode apps:"
-            ls -1 /Applications | grep '^Xcode' || true
+            echo "Xcode ${XCODE_VERSION} not found, using default"
             sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
           fi
           xcodebuild -version
@@ -42,106 +48,59 @@ jobs:
         run: |
           set -euo pipefail
           SOURCE_DIR=/Users/Shared/telegram-ios
-          # reordered_opaque was removed from AVFrame/AVCodecContext in FFmpeg 7.x
           sed -i '' '/reordered_opaque/d' \
             "$SOURCE_DIR/third-party/webrtc/webrtc/modules/video_coding/codecs/h264/h264_decoder_impl.cc"
-          # Remove incompatible LuxSettingsUI dependency from PeerInfoScreen
           sed -i '' '/LuxSettingsUI/d' \
             "$SOURCE_DIR/submodules/TelegramUI/Components/PeerInfo/PeerInfoScreen/BUILD"
           sed -i '' '/import LuxSettingsUI/d' \
             "$SOURCE_DIR/submodules/TelegramUI/Components/PeerInfo/PeerInfoScreen/Sources/PeerInfoScreenSettingsActions.swift"
-          # Replace luxGramSettingsController call with break (empty case is invalid Swift)
           sed -i '' 's/self.controller?.push(luxGramSettingsController(context: self.context))/break/' \
             "$SOURCE_DIR/submodules/TelegramUI/Components/PeerInfo/PeerInfoScreen/Sources/PeerInfoScreenSettingsActions.swift"
-          # Fix optional UIImage in PeerInfoScreenCommentItem
           sed -i '' 's/PresentationResourcesSettings.nameless.withRenderingMode(.alwaysOriginal)/PresentationResourcesSettings.nameless?.withRenderingMode(.alwaysOriginal)/' \
             "$SOURCE_DIR/submodules/TelegramUI/Components/PeerInfo/PeerInfoScreen/Sources/ListItems/PeerInfoScreenCommentItem.swift"
-          # Fix sgWebSettings not in scope in PeerInfoSettingsItems
           sed -i '' 's/sgWebSettings\.global\.canGrant/(context.currentAppConfiguration.with { $0 }).sgWebSettings.global.canGrant/' \
             "$SOURCE_DIR/submodules/TelegramUI/Components/PeerInfo/PeerInfoScreen/Sources/PeerInfoSettingsItems.swift"
 
-      - name: Set up build configuration repository
+      - name: Create CI build configuration
         run: |
           set -euo pipefail
           SOURCE_DIR=/Users/Shared/telegram-ios
-          CONFIG_REPO="$SOURCE_DIR/build-input/configuration-repository"
-          mkdir -p "$CONFIG_REPO/provisioning"
-          echo 'module(name = "build_configuration",)' > "$CONFIG_REPO/MODULE.bazel"
-          touch "$CONFIG_REPO/WORKSPACE" "$CONFIG_REPO/BUILD"
-          cp "$SOURCE_DIR/build-system/fake-codesigning/profiles/"*.mobileprovision "$CONFIG_REPO/provisioning/"
-          cd "$CONFIG_REPO/provisioning"
-          printf 'exports_files([\n' > BUILD
-          for f in *.mobileprovision; do printf '    "%s",\n' "$f" >> BUILD; done
-          printf '])\n' >> BUILD
-          cat > "$CONFIG_REPO/variables.bzl" << 'BZLEOF'
-          def get_aps_environment():
-              return "production"
-          def use_xcode_managed_codesigning():
-              return False
-          BZLEOF
-          # Delete Bazel lockfile to force re-resolution with local override
-          rm -f "$SOURCE_DIR/MODULE.bazel.lock"
-
-      - name: Setup code signing and regenerate profiles
-        run: |
-          SOURCE_DIR=/Users/Shared/telegram-ios
-          cd $SOURCE_DIR
-
-          # Step 1: Use GenerateProfiles.py to re-sign profiles with self-signed cert
           python3 -c "
-          import sys; sys.path.insert(0, 'build-system/Make')
-          from GenerateProfiles import generate_provisioning_profiles
-          generate_provisioning_profiles(
-            source_path='build-system/fake-codesigning/profiles',
-            destination_path='build-system/fake-codesigning/profiles',
-            certs_path='build-system/fake-codesigning/certs'
-          )
-          "
+import json
+cfg = {
+    'bundle_id': 'ph.telegra.Telegraph',
+    'api_id': '35971841',
+    'api_hash': '504a05393f81633f94c433502e9b09e6',
+    'team_id': '',
+    'app_center_id': '0',
+    'is_internal_build': 'false',
+    'is_appstore_build': 'false',
+    'appstore_id': '0',
+    'app_specific_url_scheme': 'tg',
+    'premium_iap_product_id': '',
+    'enable_siri': False,
+    'enable_icloud': False,
+    'sg_config': ''
+}
+with open('$SOURCE_DIR/build-system/ci-configuration.json', 'w') as f:
+    json.dump(cfg, f, indent='\t')
+print('Created ci-configuration.json')
+"
 
-          # Step 2: Clean up stale keychain refs left by GenerateProfiles
-          security list-keychains -d user -s "$HOME/Library/Keychains/login.keychain-db"
-
-          # Step 3: Create our own keychain and import cert for the build
-          KEYCHAIN_PATH="$HOME/Library/Keychains/signing.keychain-db"
-          KEYCHAIN_PASSWORD="secret"
-          security delete-keychain "$KEYCHAIN_PATH" 2>/dev/null || true
-          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
-          security set-keychain-settings "$KEYCHAIN_PATH"
-          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
-          security import build-system/fake-codesigning/certs/SelfSigned.p12 \
-            -k "$KEYCHAIN_PATH" -P '' \
-            -T /usr/bin/codesign -T /usr/bin/security
-          security import build-system/AppleWWDRCAG3.cer \
-            -k "$KEYCHAIN_PATH" -P '' \
-            -T /usr/bin/codesign -T /usr/bin/security
-          security set-key-partition-list \
-            -S 'apple-tool:,apple:' \
-            -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
-
-          # Step 4: Set search list to ONLY our keychain
-          security list-keychains -d user -s "$KEYCHAIN_PATH"
-
-          echo "=== Keychain identities ==="
-          security find-identity -v -p codesigning "$KEYCHAIN_PATH" || true
-          echo "=== Keychain list ==="
-          security list-keychains -d user || true
-
-          # Step 5: Patch provisioning profiles to fix TeamIdentifier mismatch
-          # Must run AFTER keychain setup so identity is available
-          SIGNING_IDENTITY=$(python3 -c "import subprocess; r=subprocess.run(['security','find-identity','-v','-p','codesigning','"$KEYCHAIN_PATH"'], capture_output=True, text=True); print(r.stdout.split(chr(34))[1] if chr(34) in r.stdout else '')")
-          echo "Patching profiles with identity: $SIGNING_IDENTITY"
-          python3 build-system/patch_profiles.py "build-system/fake-codesigning/profiles" "$SIGNING_IDENTITY"
+      - name: Import fake certificates
+        run: |
+          cd /Users/Shared/telegram-ios
+          python3 build-system/Make/ImportCertificates.py --path build-system/fake-codesigning/certs
 
       - name: Build the App
         run: |
           set -euo pipefail
-
           SOURCE_DIR=/Users/Shared/telegram-ios
           BAZEL_USER_ROOT="/private/var/tmp/_bazel_containerhost"
           cd $SOURCE_DIR
 
           BUILD_NUMBER_OFFSET="$(cat build_number_offset)"
-          export APP_VERSION=$(cat versions.json | python3 -c 'import json,sys;obj=json.load(sys.stdin);print(obj["app"]);')
+          export APP_VERSION=$(python3 -c 'import json; d=json.load(open("versions.json")); print(d["app"])')
           export COMMIT_COUNT=$(git rev-list --count HEAD)
           export COMMIT_COUNT="$(($COMMIT_COUNT+$BUILD_NUMBER_OFFSET))"
           export BUILD_NUMBER="$COMMIT_COUNT"
@@ -151,13 +110,13 @@ jobs:
           python3 -u build-system/Make/Make.py \
             --bazelUserRoot="$BAZEL_USER_ROOT" \
             build \
-            --configurationPath="build-system/appstore-configuration.json" \
+            --configurationPath="build-system/ci-configuration.json" \
             --codesigningInformationPath=build-system/fake-codesigning \
+            --disableProvisioningProfiles \
             --configuration=release_arm64 \
             --buildNumber="$BUILD_NUMBER" \
             --disableExtensions
 
-          # collect ipa
           OUTPUT_PATH="build/artifacts"
           rm -rf "$OUTPUT_PATH"
           mkdir -p "$OUTPUT_PATH"
@@ -172,7 +131,6 @@ jobs:
             cp "$f" "$OUTPUT_PATH/nameless.ipa"
           done
 
-          # collect dsym
           mkdir -p build/DSYMs
           for f in bazel-out/applebin_ios-ios_arm*-opt-ST-*/bin/Telegram/*.dSYM; do
             cp -R "$f" build/DSYMs/
