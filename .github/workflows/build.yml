@@ -107,14 +107,14 @@ print('Created ci-configuration.json')
           echo "BUILD_NUMBER=$(echo $BUILD_NUMBER)" >> $GITHUB_ENV
           echo "APP_VERSION=$(echo $APP_VERSION)" >> $GITHUB_ENV
 
-          python3 -u build-system/Make/Make.py \
-            --bazelUserRoot="$BAZEL_USER_ROOT" \
-            build \
-            --configurationPath="build-system/ci-configuration.json" \
-            --codesigningInformationPath=build-system/fake-codesigning \
-            --disableProvisioningProfiles \
-            --configuration=release_arm64 \
-            --buildNumber="$BUILD_NUMBER" \
+          python3 -u build-system/Make/Make.py  \
+            --bazelUserRoot="$BAZEL_USER_ROOT"  \
+            build  \
+            --configurationPath="build-system/ci-configuration.json"  \
+            --codesigningInformationPath=build-system/fake-codesigning  \
+            --disableProvisioningProfiles  \
+            --configuration=release_arm64  \
+            --buildNumber="$BUILD_NUMBER"  \
             --disableExtensions
 
           OUTPUT_PATH="build/artifacts"
