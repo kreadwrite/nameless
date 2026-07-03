@@ -81,17 +81,24 @@ jobs:
           rm -rf "$OUTPUT_PATH"
           mkdir -p "$OUTPUT_PATH"
           shopt -s nullglob
-          ipa_files=(bazel-out/applebin_ios-ios_arm*-opt-ST-*/bin/Telegram/Swiftgram.ipa)
+          ipa_files=(bazel-bin/Telegram/Swiftgram.ipa)
+          if [ ${#ipa_files[@]} -eq 0 ]; then
+            ipa_files=(bazel-out/applebin_ios-ios_arm*-opt-ST-*/bin/Telegram/Swiftgram.ipa)
+          fi
           if [ ${#ipa_files[@]} -eq 0 ]; then
             echo "::error::Swiftgram.ipa was not produced"
-            find bazel-out -name '*.ipa' -print || true
+            find bazel-out bazel-bin -name '*.ipa' -print 2>/dev/null || true
             exit 1
           fi
-          for f in bazel-out/applebin_ios-ios_arm*-opt-ST-*/bin/Telegram/Swiftgram.ipa; do
+          for f in ${ipa_files[@]}; do
             cp "$f" "$OUTPUT_PATH/nameless.ipa"
           done
           mkdir -p build/DSYMs
-          for f in bazel-out/applebin_ios-ios_arm*-opt-ST-*/bin/Telegram/*.dSYM; do
+          dsym_files=(bazel-bin/Telegram/*.dSYM)
+          if [ ${#dsym_files[@]} -eq 0 ]; then
+            dsym_files=(bazel-out/applebin_ios-ios_arm*-opt-ST-*/bin/Telegram/*.dSYM)
+          fi
+          for f in ${dsym_files[@]}; do
             cp -R "$f" build/DSYMs/
           done
           zip -r "./$OUTPUT_PATH/nameless.DSYMs.zip" build/DSYMs 1>/dev/null
