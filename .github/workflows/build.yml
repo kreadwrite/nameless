@@ -128,7 +128,7 @@ jobs:
 
           # Step 5: Patch provisioning profiles to fix TeamIdentifier mismatch
           # Must run AFTER keychain setup so identity is available
-          SIGNING_IDENTITY=$(security find-identity -v -p codesigning "$KEYCHAIN_PATH" 2>/dev/null | head -1 | sed 's/.*"\(.*\)"$/\1/')
+          SIGNING_IDENTITY=$(python3 -c "import subprocess; r=subprocess.run(['security','find-identity','-v','-p','codesigning','"$KEYCHAIN_PATH"'], capture_output=True, text=True); print(r.stdout.split(chr(34))[1] if chr(34) in r.stdout else '')")
           echo "Patching profiles with identity: $SIGNING_IDENTITY"
           python3 build-system/patch_profiles.py "build-system/fake-codesigning/profiles" "$SIGNING_IDENTITY"
 
