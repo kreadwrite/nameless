@@ -98,6 +98,34 @@ jobs:
           )
           "
 
+
+          # Step 2.5: Patch provisioning profiles to remove TeamIdentifier mismatch
+          # GenerateProfiles re-signs profiles but leaves original TeamIdentifier (C67CF9S4VU)
+          # which doesn't match the self-signed cert. Patch them to accept any identity.
+          SIGNING_IDENTITY=$(security find-identity -v -p codesigning "$KEYCHAIN_PATH" 2>/dev/null | head -1 | sed 's/.*"\(.*\)"$/\1/')
+          echo "Patching profiles with identity: $SIGNING_IDENTITY"
+          python3 -c "
+import plistlib, subprocess, tempfile, os
+profiles_dir = 'build-system/fake-codesigning/profiles'
+identity = '$SIGNING_IDENTITY'
+for fname in sorted(os.listdir(profiles_dir)):
+    if not fname.endswith('.mobileprovision'): continue
+    fpath = os.path.join(profiles_dir, fname)
+    r2 = subprocess.run(['security','cms','-D','-i',fpath], capture_output=True, text=True)
+    if r2.returncode != 0: continue
+    plist = plistlib.loads(r2.stdout.encode())
+    plist['TeamIdentifier'] = []
+    plist['TeamName'] = ['Organization']
+    if 'Entitlements' in plist:
+        plist['Entitlements'].pop('com.apple.developer.team-identifier', None)
+    tmp = tempfile.mktemp(suffix='.plist')
+    with open(tmp,'wb') as f: plistlib.dump(plist, f, format=plistlib.FMT_XML)
+    r3 = subprocess.run(['security','cms','-S','-N',identity,'-i',tmp,'-o',fpath], capture_output=True, text=True)
+    os.unlink(tmp)
+    print(f'  Patched {fname}')
+print('All profiles patched.')
+"
+
           # Step 2: Clean up stale keychain refs left by GenerateProfiles
           security list-keychains -d user -s "$HOME/Library/Keychains/login.keychain-db"
 
