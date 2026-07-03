@@ -157,9 +157,9 @@ private func pluginListEntries(presentationData: PresentationData, plugins: [Plu
     var id = 0
     entries.append(.addHeader(id: id, text: lang == "ru" ? "ДОБАВИТЬ ПЛАГИН" : "ADD PLUGIN"))
     id += 1
-    entries.append(.addAction(id: id, text: lang == "ru" ? "Выбрать файл .plugin" : "Select .plugin file"))
+    entries.append(.addAction(id: id, text: lang == "ru" ? "Выбрать файл .plugin / .js" : "Select .plugin / .js file"))
     id += 1
-    entries.append(.addNotice(id: id, text: lang == "ru" ? "Файлы плагинов .plugin можно устанавливать здесь." : "Plugin .plugin files can be installed here."))
+    entries.append(.addNotice(id: id, text: lang == "ru" ? "Файлы плагинов .plugin и .js можно устанавливать здесь." : "Plugin .plugin and .js files can be installed here."))
     id += 1
     entries.append(.addDebAction(id: id, text: lang == "ru" ? "Установить пакет .deb (твики)" : "Install .deb package (tweaks)"))
     id += 1
@@ -278,8 +278,8 @@ public func PluginListController(context: AccountContext, onPluginsChanged: @esc
         guard let controller = controller else { return }
         let picker: UIDocumentPickerViewController
         if #available(iOS 14.0, *) {
-            let pluginType = UTType(filenameExtension: "plugin") ?? .plainText
-            picker = UIDocumentPickerViewController(forOpeningContentTypes: [pluginType], asCopy: true)
+            let pluginTypes: [UTType] = ["plugin", "js", "mjs", "cjs"].compactMap { UTType(filenameExtension: $0) }
+            picker = UIDocumentPickerViewController(forOpeningContentTypes: pluginTypes.isEmpty ? [.plainText] : pluginTypes, asCopy: true)
         } else {
             picker = UIDocumentPickerViewController(documentTypes: ["public.plain-text", "public.data"], in: .import)
         }
@@ -295,7 +295,9 @@ public func PluginListController(context: AccountContext, onPluginsChanged: @esc
                 guard let supportURL = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else { return }
                 let pluginsDir = supportURL.appendingPathComponent("Plugins", isDirectory: true)
                 try? fileManager.createDirectory(at: pluginsDir, withIntermediateDirectories: true)
-                let destURL = pluginsDir.appendingPathComponent("\(metadata.id).plugin")
+                let sourceExt = url.pathExtension.lowercased()
+                let targetExt = ["js", "mjs", "cjs"].contains(sourceExt) ? sourceExt : "plugin"
+                let destURL = pluginsDir.appendingPathComponent("\(metadata.id).\(targetExt)")
                 try? fileManager.removeItem(at: destURL)
                 try? fileManager.copyItem(at: url, to: destURL)
                 var plugins = loadInstalledPlugins()

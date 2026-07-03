@@ -162,6 +162,47 @@ private class ApplicationStatusBarHost: StatusBarHost {
     }
 }
 
+private final class NamelessLaunchCoveringView: WindowCoveringView {
+    private let imageView = UIImageView()
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+
+        self.backgroundColor = UIColor(red: 0.08, green: 0.08, blue: 0.09, alpha: 1.0)
+
+        let logoImage: UIImage? = {
+            if let url = Bundle.main.url(forResource: "nameless", withExtension: "png"), let image = UIImage(contentsOfFile: url.path) {
+                return image
+            }
+            if let image = UIImage(named: "nameless") {
+                return image
+            }
+            if let image = UIImage(named: "AppIconLLC") {
+                return image
+            }
+            return nil
+        }()
+
+        self.imageView.image = logoImage
+        self.imageView.contentMode = .scaleAspectFit
+        self.addSubview(self.imageView)
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override func updateLayout(_ size: CGSize) {
+        let edge = min(size.width, size.height) * 0.24
+        self.imageView.frame = CGRect(
+            x: floor((size.width - edge) / 2.0),
+            y: floor((size.height - edge) / 2.0),
+            width: edge,
+            height: edge
+        )
+    }
+}
+
 private func legacyDocumentsPath() -> String {
     return NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true)[0] + "/legacy"
 }
@@ -232,6 +273,7 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
     var nativeWindow: (UIWindow & WindowHost)?
     var mainWindow: Window1!
     private var dataImportSplash: LegacyDataImportSplash?
+    private var launchCoveringView: NamelessLaunchCoveringView?
     private var memoryUsageOverlayView: UILabel?
     
     private var buildConfig: BuildConfig?
@@ -426,6 +468,9 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
         }
         self.window = window
         self.nativeWindow = window
+        let launchCoveringView = NamelessLaunchCoveringView(frame: window.bounds)
+        self.launchCoveringView = launchCoveringView
+        self.mainWindow.coveringView = launchCoveringView
         // MARK: Swiftgram
         if sgHardReset(present: self.mainWindow?.presentNative, beforePresent: { self.window?.makeKeyAndVisible() }) {
             return true
@@ -1349,6 +1394,7 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
                     print("Launch to ready took \((CFAbsoluteTimeGetCurrent() - launchStartTime) * 1000.0) ms")
 
                     self.mainWindow.debugAction = nil
+                    self.mainWindow.coveringView = nil
                     self.mainWindow.viewController = context.rootController
                     
                     if firstTime {
