@@ -26,12 +26,10 @@ jobs:
       - name: Set active Xcode path
         run: |
           set -euo pipefail
-          XCODE_VERSION=$(python3 -c 'import json; d=json.load(open("versions.json")); print(d["xcode"])')
-          XCODE_PATH="/Applications/Xcode_${XCODE_VERSION}.app/Contents/Developer"
-          if [ -d "$XCODE_PATH" ]; then
-            sudo xcode-select -s "$XCODE_PATH"
+          XCODE_VERSION=$(cat versions.json | python3 -c 'import json,sys;obj=json.load(sys.stdin);print(obj["xcode"]);')
+          if [ -d "/Applications/Xcode_$XCODE_VERSION.app/Contents/Developer" ]; then
+            sudo xcode-select -s "/Applications/Xcode_$XCODE_VERSION.app/Contents/Developer"
           else
-            echo "Xcode ${XCODE_VERSION} not found, using default"
             sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
           fi
           xcodebuild -version
@@ -48,44 +46,12 @@ jobs:
         run: |
           set -euo pipefail
           SOURCE_DIR=/Users/Shared/telegram-ios
-          sed -i '' '/reordered_opaque/d' \
-            "$SOURCE_DIR/third-party/webrtc/webrtc/modules/video_coding/codecs/h264/h264_decoder_impl.cc"
-          sed -i '' '/LuxSettingsUI/d' \
-            "$SOURCE_DIR/submodules/TelegramUI/Components/PeerInfo/PeerInfoScreen/BUILD"
-          sed -i '' '/import LuxSettingsUI/d' \
-            "$SOURCE_DIR/submodules/TelegramUI/Components/PeerInfo/PeerInfoScreen/Sources/PeerInfoScreenSettingsActions.swift"
-          sed -i '' 's/self.controller?.push(luxGramSettingsController(context: self.context))/break/' \
-            "$SOURCE_DIR/submodules/TelegramUI/Components/PeerInfo/PeerInfoScreen/Sources/PeerInfoScreenSettingsActions.swift"
-          sed -i '' 's/PresentationResourcesSettings.nameless.withRenderingMode(.alwaysOriginal)/PresentationResourcesSettings.nameless?.withRenderingMode(.alwaysOriginal)/' \
-            "$SOURCE_DIR/submodules/TelegramUI/Components/PeerInfo/PeerInfoScreen/Sources/ListItems/PeerInfoScreenCommentItem.swift"
-          sed -i '' 's/sgWebSettings\.global\.canGrant/(context.currentAppConfiguration.with { $0 }).sgWebSettings.global.canGrant/' \
-            "$SOURCE_DIR/submodules/TelegramUI/Components/PeerInfo/PeerInfoScreen/Sources/PeerInfoSettingsItems.swift"
-
-      - name: Create CI build configuration
-        run: |
-          set -euo pipefail
-          SOURCE_DIR=/Users/Shared/telegram-ios
-          python3 -c "
-import json
-cfg = {
-    'bundle_id': 'ph.telegra.Telegraph',
-    'api_id': '35971841',
-    'api_hash': '504a05393f81633f94c433502e9b09e6',
-    'team_id': '',
-    'app_center_id': '0',
-    'is_internal_build': 'false',
-    'is_appstore_build': 'false',
-    'appstore_id': '0',
-    'app_specific_url_scheme': 'tg',
-    'premium_iap_product_id': '',
-    'enable_siri': False,
-    'enable_icloud': False,
-    'sg_config': ''
-}
-with open('$SOURCE_DIR/build-system/ci-configuration.json', 'w') as f:
-    json.dump(cfg, f, indent='\t')
-print('Created ci-configuration.json')
-"
+          sed -i '' '/reordered_opaque/d' "$SOURCE_DIR/third-party/webrtc/webrtc/modules/video_coding/codecs/h264/h264_decoder_impl.cc"
+          sed -i '' '/LuxSettingsUI/d' "$SOURCE_DIR/submodules/TelegramUI/Components/PeerInfo/PeerInfoScreen/BUILD"
+          sed -i '' '/import LuxSettingsUI/d' "$SOURCE_DIR/submodules/TelegramUI/Components/PeerInfo/PeerInfoScreen/Sources/PeerInfoScreenSettingsActions.swift"
+          sed -i '' 's/self.controller?.push(luxGramSettingsController(context: self.context))/break/' "$SOURCE_DIR/submodules/TelegramUI/Components/PeerInfo/PeerInfoScreen/Sources/PeerInfoScreenSettingsActions.swift"
+          sed -i '' 's/PresentationResourcesSettings.nameless.withRenderingMode(.alwaysOriginal)/PresentationResourcesSettings.nameless?.withRenderingMode(.alwaysOriginal)/' "$SOURCE_DIR/submodules/TelegramUI/Components/PeerInfo/PeerInfoScreen/Sources/ListItems/PeerInfoScreenCommentItem.swift"
+          sed -i '' 's/sgWebSettings\.global\.canGrant/(context.currentAppConfiguration.with { $0 }).sgWebSettings.global.canGrant/' "$SOURCE_DIR/submodules/TelegramUI/Components/PeerInfo/PeerInfoScreen/Sources/PeerInfoSettingsItems.swift"
 
       - name: Import fake certificates
         run: |
@@ -98,25 +64,14 @@ print('Created ci-configuration.json')
           SOURCE_DIR=/Users/Shared/telegram-ios
           BAZEL_USER_ROOT="/private/var/tmp/_bazel_containerhost"
           cd $SOURCE_DIR
-
           BUILD_NUMBER_OFFSET="$(cat build_number_offset)"
-          export APP_VERSION=$(python3 -c 'import json; d=json.load(open("versions.json")); print(d["app"])')
+          export APP_VERSION=$(cat versions.json | python3 -c 'import json,sys;obj=json.load(sys.stdin);print(obj["app"]);')
           export COMMIT_COUNT=$(git rev-list --count HEAD)
           export COMMIT_COUNT="$(($COMMIT_COUNT+$BUILD_NUMBER_OFFSET))"
           export BUILD_NUMBER="$COMMIT_COUNT"
           echo "BUILD_NUMBER=$(echo $BUILD_NUMBER)" >> $GITHUB_ENV
           echo "APP_VERSION=$(echo $APP_VERSION)" >> $GITHUB_ENV
-
-          python3 -u build-system/Make/Make.py  \
-            --bazelUserRoot="$BAZEL_USER_ROOT"  \
-            build  \
-            --configurationPath="build-system/ci-configuration.json"  \
-            --codesigningInformationPath=build-system/fake-codesigning  \
-            --disableProvisioningProfiles  \
-            --configuration=release_arm64  \
-            --buildNumber="$BUILD_NUMBER"  \
-            --disableExtensions
-
+          python3 -u build-system/Make/Make.py --bazelUserRoot="$BAZEL_USER_ROOT" build --configurationPath="build-system/ci-configuration.json" --codesigningInformationPath=build-system/fake-codesigning --disableProvisioningProfiles --configuration=release_arm64 --buildNumber="$BUILD_NUMBER" --disableExtensions
           OUTPUT_PATH="build/artifacts"
           rm -rf "$OUTPUT_PATH"
           mkdir -p "$OUTPUT_PATH"
@@ -130,7 +85,6 @@ print('Created ci-configuration.json')
           for f in bazel-out/applebin_ios-ios_arm*-opt-ST-*/bin/Telegram/Swiftgram.ipa; do
             cp "$f" "$OUTPUT_PATH/nameless.ipa"
           done
-
           mkdir -p build/DSYMs
           for f in bazel-out/applebin_ios-ios_arm*-opt-ST-*/bin/Telegram/*.dSYM; do
             cp -R "$f" build/DSYMs/
