@@ -98,12 +98,6 @@ jobs:
           )
           "
 
-
-          # Step 2.5: Patch provisioning profiles to fix TeamIdentifier mismatch
-          SIGNING_IDENTITY=$(security find-identity -v -p codesigning "$KEYCHAIN_PATH" 2>/dev/null | head -1 | sed 's/.*"\(.*\)"$/\1/')
-          echo "Patching profiles with identity: $SIGNING_IDENTITY"
-          python3 build-system/patch_profiles.py "build-system/fake-codesigning/profiles" "$SIGNING_IDENTITY"
-
           # Step 2: Clean up stale keychain refs left by GenerateProfiles
           security list-keychains -d user -s "$HOME/Library/Keychains/login.keychain-db"
 
