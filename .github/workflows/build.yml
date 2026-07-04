@@ -73,6 +73,26 @@ jobs:
           cd /Users/Shared/telegram-ios
           python3 build-system/patch-rules-apple.py
 
+      - name: Inject API credentials from Secrets
+        env:
+          TELEGRAM_API_ID: ${{ secrets.TELEGRAM_API_ID }}
+          TELEGRAM_API_HASH: ${{ secrets.TELEGRAM_API_HASH }}
+        run: |
+          set -euo pipefail
+          cd /Users/Shared/telegram-ios
+          python3 - <<'PY'
+          import json, os
+          path = "build-system/ci-configuration.json"
+          with open(path) as f:
+              cfg = json.load(f)
+          cfg["api_id"] = os.environ["TELEGRAM_API_ID"]
+          cfg["api_hash"] = os.environ["TELEGRAM_API_HASH"]
+          with open(path, "w") as f:
+              json.dump(cfg, f, indent="	")
+              f.write("\n")
+          print("ci-configuration.json: api_id/api_hash injected from secrets")
+          PY
+
       - name: Build the App
         run: |
           set -euo pipefail
@@ -121,15 +141,3 @@ jobs:
             /Users/Shared/telegram-ios/build/artifacts/nameless.ipa
             /Users/Shared/telegram-ios/build/artifacts/nameless.DSYMs.zip
 
-      - name: Create GitHub Release
-        if: github.event_name == 'workflow_dispatch'
-        uses: softprops/action-gh-release@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: build-${{ env.BUILD_NUMBER }}
-          name: nameless ${{ env.APP_VERSION }} (${{ env.BUILD_NUMBER }})
-          body: unsigned iOS build of nameless ${{ env.APP_VERSION }} (${{ env.BUILD_NUMBER }})
-          files: |
-            /Users/Shared/telegram-ios/build/artifacts/nameless.ipa
-            /Users/Shared/telegram-ios/build/artifacts/nameless.DSYMs.zip

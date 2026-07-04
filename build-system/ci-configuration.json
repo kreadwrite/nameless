@@ -1,7 +1,7 @@
 {
 	"bundle_id": "app.nameless.io",
-	"api_id": "35971841",
-	"api_hash": "504a05393f81633f94c433502e9b09e6",
+	"api_id": "__TELEGRAM_API_ID__",
+	"api_hash": "__TELEGRAM_API_HASH__",
 	"team_id": "",
 	"app_center_id": "0",
 	"is_internal_build": "false",
