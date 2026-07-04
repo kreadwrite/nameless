@@ -316,16 +316,6 @@ filegroup(
     ], exclude = ["Telegram-iOS/DefaultAppIcon.xcassets/**/.*"]),
 )
 
-# Flat nameless.png bundled as a regular resource so that
-# NamelessLaunchCoveringView can load it via Bundle.main.url(forResource:withExtension:)
-# even when the icon-composer assets are not runtime-loadable.
-filegroup(
-    name = "NamelessBrandingResources",
-    srcs = glob([
-        "Telegram-iOS/Resources/Branding/**/*",
-    ], exclude = ["Telegram-iOS/Resources/Branding/**/.*"]),
-)
-
 # MARK: nameless alternative icons
 alternate_icon_folders = [
     "NamelessBlack",
@@ -1947,7 +1937,6 @@ ios_application(
     ],
     resources = [
         ":LaunchScreen",
-        ":NamelessBrandingResources",
     ],
     frameworks = [
         ":MtProtoKitFramework",
