@@ -229,6 +229,7 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
 }
 
 @objc(AppDelegate) class AppDelegate: UIResponder, UIApplicationDelegate, PKPushRegistryDelegate, UNUserNotificationCenterDelegate, URLSessionDelegate, URLSessionTaskDelegate {
+    override init() { super.init(); NSLog("[nameless] AppDelegate init") }
     @objc var window: UIWindow?
     var nativeWindow: (UIWindow & WindowHost)?
     var mainWindow: Window1!
@@ -422,6 +423,7 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
             } else {
                 hostView.containerView.backgroundColor = UIColor.white
             }
+        hostView.containerView.backgroundColor = UIColor.white
         } else {
             hostView.containerView.backgroundColor = UIColor.white
         }

@@ -1483,7 +1483,7 @@ private class CustomDimController: ViewController {
         override init() {
             super.init()
             
-            self.backgroundColor = .black
+            self.backgroundColor = .white
         }
     }
     override init(navigationBarPresentationData: NavigationBarPresentationData?) {
