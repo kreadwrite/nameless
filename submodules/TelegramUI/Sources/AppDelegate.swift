@@ -417,7 +417,7 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
                 case .light, .unspecified:
                     hostView.containerView.backgroundColor = UIColor.white
                 default:
-                    hostView.containerView.backgroundColor = UIColor.black
+                    hostView.containerView.backgroundColor = UIColor.white
                 }
             } else {
                 hostView.containerView.backgroundColor = UIColor.white
@@ -1351,6 +1351,7 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
 
                     self.mainWindow.debugAction = nil
                     self.mainWindow.coveringView = nil
+                    NSLog("[nameless] SUCCESS: context.isReady fired, setting rootController")
                     self.mainWindow.viewController = context.rootController
                     
                     if firstTime {
@@ -1388,6 +1389,7 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
                     
                 }))
             } else {
+                NSLog("[nameless] WARNING: context is nil, setting viewController to nil")
                 self.mainWindow.viewController = nil
                 self.mainWindow.topLevelOverlayControllers = []
                 contextReadyDisposable.set(nil)
