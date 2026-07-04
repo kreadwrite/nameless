@@ -1947,7 +1947,6 @@ ios_application(
     ],
     resources = [
         ":LaunchScreen",
-        ":DefaultAppIcon",
         ":NamelessBrandingResources",
     ],
     frameworks = [

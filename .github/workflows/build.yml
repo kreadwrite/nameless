@@ -17,6 +17,16 @@ jobs:
           submodules: recursive
           fetch-depth: 0
 
+      - name: Cache Bazel user root
+        uses: actions/cache@v4
+        with:
+          path: |
+            /private/var/tmp/_bazel_containerhost
+            /Users/Shared/telegram-ios/build-input
+          key: bazel-${{ runner.os }}-xcode26-${{ hashFiles('MODULE.bazel', 'MODULE.bazel.lock', 'versions.json') }}
+          restore-keys: |
+            bazel-${{ runner.os }}-xcode26-
+
       - name: Set up Java 21
         uses: actions/setup-java@v4
         with:
