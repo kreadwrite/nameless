@@ -662,9 +662,16 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
             isICloudEnabled: buildConfig.isICloudEnabled
         )
         
-        guard let appGroupUrl = maybeAppGroupUrl else {
-            self.mainWindow?.presentNative(UIAlertController(title: nil, message: "Error 2", preferredStyle: .alert))
-            return true
+        let appGroupUrl: URL
+        if let url = maybeAppGroupUrl {
+            appGroupUrl = url
+            NSLog("[nameless] App group container: %@", url.path)
+        } else {
+            let docsUrl = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+            let fallbackPath = docsUrl.appendingPathComponent("app-group-fallback", isDirectory: true)
+            try? FileManager.default.createDirectory(at: fallbackPath, withIntermediateDirectories: true)
+            appGroupUrl = fallbackPath
+            NSLog("[nameless] WARNING: App group '%@' not available, using fallback: %@", appGroupName, fallbackPath.path)
         }
         
         var isDebugConfiguration = false
@@ -1391,8 +1398,23 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
                     
                 }))
             } else {
-                NSLog("[nameless] WARNING: context is nil, setting viewController to nil")
-                self.mainWindow.viewController = nil
+                NSLog("[nameless] WARNING: context is nil — checking auth context for login screen")
+                if let authCtx = self.authContextValue {
+                    NSLog("[nameless] Presenting auth (login) controller as fallback")
+                    self.mainWindow.present(authCtx.controller, on: .root)
+                } else {
+                    NSLog("[nameless] ERROR: both context and authContext are nil — black screen fallback")
+                    let label = UILabel(frame: UIScreen.main.bounds)
+                    label.text = "Starting nameless..."
+                    label.textColor = .gray
+                    label.textAlignment = .center
+                    label.font = .systemFont(ofSize: 16)
+                    label.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+                    let wrapper = UIViewController()
+                    wrapper.view.backgroundColor = .white
+                    wrapper.view.addSubview(label)
+                    self.mainWindow.viewController = wrapper
+                }
                 self.mainWindow.topLevelOverlayControllers = []
                 contextReadyDisposable.set(nil)
             }
