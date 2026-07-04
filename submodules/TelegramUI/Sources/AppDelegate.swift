@@ -165,11 +165,15 @@ private class ApplicationStatusBarHost: StatusBarHost {
 private final class NamelessLaunchCoveringView: WindowCoveringView {
     private let imageView = UIImageView()
     private let titleLabel = UILabel()
+    private let statusLabel = UILabel()
 
     override init(frame: CGRect) {
         super.init(frame: frame)
 
-        self.backgroundColor = UIColor(red: 0.08, green: 0.08, blue: 0.09, alpha: 1.0)
+        // Use a noticeably non-black background so we can tell if the cover is
+        // actually being shown. A deep navy that is visibly different from pure black.
+        self.backgroundColor = UIColor(red: 0.04, green: 0.05, blue: 0.12, alpha: 1.0)
+        self.clipsToBounds = true
 
         let logoImage: UIImage? = {
             if let url = Bundle.main.url(forResource: "nameless", withExtension: "png"), let image = UIImage(contentsOfFile: url.path) {
@@ -189,34 +193,64 @@ private final class NamelessLaunchCoveringView: WindowCoveringView {
         self.imageView.isHidden = logoImage == nil
         self.addSubview(self.imageView)
 
-        // Fallback: if no logo asset is found in the bundle, show a text label
-        // instead of leaving the user with a pure black screen.
+        // Always show the text label so the user can see the app is alive even
+        // if the logo asset is missing. Place it slightly below center.
         self.titleLabel.text = "nameless"
         self.titleLabel.textColor = UIColor.white
-        self.titleLabel.font = UIFont.systemFont(ofSize: 28.0, weight: .semibold)
+        self.titleLabel.font = UIFont.systemFont(ofSize: 32.0, weight: .bold)
         self.titleLabel.textAlignment = .center
-        self.titleLabel.isHidden = logoImage != nil
+        self.titleLabel.sizeToFit()
         self.addSubview(self.titleLabel)
+
+        // A tiny status label at the bottom — useful for diagnosing hangs.
+        self.statusLabel.text = "loading…"
+        self.statusLabel.textColor = UIColor(white: 1.0, alpha: 0.6)
+        self.statusLabel.font = UIFont.systemFont(ofSize: 13.0, weight: .regular)
+        self.statusLabel.textAlignment = .center
+        self.statusLabel.sizeToFit()
+        self.addSubview(self.statusLabel)
+
+        // Force an initial layout in case the host doesn't call updateLayout
+        // before the first paint.
+        if !self.bounds.size.width.isZero {
+            self.updateLayout(self.bounds.size)
+        }
     }
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        // Guarantee that subviews get a real frame as soon as the cover is sized.
+        if !self.bounds.size.width.isZero {
+            self.updateLayout(self.bounds.size)
+        }
+    }
+
     override func updateLayout(_ size: CGSize) {
         let edge = min(size.width, size.height) * 0.24
+        let centerY = size.height * 0.42
         self.imageView.frame = CGRect(
             x: floor((size.width - edge) / 2.0),
-            y: floor((size.height - edge) / 2.0),
+            y: floor(centerY - edge / 2.0),
             width: edge,
             height: edge
         )
         let labelSize = self.titleLabel.sizeThatFits(CGSize(width: size.width, height: CGFloat.greatestFiniteMagnitude))
         self.titleLabel.frame = CGRect(
             x: floor((size.width - labelSize.width) / 2.0),
-            y: floor((size.height - labelSize.height) / 2.0),
+            y: floor(centerY + edge / 2.0 + 12.0),
             width: labelSize.width,
             height: labelSize.height
+        )
+        let statusSize = self.statusLabel.sizeThatFits(CGSize(width: size.width, height: CGFloat.greatestFiniteMagnitude))
+        self.statusLabel.frame = CGRect(
+            x: floor((size.width - statusSize.width) / 2.0),
+            y: floor(size.height - statusSize.height - 32.0),
+            width: statusSize.width,
+            height: statusSize.height
         )
     }
 }
@@ -490,12 +524,14 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
         let launchCoveringView = NamelessLaunchCoveringView(frame: window.bounds)
         self.launchCoveringView = launchCoveringView
         self.mainWindow.coveringView = launchCoveringView
+        NSLog("[nameless] Launch covering view installed. Bundle: \(Bundle.main.bundleIdentifier ?? "?")")
         // Safety net: if context.isReady never fires (broken api_id, network failure,
-        // auth rejection, etc.), drop the launch cover after 8 seconds so the user
+        // auth rejection, etc.), drop the launch cover after 5 seconds so the user
         // is not stuck on a black screen forever.
         self.launchCoveringFallbackTimer?.invalidate()
-        self.launchCoveringFallbackTimer = Foundation.Timer.scheduledTimer(withTimeInterval: 8.0, repeats: false) { [weak self] _ in
+        self.launchCoveringFallbackTimer = Foundation.Timer.scheduledTimer(withTimeInterval: 5.0, repeats: false) { [weak self] _ in
             guard let self = self else { return }
+            NSLog("[nameless] Safety-net timer fired — forcing launch cover removal. contextReady likely never fired.")
             if self.mainWindow.coveringView === self.launchCoveringView {
                 self.mainWindow.coveringView = nil
             }
@@ -1423,6 +1459,7 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
                         print("Application: context took \(readyTime) to become ready")
                     }
                     print("Launch to ready took \((CFAbsoluteTimeGetCurrent() - launchStartTime) * 1000.0) ms")
+                    NSLog("[nameless] context.isReady fired after \(readyTime)s. Removing launch cover, setting root controller.")
 
                     self.mainWindow.debugAction = nil
                     self.launchCoveringFallbackTimer?.invalidate()
