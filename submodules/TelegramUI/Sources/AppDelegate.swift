@@ -164,6 +164,7 @@ private class ApplicationStatusBarHost: StatusBarHost {
 
 private final class NamelessLaunchCoveringView: WindowCoveringView {
     private let imageView = UIImageView()
+    private let titleLabel = UILabel()
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -185,7 +186,17 @@ private final class NamelessLaunchCoveringView: WindowCoveringView {
 
         self.imageView.image = logoImage
         self.imageView.contentMode = .scaleAspectFit
+        self.imageView.isHidden = logoImage == nil
         self.addSubview(self.imageView)
+
+        // Fallback: if no logo asset is found in the bundle, show a text label
+        // instead of leaving the user with a pure black screen.
+        self.titleLabel.text = "nameless"
+        self.titleLabel.textColor = UIColor.white
+        self.titleLabel.font = UIFont.systemFont(ofSize: 28.0, weight: .semibold)
+        self.titleLabel.textAlignment = .center
+        self.titleLabel.isHidden = logoImage != nil
+        self.addSubview(self.titleLabel)
     }
 
     required init?(coder: NSCoder) {
@@ -199,6 +210,13 @@ private final class NamelessLaunchCoveringView: WindowCoveringView {
             y: floor((size.height - edge) / 2.0),
             width: edge,
             height: edge
+        )
+        let labelSize = self.titleLabel.sizeThatFits(CGSize(width: size.width, height: CGFloat.greatestFiniteMagnitude))
+        self.titleLabel.frame = CGRect(
+            x: floor((size.width - labelSize.width) / 2.0),
+            y: floor((size.height - labelSize.height) / 2.0),
+            width: labelSize.width,
+            height: labelSize.height
         )
     }
 }
@@ -274,6 +292,7 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
     var mainWindow: Window1!
     private var dataImportSplash: LegacyDataImportSplash?
     private var launchCoveringView: NamelessLaunchCoveringView?
+    private var launchCoveringFallbackTimer: Foundation.Timer?
     private var memoryUsageOverlayView: UILabel?
     
     private var buildConfig: BuildConfig?
@@ -471,6 +490,18 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
         let launchCoveringView = NamelessLaunchCoveringView(frame: window.bounds)
         self.launchCoveringView = launchCoveringView
         self.mainWindow.coveringView = launchCoveringView
+        // Safety net: if context.isReady never fires (broken api_id, network failure,
+        // auth rejection, etc.), drop the launch cover after 8 seconds so the user
+        // is not stuck on a black screen forever.
+        self.launchCoveringFallbackTimer?.invalidate()
+        self.launchCoveringFallbackTimer = Foundation.Timer.scheduledTimer(withTimeInterval: 8.0, repeats: false) { [weak self] _ in
+            guard let self = self else { return }
+            if self.mainWindow.coveringView === self.launchCoveringView {
+                self.mainWindow.coveringView = nil
+            }
+            self.launchCoveringView = nil
+            self.launchCoveringFallbackTimer = nil
+        }
         // MARK: Swiftgram
         if sgHardReset(present: self.mainWindow?.presentNative, beforePresent: { self.window?.makeKeyAndVisible() }) {
             return true
@@ -1394,6 +1425,9 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
                     print("Launch to ready took \((CFAbsoluteTimeGetCurrent() - launchStartTime) * 1000.0) ms")
 
                     self.mainWindow.debugAction = nil
+                    self.launchCoveringFallbackTimer?.invalidate()
+                    self.launchCoveringFallbackTimer = nil
+                    self.launchCoveringView = nil
                     self.mainWindow.coveringView = nil
                     self.mainWindow.viewController = context.rootController
                     
