@@ -441,16 +441,6 @@ func infoItems(
                 }
 
                 if isNamelessOfficialUser(user) {
-                    items[currentPeerInfoSection]!.append(PeerInfoScreenLabeledValueItem(
-                        id: ItemNamelessDeveloper,
-                        label: "Основатель nameless",
-                        text: "official developer",
-                        textColor: .primary,
-                        action: nil,
-                        requestLayout: { _ in
-                            interaction.requestLayout(false)
-                        }
-                    ))
                     items[currentPeerInfoSection]!.append(PeerInfoScreenCommentItem(
                         id: ItemNamelessVerification,
                         icon: .nameless,
@@ -578,16 +568,6 @@ func infoItems(
         }
 
         if isNamelessOfficialUser(user) && (isMyProfile || reactionSourceMessageId != nil) {
-            items[currentPeerInfoSection]!.append(PeerInfoScreenLabeledValueItem(
-                id: ItemNamelessDeveloper,
-                label: "Основатель nameless",
-                text: "official developer",
-                textColor: .primary,
-                action: nil,
-                requestLayout: { _ in
-                    interaction.requestLayout(false)
-                }
-            ))
             items[currentPeerInfoSection]!.append(PeerInfoScreenCommentItem(
                 id: ItemNamelessVerification,
                 icon: .nameless,

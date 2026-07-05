@@ -215,6 +215,9 @@ func settingsItems(showProfileId: Bool, data: PeerInfoScreenData?, context: Acco
     items[.swiftgram]!.append(PeerInfoScreenDisclosureItem(id: 1, text: "Функции nameless", icon: PresentationResourcesSettings.swiftgram, action: {
         interaction.openSettings(.namelessFeatures)
     }))
+    items[.swiftgram]!.append(PeerInfoScreenDisclosureItem(id: 2, text: "О nameless", icon: PresentationResourcesSettings.language, action: {
+        interaction.openSettings(.namelessAbout)
+    }))
 
 
     var appIndex = 1000

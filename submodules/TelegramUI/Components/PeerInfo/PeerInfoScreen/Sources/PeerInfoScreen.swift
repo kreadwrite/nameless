@@ -163,6 +163,7 @@ enum PeerInfoContextSubject {
 enum PeerInfoSettingsSection {
     case nameless
     case namelessFeatures
+    case namelessAbout
     case swiftgram
     case swiftgramPro
     case swiftgramLegacyPicker

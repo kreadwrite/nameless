@@ -50,6 +50,8 @@ extension PeerInfoScreenNode {
             self.controller?.push(sgSettingsController(context: self.context))
         case .namelessFeatures:
             self.controller?.push(namelessFeaturesController(context: self.context))
+        case .namelessAbout:
+            self.controller?.push(namelessAboutController(context: self.context))
         case .swiftgram:
             self.controller?.push(sgSettingsController(context: self.context))
         case .swiftgramPro:
@@ -67,11 +69,11 @@ extension PeerInfoScreenNode {
             let actionSheet = ActionSheetController(presentationData: presentationData)
             actionSheet.setItemGroups([
                 ActionSheetItemGroup(items: [
-                    ActionSheetButtonItem(title: "Swiftgram", color: .accent, action: { [weak self, weak actionSheet] in
+                    ActionSheetButtonItem(title: "nameless", color: .accent, action: { [weak self, weak actionSheet] in
                         actionSheet?.dismissAnimated()
-                        self?.openSettings(section: .swiftgram)
+                        self?.openSettings(section: .nameless)
                     }),
-                    ActionSheetButtonItem(title: "Swiftgram Pro", color: .accent, action: { [weak self, weak actionSheet] in
+                    ActionSheetButtonItem(title: "nameless Pro", color: .accent, action: { [weak self, weak actionSheet] in
                         actionSheet?.dismissAnimated()
                         self?.openSettings(section: .swiftgramPro)
                     })

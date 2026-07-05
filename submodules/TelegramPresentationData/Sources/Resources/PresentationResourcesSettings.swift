@@ -119,7 +119,7 @@ let colorViolet = UIColor(rgb: 0x5E5CE6)
 public struct PresentationResourcesSettings {
     public static let swiftgram = renderSettingsIcon(name: "NamelessSettings", scaleFactor: 30.0 / 1280.0)
     public static let swiftgramPro = renderSettingsIcon(name: "NamelessSettings", scaleFactor: 30.0 / 1280.0)
-    public static let nameless = renderSettingsIcon(name: "NamelessSettings", scaleFactor: 30.0 / 1280.0)
+    public static let nameless = renderSettingsIcon(name: "NamelessSettings", scaleFactor: 40.0 / 1280.0)
     public static let proxy = renderSettingsIcon(name: "Item List/Icons/Proxy", backgroundColors: [colorGreen])
     public static let savedMessages = renderSettingsIcon(name: "Item List/Icons/SavedMessages", backgroundColors: [colorBlue])
     public static let recentCalls = renderSettingsIcon(name: "Item List/Icons/Phone", backgroundColors: [colorGreen])
