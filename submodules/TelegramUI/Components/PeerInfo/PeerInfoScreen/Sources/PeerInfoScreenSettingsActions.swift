@@ -48,6 +48,8 @@ extension PeerInfoScreenNode {
         switch section {
         case .nameless:
             self.controller?.push(sgSettingsController(context: self.context))
+        case .namelessFeatures:
+            self.controller?.push(namelessFeaturesController(context: self.context))
         case .swiftgram:
             self.controller?.push(sgSettingsController(context: self.context))
         case .swiftgramPro:
