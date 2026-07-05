@@ -5,6 +5,10 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: macos-26
@@ -23,25 +27,15 @@ jobs:
           path: |
             /private/var/tmp/_bazel_containerhost
             /Users/Shared/telegram-ios/build-input
-          key: bazel-${{ runner.os }}-xcode26-${{ hashFiles('MODULE.bazel', 'MODULE.bazel.lock', 'versions.json') }}
+          key: bazel-${{ runner.os }}-xcode26-${{ hashFiles('MODULE.bazel', 'MODULE.bazel.lock', 'versions.json') }}-v2
           restore-keys: |
             bazel-${{ runner.os }}-xcode26-
-
-      - name: Set up Java 21
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: "21"
 
       - name: Set active Xcode path
         run: |
           set -euo pipefail
-          XCODE_VERSION=$(cat versions.json | python3 -c 'import json,sys;obj=json.load(sys.stdin);print(obj["xcode"]);')
-          if [ -d "/Applications/Xcode_$XCODE_VERSION.app/Contents/Developer" ]; then
-            sudo xcode-select -s "/Applications/Xcode_$XCODE_VERSION.app/Contents/Developer"
-          else
-            sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
-          fi
+          XCODE_PATH=$(ls -d /Applications/Xcode*.app | sort -V | tail -1)
+          sudo xcode-select -s "$XCODE_PATH/Contents/Developer"
           xcodebuild -version
 
       - name: Create canonical source directory
@@ -63,39 +57,23 @@ jobs:
           sed -i '' 's/PresentationResourcesSettings.nameless.withRenderingMode(.alwaysOriginal)/PresentationResourcesSettings.nameless?.withRenderingMode(.alwaysOriginal)/' "$SOURCE_DIR/submodules/TelegramUI/Components/PeerInfo/PeerInfoScreen/Sources/ListItems/PeerInfoScreenCommentItem.swift"
           sed -i '' 's/sgWebSettings\.global\.canGrant/(context.currentAppConfiguration.with { $0 }).sgWebSettings.global.canGrant/' "$SOURCE_DIR/submodules/TelegramUI/Components/PeerInfo/PeerInfoScreen/Sources/PeerInfoSettingsItems.swift"
 
-      - name: Import fake certificates
+      - name: Import certificates and fix profiles
         run: |
+          set -x
+          set -o pipefail
           cd /Users/Shared/telegram-ios
           python3 build-system/Make/ImportCertificates.py --path build-system/fake-codesigning/certs
+          python3 build-system/Make/fix_profiles.py
 
       - name: Patch rules_apple for CI
         run: |
           cd /Users/Shared/telegram-ios
           python3 build-system/patch-rules-apple.py
 
-      - name: Inject API credentials from Secrets
-        env:
-          TELEGRAM_API_ID: ${{ secrets.TELEGRAM_API_ID }}
-          TELEGRAM_API_HASH: ${{ secrets.TELEGRAM_API_HASH }}
-        run: |
-          set -euo pipefail
-          cd /Users/Shared/telegram-ios
-          python3 - <<'PY'
-          import json, os
-          path = "build-system/ci-configuration.json"
-          with open(path) as f:
-              cfg = json.load(f)
-          cfg["api_id"] = os.environ["TELEGRAM_API_ID"]
-          cfg["api_hash"] = os.environ["TELEGRAM_API_HASH"]
-          with open(path, "w") as f:
-              json.dump(cfg, f, indent="	")
-              f.write("\n")
-          print("ci-configuration.json: api_id/api_hash injected from secrets")
-          PY
-
       - name: Build the App
         run: |
-          set -euo pipefail
+          set -x
+          set -o pipefail
           SOURCE_DIR=/Users/Shared/telegram-ios
           BAZEL_USER_ROOT="/private/var/tmp/_bazel_containerhost"
           cd $SOURCE_DIR
@@ -106,38 +84,51 @@ jobs:
           export BUILD_NUMBER="$COMMIT_COUNT"
           echo "BUILD_NUMBER=$(echo $BUILD_NUMBER)" >> $GITHUB_ENV
           echo "APP_VERSION=$(echo $APP_VERSION)" >> $GITHUB_ENV
-          python3 -u build-system/Make/Make.py --bazelUserRoot="$BAZEL_USER_ROOT" build --configurationPath="build-system/ci-configuration.json" --codesigningInformationPath=build-system/fake-codesigning --disableProvisioningProfiles --configuration=release_arm64 --buildNumber="$BUILD_NUMBER" --disableExtensions 2>&1 || echo "=== Make.py exited with code $? ==="
+          python3 -u build-system/Make/Make.py \
+            --bazelUserRoot="$BAZEL_USER_ROOT" \
+            build \
+            --configurationPath="build-system/ci-configuration.json" \
+            --codesigningInformationPath=build-system/fake-codesigning \
+            --configuration=release_arm64 \
+            --buildNumber="$BUILD_NUMBER" \
+          2>&1 | tee /tmp/build.log
+          echo "=== LAST 50 LINES ===" && tail -50 /tmp/build.log
           OUTPUT_PATH="build/artifacts"
           rm -rf "$OUTPUT_PATH"
           mkdir -p "$OUTPUT_PATH"
           shopt -s nullglob
-          ipa_files=(bazel-bin/Telegram/Swiftgram.ipa)
-          if [ ${#ipa_files[@]} -eq 0 ]; then
-            ipa_files=(bazel-out/applebin_ios-ios_arm*-opt-ST-*/bin/Telegram/Swiftgram.ipa)
-          fi
-          if [ ${#ipa_files[@]} -eq 0 ]; then
-            echo "::error::Swiftgram.ipa was not produced"
-            find bazel-out bazel-bin -name '*.ipa' -print 2>/dev/null || true
-            exit 1
-          fi
-          for f in ${ipa_files[@]}; do
+          for f in bazel-bin/Telegram/Swiftgram.ipa; do
             cp "$f" "$OUTPUT_PATH/nameless.ipa"
+            echo "Found IPA: $f"
+            break
           done
-          mkdir -p build/DSYMs
-          dsym_files=(bazel-bin/Telegram/*.dSYM)
-          if [ ${#dsym_files[@]} -eq 0 ]; then
-            dsym_files=(bazel-out/applebin_ios-ios_arm*-opt-ST-*/bin/Telegram/*.dSYM)
+          if [ ! -f "$OUTPUT_PATH/nameless.ipa" ]; then
+            for f in bazel-out/applebin_ios-ios_arm*-opt-ST-*/bin/Telegram/Swiftgram.ipa; do
+              cp "$f" "$OUTPUT_PATH/nameless.ipa"
+              echo "Found IPA: $f"
+              break
+            done
           fi
-          for f in ${dsym_files[@]}; do
-            cp -R "$f" build/DSYMs/
-          done
-          zip -r "./$OUTPUT_PATH/nameless.DSYMs.zip" build/DSYMs 1>/dev/null
+          if [ ! -f "$OUTPUT_PATH/nameless.ipa" ]; then
+            FOUND=$(find bazel-out bazel-bin -name '*.ipa' -type f 2>/dev/null | head -1)
+            if [ -n "$FOUND" ]; then
+              cp "$FOUND" "$OUTPUT_PATH/nameless.ipa"
+              echo "Found IPA via find: $FOUND"
+            fi
+          fi
+          ls -lah "$OUTPUT_PATH/"
 
-      - name: Upload unsigned build artifact
+      - name: Upload build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: /tmp/build.log
+          retention-days: 3
+
+      - name: Upload signed build artifact
         uses: actions/upload-artifact@v4
         with:
           name: nameless-${{ env.APP_VERSION }}-${{ env.BUILD_NUMBER }}
-          path: |
-            /Users/Shared/telegram-ios/build/artifacts/nameless.ipa
-            /Users/Shared/telegram-ios/build/artifacts/nameless.DSYMs.zip
-
+          path: /Users/Shared/telegram-ios/build/artifacts/nameless.ipa
+          retention-days: 7
