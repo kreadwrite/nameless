@@ -212,9 +212,7 @@ func settingsItems(showProfileId: Bool, data: PeerInfoScreenData?, context: Acco
     items[.swiftgram]!.append(PeerInfoScreenDisclosureItem(id: 0, label: swiftgramLabel, text: "nameless", icon: PresentationResourcesSettings.nameless, action: {
         interaction.openSettings(.nameless)
     }))
-    items[.swiftgram]!.append(PeerInfoScreenDisclosureItem(id: 1, text: "Возможности Telegram", icon: PresentationResourcesSettings.tips, hasArrow: false, action: nil, longTapAction: {
-        interaction.openSettings(.swiftgramLegacyPicker)
-    }))
+
 
     var appIndex = 1000
     if let settings = data.globalSettings {

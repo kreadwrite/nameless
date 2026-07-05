@@ -1,6 +1,5 @@
 import SGStrings
 import SGSettingsUI
-import LuxSettingsUI
 import Foundation
 import UIKit
 import Display
@@ -48,7 +47,7 @@ extension PeerInfoScreenNode {
         }
         switch section {
         case .nameless:
-            self.controller?.push(luxGramSettingsController(context: self.context))
+            self.controller?.push(sgSettingsController(context: self.context))
         case .swiftgram:
             self.controller?.push(sgSettingsController(context: self.context))
         case .swiftgramPro:
