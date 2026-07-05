@@ -1,5 +1,52 @@
 // MARK: Swiftgram
 import StoreKit
+
+// MARK: nameless - visible debug launch logger
+private var launchDebugLabel: UILabel?
+private var launchDebugLines: [String] = []
+private func launchLog(_ msg: String) {
+    let line = "[\(Date().timeIntervalSince1970.truncatingRemainder(dividingBy: 100000))] \(msg)"
+    launchDebugLines.append(line)
+    NSLog("[nameless.launch] \(msg)")
+    DispatchQueue.main.async {
+        if let label = launchDebugLabel {
+            let display = launchDebugLines.suffix(12).joined(separator: "\n")
+            label.text = display
+            label.sizeToFit()
+            label.frame.size.width = min(label.frame.size.width + 20, UIScreen.main.bounds.width - 32)
+            label.frame.size.height = min(label.frame.size.height + 20, UIScreen.main.bounds.height - 100)
+            label.center = CGPoint(x: UIScreen.main.bounds.midX, y: UIScreen.main.bounds.midY)
+        }
+    }
+}
+private func showLaunchDebugScreen(on hostView: UIView?) {
+    guard let hostView = hostView else { return }
+    let bg = UIView(frame: hostView.bounds)
+    bg.backgroundColor = .white
+    bg.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+    bg.tag = 999991
+    hostView.addSubview(bg)
+    let label = UILabel(frame: CGRect(x: 16, y: 60, width: hostView.bounds.width - 32, height: hostView.bounds.height - 120))
+    label.font = UIFont.monospacedSystemFont(ofSize: 11, weight: .regular)
+    label.textColor = .darkGray
+    label.numberOfLines = 0
+    label.tag = 999992
+    label.backgroundColor = UIColor(white: 0.95, alpha: 1)
+    label.layer.cornerRadius = 8
+    label.clipsToBounds = true
+    label.text = "nameless starting..."
+    label.sizeToFit()
+    label.frame.size.width = min(label.frame.size.width + 20, hostView.bounds.width - 32)
+    label.center = CGPoint(x: hostView.bounds.midX, y: hostView.bounds.midY)
+    label.autoresizingMask = [.flexibleLeftMargin, .flexibleRightMargin, .flexibleTopMargin, .flexibleBottomMargin]
+    bg.addSubview(label)
+    launchDebugLabel = label
+}
+private func hideLaunchDebugScreen(on hostView: UIView?) {
+    launchDebugLabel = nil
+    hostView?.viewWithTag(999991)?.removeFromSuperview()
+}
+
 import SGIAP
 import SGAPI
 import SGDeviceToken
@@ -429,10 +476,15 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
         }
         self.window = window
         self.nativeWindow = window
+        // MARK: nameless - show debug overlay
+        showLaunchDebugScreen(on: hostView.containerView)
+        launchLog("Window created, bundleId=\(Bundle.main.bundleIdentifier ?? "nil")")
         // MARK: Swiftgram
         if sgHardReset(present: self.mainWindow?.presentNative, beforePresent: { self.window?.makeKeyAndVisible() }) {
+            launchLog("BLOCKED: sgHardReset returned true")
             return true
         }
+        launchLog("sgHardReset: ok (not triggered)")
         //
         
         hostView.containerView.layer.addSublayer(MetalEngine.shared.rootLayer)
@@ -550,9 +602,12 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
         
         let baseAppBundleId = Bundle.main.bundleIdentifier!
         let appGroupName = "group.\(baseAppBundleId)"
+        launchLog("App group: \(appGroupName)")
         let maybeAppGroupUrl = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroupName)
+        launchLog("App group URL: \(maybeAppGroupUrl?.path ?? "NIL"))"
         
         let buildConfig = BuildConfig(baseAppBundleId: baseAppBundleId)
+        launchLog("BuildConfig: apiId=\(buildConfig.apiId) apiHash=\(buildConfig.apiHash.prefix(6))... bundleId=\(buildConfig.baseAppBundleId)")
         self.buildConfig = buildConfig
         let signatureDict = BuildConfigExtra.signatureDict()
         
@@ -665,13 +720,13 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
         let appGroupUrl: URL
         if let url = maybeAppGroupUrl {
             appGroupUrl = url
-            NSLog("[nameless] App group container: %@", url.path)
+            launchLog("App group container OK: \(url.path)")
         } else {
             let docsUrl = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
             let fallbackPath = docsUrl.appendingPathComponent("app-group-fallback", isDirectory: true)
             try? FileManager.default.createDirectory(at: fallbackPath, withIntermediateDirectories: true)
             appGroupUrl = fallbackPath
-            NSLog("[nameless] WARNING: App group '%@' not available, using fallback: %@", appGroupName, fallbackPath.path)
+            launchLog("WARNING: App group NIL, fallback=\(fallbackPath.path)")
         }
         
         var isDebugConfiguration = false
@@ -1023,8 +1078,10 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
             }
         })
         
+        launchLog("Creating AccountManager at \(rootPath)/accounts-metadata")
         let accountManager = AccountManager<TelegramAccountManagerTypes>(basePath: rootPath + "/accounts-metadata", isTemporary: false, isReadOnly: false, useCaches: true, removeDatabaseOnError: true)
         self.accountManager = accountManager
+        launchLog("AccountManager created OK")
 
         telegramUIDeclareEncodables()
         initializeAccountManagement()
@@ -1085,13 +1142,17 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
             }
         }
         
+        launchLog("Starting currentPresentationDataAndSettings...")
         let sharedContextSignal = currentPresentationDataAndSettings(accountManager: accountManager, systemUserInterfaceStyle: systemUserInterfaceStyle)
+        launchLog("sharedContextSignal created")
         |> map { initialPresentationDataAndSettings -> (AccountManager, InitialPresentationDataAndSettings) in
             return (accountManager, initialPresentationDataAndSettings)
         }
         |> deliverOnMainQueue
         |> mapToSignal { accountManager, initialPresentationDataAndSettings -> Signal<(SharedApplicationContext, LoggingSettings), NoError> in
+            launchLog("PresentationData ready, theme=\(initialPresentationDataAndSettings.presentationData.theme.name)")
             self.mainWindow?.hostView.containerView.backgroundColor =  initialPresentationDataAndSettings.presentationData.theme.chatList.backgroundColor
+            launchLog("Creating SharedAccountContextImpl...")
             
             let legacyBasePath = appGroupUrl.path
             
@@ -1209,6 +1270,7 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
                 return (sharedApplicationContext, transaction.getSharedData(SharedDataKeys.loggingSettings)?.get(LoggingSettings.self) ?? LoggingSettings.defaultSettings)
             }
         }
+        launchLog("Setting sharedContextPromise...")
         self.sharedContextPromise.set(sharedContextSignal
         |> mapToSignal { sharedApplicationContext, loggingSettings -> Signal<SharedApplicationContext, NoError> in
             Logger.shared.logToFile = loggingSettings.logToFile
@@ -1325,8 +1387,10 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
         let contextReadyDisposable = MetaDisposable()
         
         let startTime = CFAbsoluteTimeGetCurrent()
+        launchLog("Waiting for context signal...")
         self.contextDisposable.set((self.context.get()
         |> deliverOnMainQueue).start(next: { context in
+            launchLog("CONTEXT SIGNAL FIRED: context=\(context == nil ? "nil" : "some")")
             print("Application: context took \(CFAbsoluteTimeGetCurrent() - startTime) to become available")
             
             var network: Network?
@@ -1348,10 +1412,12 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
             if let context = context {
                 setupLegacyComponents(context: context.context)
                 let isReady = context.isReady.get()
+                launchLog("Waiting for context.isReady...")
                 contextReadyDisposable.set((isReady
                 |> filter { $0 }
                 |> take(1)
                 |> deliverOnMainQueue).start(next: { _ in
+                    launchLog("context.isReady = TRUE")
                     let readyTime = CFAbsoluteTimeGetCurrent() - startTime
                     if readyTime > 0.5 {
                         print("Application: context took \(readyTime) to become ready")
@@ -1360,8 +1426,10 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
 
                     self.mainWindow.debugAction = nil
                     self.mainWindow.coveringView = nil
-                    NSLog("[nameless] SUCCESS: context.isReady fired, setting rootController")
+                    launchLog("SUCCESS: setting rootController")
+                    hideLaunchDebugScreen(on: self.mainWindow?.hostView.containerView)
                     self.mainWindow.viewController = context.rootController
+                    launchLog("rootController SET DONE")
                     
                     if firstTime {
                         let layer = context.rootController.view.layer
@@ -1398,12 +1466,13 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
                     
                 }))
             } else {
-                NSLog("[nameless] WARNING: context is nil — checking auth context for login screen")
+                launchLog("WARNING: context is nil, authContext=\(self.authContextValue == nil ? "nil" : "some")")
                 if let authCtx = self.authContextValue {
-                    NSLog("[nameless] Presenting auth (login) controller as fallback")
+                    launchLog("Presenting auth controller as fallback")
+                    hideLaunchDebugScreen(on: self.mainWindow?.hostView.containerView)
                     self.mainWindow.present(authCtx.controller, on: .root)
                 } else {
-                    NSLog("[nameless] ERROR: both context and authContext are nil — black screen fallback")
+                    launchLog("ERROR: both context and authContext nil - showing error")
                     let label = UILabel(frame: UIScreen.main.bounds)
                     label.text = "Starting nameless..."
                     label.textColor = .gray
