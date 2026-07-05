@@ -1,46 +1,4 @@
 // MARK: Swiftgram
-
-// MARK: nameless debug
-private var _debugWindow: UIWindow?
-private var _debugLabel: UILabel?
-private var _debugLines: [String] = []
-private func _dbg(_ msg: String) {
-    let ts = Int(Date().timeIntervalSince1970) % 100000
-    let line = "[\(ts)] \(msg)"
-    _debugLines.append(line)
-    print("[nameless] \(msg)")
-    DispatchQueue.main.async {
-        guard let lbl = self._debugLabel else { return }
-        lbl.text = self._debugLines.suffix(15).joined(separator: "\n")
-        lbl.sizeToFit()
-        lbl.frame = CGRect(x: 8, y: 40, width: min(lbl.frame.width + 16, UIScreen.main.bounds.width - 16), height: min(lbl.frame.height + 16, UIScreen.main.bounds.height - 80))
-        lbl.center = CGPoint(x: UIScreen.main.bounds.midX, y: UIScreen.main.bounds.midY)
-    }
-}
-private func _showDebug() {
-    let w = UIWindow(frame: UIScreen.main.bounds)
-    w.windowLevel = UIWindow.Level.statusBar + 1
-    w.backgroundColor = .white
-    w.rootViewController = UIViewController()
-    w.rootViewController?.view.backgroundColor = .white
-    w.makeKeyAndVisible()
-    let lbl = UILabel(frame: CGRect(x: 8, y: 40, width: 300, height: 400))
-    lbl.font = .monospacedSystemFont(ofSize: 10, weight: .regular)
-    lbl.textColor = .black
-    lbl.numberOfLines = 0
-    lbl.backgroundColor = UIColor(white: 0.95, alpha: 1)
-    lbl.layer.cornerRadius = 8
-    lbl.clipsToBounds = true
-    w.rootViewController?.view.addSubview(lbl)
-    self._debugWindow = w
-    self._debugLabel = lbl
-}
-private func _hideDebug() {
-    self._debugWindow?.isHidden = true
-    self._debugWindow = nil
-    self._debugLabel = nil
-}
-
 import StoreKit
 import SGIAP
 import SGAPI
@@ -203,6 +161,7 @@ private class ApplicationStatusBarHost: StatusBarHost {
         return nil
     }
 }
+
 
 private func legacyDocumentsPath() -> String {
     return NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true)[0] + "/legacy"
@@ -377,8 +336,6 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
     private var recaptchaClientsBySiteKey: [String: Promise<RecaptchaClient>] = [:]
         
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
-        _showDebug()
-        _dbg("didFinishLaunching START bundleId=\(Bundle.main.bundleIdentifier ?? "nil")")
         precondition(!testIsLaunched)
         testIsLaunched = true
         
@@ -469,14 +426,11 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
             hostView.containerView.backgroundColor = UIColor.white
         }
         self.window = window
-        _dbg("window created")
         self.nativeWindow = window
         // MARK: Swiftgram
         if sgHardReset(present: self.mainWindow?.presentNative, beforePresent: { self.window?.makeKeyAndVisible() }) {
-            _dbg("BLOCKED by sgHardReset")
             return true
         }
-        _dbg("sgHardReset: ok")
         //
         
         hostView.containerView.layer.addSublayer(MetalEngine.shared.rootLayer)
@@ -594,12 +548,9 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
         
         let baseAppBundleId = Bundle.main.bundleIdentifier!
         let appGroupName = "group.\(baseAppBundleId)"
-        _dbg("appGroup: \(appGroupName)")
         let maybeAppGroupUrl = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroupName)
-        _dbg("appGroupUrl: \(maybeAppGroupUrl?.path ?? "NIL"))
         
         let buildConfig = BuildConfig(baseAppBundleId: baseAppBundleId)
-        _dbg("BuildConfig apiId=\(buildConfig.apiId) bundleId=\(buildConfig.baseAppBundleId)")
         self.buildConfig = buildConfig
         let signatureDict = BuildConfigExtra.signatureDict()
         
@@ -1016,11 +967,11 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
             self.window?.rootViewController?.dismiss(animated: true, completion: nil)
         }, getAvailableAlternateIcons: {
             if #available(iOS 10.3, *) {
-                let icons = [
-                    PresentationAppIcon(name: "Default", imageName: "Default", isDefault: true)
+                return [
+                    PresentationAppIcon(name: "nameless", imageName: "NamelessSettings", isDefault: true),
+                    PresentationAppIcon(name: "namelessPink", imageName: "NamelessPink"),
+                    PresentationAppIcon(name: "namelessSky", imageName: "NamelessSky")
                 ]
-                
-                return icons
             } else {
                 return []
             }
@@ -1065,7 +1016,6 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
         
         let accountManager = AccountManager<TelegramAccountManagerTypes>(basePath: rootPath + "/accounts-metadata", isTemporary: false, isReadOnly: false, useCaches: true, removeDatabaseOnError: true)
         self.accountManager = accountManager
-            _dbg("AccountManager created")
 
         telegramUIDeclareEncodables()
         initializeAccountManagement()
@@ -1250,7 +1200,6 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
                 return (sharedApplicationContext, transaction.getSharedData(SharedDataKeys.loggingSettings)?.get(LoggingSettings.self) ?? LoggingSettings.defaultSettings)
             }
         }
-        _dbg("setting sharedContextPromise...")
         self.sharedContextPromise.set(sharedContextSignal
         |> mapToSignal { sharedApplicationContext, loggingSettings -> Signal<SharedApplicationContext, NoError> in
             Logger.shared.logToFile = loggingSettings.logToFile
@@ -1370,7 +1319,6 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
         self.contextDisposable.set((self.context.get()
         |> deliverOnMainQueue).start(next: { context in
             print("Application: context took \(CFAbsoluteTimeGetCurrent() - startTime) to become available")
-            _dbg("CONTEXT SIGNAL FIRED")
             
             var network: Network?
             if let context = context {
@@ -1402,10 +1350,8 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
                     print("Launch to ready took \((CFAbsoluteTimeGetCurrent() - launchStartTime) * 1000.0) ms")
 
                     self.mainWindow.debugAction = nil
-                    _dbg("setting rootController")
-                    _hideDebug()
+                    self.mainWindow.coveringView = nil
                     self.mainWindow.viewController = context.rootController
-                    _dbg("rootController SET")
                     
                     if firstTime {
                         let layer = context.rootController.view.layer
