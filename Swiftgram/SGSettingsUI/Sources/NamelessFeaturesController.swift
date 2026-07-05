@@ -17,7 +17,7 @@ private struct NLToggle {
     let key: String
     let description: String?
     
-    init(_ title: String, key: String, description: String? = nil) {
+    init(_ title: String, _ key: String, _ description: String? = nil) {
         self.title = title
         self.key = key
         self.description = description
