@@ -10,18 +10,12 @@ import TelegramPresentationData
 import PresentationDataUtils
 import UndoUI
 
-// MARK: - Data Models
+// MARK: - Data Model
 
 private struct NLToggle {
     let title: String
-    let key: String
-    let description: String?
-    
-    init(_ title: String, _ key: String, _ description: String? = nil) {
-        self.title = title
-        self.key = key
-        self.description = description
-    }
+    let read: () -> Bool
+    let write: (Bool) -> Void
 }
 
 private enum NLCategory: Int, CaseIterable {
@@ -48,99 +42,122 @@ private enum NLCategory: Int, CaseIterable {
     }
     
     var toggles: [NLToggle] {
+        let s = SGSimpleSettings.shared
         switch self {
         case .appearance:
             return [
-                NLToggle("Скрыть номер телефона", "nameless.hidePhoneInSettings"),
-                NLToggle("Показывать имена вкладок", "nameless.showTabNames"),
-                NLToggle("Широкая панель вкладок", "nameless.wideTabBar"),
-                NLToggle("Панель форматирования", "nameless.formattingPanel"),
+                NLToggle("Скрыть номер телефона", read: { s.hidePhoneInSettings }, write: { s.hidePhoneInSettings = $0 }),
+                NLToggle("Показывать имена вкладок", read: { s.showTabNames }, write: { s.showTabNames = $0 }),
+                NLToggle("Широкая панель вкладок", read: { s.wideTabBar }, write: { s.wideTabBar = $0 }),
+                NLToggle("Скрыть истории", read: { s.hideStories }, write: { s.hideStories = $0 }),
+                NLToggle("Компактный список чатов", read: { s.compactChatList }, write: { s.compactChatList = $0 }),
+                NLToggle("Скрыть кнопку записи в панели", read: { s.hideRecordingButton }, write: { s.hideRecordingButton = $0 }),
+                NLToggle("Отправка по клавише Return", read: { s.sendWithReturnKey }, write: { s.sendWithReturnKey = $0 }),
+                NLToggle("Широкие посты каналов", read: { s.wideChannelPosts }, write: { s.wideChannelPosts = $0 }),
             ]
         case .messages:
             return [
-                NLToggle("Показывать удалённые сообщения", "nameless.showDeletedMessages"),
-                NLToggle("Сохранять медиа удалённых", "nameless.saveDeletedMessagesMedia"),
-                NLToggle("Сохранять историю редактирований", "nameless.saveEditHistory"),
-                NLToggle("Локальное редактирование сообщений", "nameless.enableLocalMessageEditing"),
-                NLToggle("Кнопка «Наверх»", "nameless.scrollToTopButtonEnabled"),
-                NLToggle("Кнопка «В избранное» в меню", "nameless.bookmarkInMenu"),
-                NLToggle("Скрыть реакции", "nameless.hideReactions"),
-                NLToggle("Показывать время у действий", "nameless.showActionTimestamps"),
-                NLToggle("Авто-форматирование текста", "nameless.autoTextFormatting"),
-                NLToggle("Скрыть подарки", "nameless.hideGifts"),
+                NLToggle("Показывать удалённые сообщения", read: { s.showDeletedMessages }, write: { s.showDeletedMessages = $0 }),
+                NLToggle("Сохранять медиа удалённых", read: { s.saveDeletedMessagesMedia }, write: { s.saveDeletedMessagesMedia = $0 }),
+                NLToggle("Сохранять историю редактирований", read: { s.saveEditHistory }, write: { s.saveEditHistory = $0 }),
+                NLToggle("Локальное редактирование сообщений", read: { s.enableLocalMessageEditing }, write: { s.enableLocalMessageEditing = $0 }),
+                NLToggle("Кнопка «Наверх»", read: { s.scrollToTopButtonEnabled }, write: { s.scrollToTopButtonEnabled = $0 }),
+                NLToggle("Скрыть реакции", read: { s.hideReactions }, write: { s.hideReactions = $0 }),
+                NLToggle("Секунды в метке времени", read: { s.secondsInMessages }, write: { s.secondsInMessages = $0 }),
+                NLToggle("Скрыть эффект удаления", read: { s.disableSnapDeletionEffect }, write: { s.disableSnapDeletionEffect = $0 }),
+                NLToggle("Скрыть кнопку «Send As»", read: { s.disableSendAsButton }, write: { s.disableSendAsButton = $0 }),
+                NLToggle("Скрыть кнопку канала внизу", read: { s.hideChannelBottomButton }, write: { s.hideChannelBottomButton = $0 }),
             ]
         case .camera:
             return [
-                NLToggle("Телескоп (зум камеры)", "nameless.enableTelescope"),
-                NLToggle("Начинать с задней камеры", "nameless.startTelescopeWithRearCam"),
-                NLToggle("Скрыть камеру в галерее", "nameless.hideGalleryCamera"),
-                NLToggle("Видео-фон чатов", "nameless.videoBackgroundEnabled"),
-                NLToggle("Скачивание эмодзи", "nameless.emojiDownloaderEnabled"),
+                NLToggle("Телескоп (зум камеры)", read: { s.enableTelescope }, write: { s.enableTelescope = $0 }),
+                NLToggle("Начинать с задней камеры", read: { s.startTelescopeWithRearCam }, write: { s.startTelescopeWithRearCam = $0 }),
+                NLToggle("Скрыть камеру в галерее", read: { s.disableGalleryCamera }, write: { s.disableGalleryCamera = $0 }),
+                NLToggle("Скрыть превью камеры в галерее", read: { s.disableGalleryCameraPreview }, write: { s.disableGalleryCameraPreview = $0 }),
+                NLToggle("Видео-фон чатов", read: { s.namelessVideoBackgroundEnabled }, write: { s.namelessVideoBackgroundEnabled = $0 }),
+                NLToggle("Скачивание эмодзи", read: { s.emojiDownloaderEnabled }, write: { s.emojiDownloaderEnabled = $0 }),
+                NLToggle("Конвертировать видео в кружок/голосовое", read: { s.enableVideoToCircleOrVoice }, write: { s.enableVideoToCircleOrVoice = $0 }),
             ]
         case .ghostMode:
             return [
-                NLToggle("Всегда онлайн", "nameless.ghost.alwaysOnline"),
-                NLToggle("Скрыть онлайн-статус", "nameless.disableOnlineStatus"),
-                NLToggle("Скрыть статус набора текста", "nameless.disableTypingStatus"),
-                NLToggle("Скрыть статус записи голосового", "nameless.disableRecordingVoiceStatus"),
-                NLToggle("Скрыть статус загрузки файлов", "nameless.disableUploadingFileStatus"),
-                NLToggle("Скрыть прочтение сообщений", "nameless.disableMessageReadReceipt"),
-                NLToggle("Скрыть просмотр сторис", "nameless.disableStoryReadReceipt"),
-                NLToggle("Читать при действиях", "nameless.ghost.readOnAction"),
-                NLToggle("Отложенная отправка", "nameless.ghost.delayedSend", "12 сек"),
-                NLToggle("Имя устройства", "nameless.ghost.deviceName"),
-                NLToggle("Подмена геолокации", "nameless.ghost.fakeGeo"),
-                NLToggle("Автоматически отправлять записи одноразово", "nameless.ghost.autoOneTime"),
-                NLToggle("История онлайн", "nameless.ghost.onlineHistory"),
+                NLToggle("Скрыть онлайн-статус", read: { s.disableOnlineStatus }, write: { s.disableOnlineStatus = $0 }),
+                NLToggle("Скрыть статус набора текста", read: { s.disableTypingStatus }, write: { s.disableTypingStatus = $0 }),
+                NLToggle("Скрыть статус записи голосового", read: { s.disableVCMessageRecordingStatus }, write: { s.disableVCMessageRecordingStatus = $0 }),
+                NLToggle("Скрыть статус загрузки файлов", read: { s.disableUploadingFileStatus }, write: { s.disableUploadingFileStatus = $0 }),
+                NLToggle("Скрыть отправку фото", read: { s.disableUploadingPhotoStatus }, write: { s.disableUploadingPhotoStatus = $0 }),
+                NLToggle("Скрыть отправку видео", read: { s.disableUploadingVideoStatus }, write: { s.disableUploadingVideoStatus = $0 }),
+                NLToggle("Скрыть запись видео", read: { s.disableRecordingVideoStatus }, write: { s.disableRecordingVideoStatus = $0 }),
+                NLToggle("Скрыть выбор локации", read: { s.disableChoosingLocationStatus }, write: { s.disableChoosingLocationStatus = $0 }),
+                NLToggle("Скрыть выбор контакта", read: { s.disableChoosingContactStatus }, write: { s.disableChoosingContactStatus = $0 }),
+                NLToggle("Скрыть прочтение сообщений", read: { s.disableMessageReadReceipt }, write: { s.disableMessageReadReceipt = $0 }),
+                NLToggle("Скрыть просмотр сторис", read: { s.disableStoryReadReceipt }, write: { s.disableStoryReadReceipt = $0 }),
+                NLToggle("Скрыть статус записи круглого видео", read: { s.disableRecordingRoundVideoStatus }, write: { s.disableRecordingRoundVideoStatus = $0 }),
+                NLToggle("Скрыть отправку круглого видео", read: { s.disableUploadingRoundVideoStatus }, write: { s.disableUploadingRoundVideoStatus = $0 }),
+                NLToggle("Скрыть статус игры", read: { s.disablePlayingGameStatus }, write: { s.disablePlayingGameStatus = $0 }),
+                NLToggle("Скрыть выбор стикера", read: { s.disableChoosingStickerStatus }, write: { s.disableChoosingStickerStatus = $0 }),
+                NLToggle("Скрыть эмодзи-взаимодействие", read: { s.disableEmojiInteractionStatus }, write: { s.disableEmojiInteractionStatus = $0 }),
+                NLToggle("Скрыть эмодзи-подтверждение", read: { s.disableEmojiAcknowledgementStatus }, write: { s.disableEmojiAcknowledgementStatus = $0 }),
+                NLToggle("История онлайн", read: { s.enableOnlineStatusRecording }, write: { s.enableOnlineStatusRecording = $0 }),
+                NLToggle("Подмена геолокации", read: { s.fakeLocationEnabled }, write: { s.fakeLocationEnabled = $0 }),
+                NLToggle("Задержка отправки (призрак)", read: { s.ghostModeMessageSendDelaySeconds > 0 }, write: { s.ghostModeMessageSendDelaySeconds = $0 ? 12 : 0 }),
             ]
         case .liquidGlass:
             return [
-                NLToggle("Сообщения", "nameless.liquidGlass.messages"),
-                NLToggle("Настройки", "nameless.liquidGlass.settings"),
-                NLToggle("Профиль", "nameless.liquidGlass.profile"),
-                NLToggle("Подарки профиля", "nameless.liquidGlass.profileGifts"),
-                NLToggle("Инлайн-кнопки", "nameless.liquidGlass.inlineButtons"),
-                NLToggle("Тонирование", "nameless.liquidGlass.tinting"),
+                NLToggle("Жидкое стекло (общее)", read: { s.liquidGlassEnabled }, write: { v in s.liquidGlassEnabled = v; NotificationCenter.default.post(name: .luxgramLiquidGlassDidChange, object: nil) }),
+                NLToggle("Сообщения", read: { s.namelessLiquidGlassMessages }, write: { s.namelessLiquidGlassMessages = $0; NotificationCenter.default.post(name: .luxgramLiquidGlassDidChange, object: nil) }),
+                NLToggle("Настройки", read: { s.namelessLiquidGlassSettings }, write: { s.namelessLiquidGlassSettings = $0; NotificationCenter.default.post(name: .luxgramLiquidGlassDidChange, object: nil) }),
+                NLToggle("Профиль", read: { s.namelessLiquidGlassProfile }, write: { s.namelessLiquidGlassProfile = $0; NotificationCenter.default.post(name: .luxgramLiquidGlassDidChange, object: nil) }),
+                NLToggle("Подарки профиля", read: { s.namelessLiquidGlassProfileGifts }, write: { s.namelessLiquidGlassProfileGifts = $0; NotificationCenter.default.post(name: .luxgramLiquidGlassDidChange, object: nil) }),
+                NLToggle("Инлайн-кнопки", read: { s.namelessLiquidGlassInlineButtons }, write: { s.namelessLiquidGlassInlineButtons = $0; NotificationCenter.default.post(name: .luxgramLiquidGlassDidChange, object: nil) }),
+                NLToggle("Тонирование", read: { s.namelessLiquidGlassTinting }, write: { s.namelessLiquidGlassTinting = $0; NotificationCenter.default.post(name: .luxgramLiquidGlassDidChange, object: nil) }),
             ]
         case .privacy:
             return [
-                NLToggle("Отключить рекламу в каналах", "nameless.disableAllAds"),
-                NLToggle("Сохранять защищённый контент", "nameless.enableSavingProtectedContent"),
-                NLToggle("Отключить определение скриншотов", "nameless.disableScreenshotDetection"),
-                NLToggle("Скрыть статус отправки фото", "nameless.disableUploadingPhotoStatus"),
-                NLToggle("Скрыть отправку видео", "nameless.disableUploadingVideoStatus"),
-                NLToggle("Скрыть запись видео", "nameless.disableRecordingVideoStatus"),
-                NLToggle("Скрыть выбор локации", "nameless.disableChoosingLocationStatus"),
-                NLToggle("Скрыть чтение историй", "nameless.ghost.hideStoryRead"),
-                NLToggle("Без переключения каналов", "nameless.noChannelSwitch"),
+                NLToggle("Отключить рекламу", read: { s.disableAllAds }, write: { s.disableAllAds = $0 }),
+                NLToggle("Сохранять защищённый контент", read: { s.enableSavingProtectedContent }, write: { s.enableSavingProtectedContent = $0 }),
+                NLToggle("Сохранять самоуничтожающиеся сообщения", read: { s.enableSavingSelfDestructingMessages }, write: { s.enableSavingSelfDestructingMessages = $0 }),
+                NLToggle("Отключить определение скриншотов", read: { s.disableScreenshotDetection }, write: { s.disableScreenshotDetection = $0 }),
+                NLToggle("Отключить размытие при скриншоте (секретные чаты)", read: { s.disableSecretChatBlurOnScreenshot }, write: { s.disableSecretChatBlurOnScreenshot = $0 }),
+                NLToggle("Скрыть статус отправки фото", read: { s.disableUploadingPhotoStatus }, write: { s.disableUploadingPhotoStatus = $0 }),
+                NLToggle("Скрыть отправку видео", read: { s.disableUploadingVideoStatus }, write: { s.disableUploadingVideoStatus = $0 }),
+                NLToggle("Скрыть запись видео", read: { s.disableRecordingVideoStatus }, write: { s.disableRecordingVideoStatus = $0 }),
+                NLToggle("Скрыть выбор локации", read: { s.disableChoosingLocationStatus }, write: { s.disableChoosingLocationStatus = $0 }),
+                NLToggle("Скрыть просмотр сторис", read: { s.disableStoryReadReceipt }, write: { s.disableStoryReadReceipt = $0 }),
+                NLToggle("Скрыть прочтение сообщений", read: { s.disableMessageReadReceipt }, write: { s.disableMessageReadReceipt = $0 }),
+                NLToggle("Не скроллить к следующему каналу", read: { s.disableScrollToNextChannel }, write: { s.disableScrollToNextChannel = $0 }),
+                NLToggle("Не скроллить к следующему топику", read: { s.disableScrollToNextTopic }, write: { s.disableScrollToNextTopic = $0 }),
             ]
         case .information:
             return [
-                NLToggle("ID и DC в профиле", "nameless.showProfileId"),
-                NLToggle("Секунды в метке времени", "nameless.secondsInTimestamp"),
-                NLToggle("Полные просмотры", "nameless.fullViews"),
-                NLToggle("Скрыть номер телефона", "nameless.hidePhoneNumber"),
-                NLToggle("Дата создания чата/канала", "nameless.showChatCreationDate"),
-                NLToggle("Визуальный юзернейм", "nameless.visualUsername"),
-                NLToggle("В контактах", "nameless.showMutualContacts"),
-                NLToggle("Приблизительная дата регистрации", "nameless.showRegistrationDate"),
+                NLToggle("ID и DC в профиле", read: { s.showProfileId }, write: { s.showProfileId = $0 }),
+                NLToggle("Показывать DC", read: { s.showDC }, write: { s.showDC = $0 }),
+                NLToggle("Дата создания чата/канала", read: { s.showCreationDate }, write: { s.showCreationDate = $0 }),
+                NLToggle("Дата регистрации пользователя", read: { s.showRegDate }, write: { s.showRegDate = $0 }),
+                NLToggle("Компактные числа", read: { !s.disableCompactNumbers }, write: { s.disableCompactNumbers = !$0 }),
             ]
         case .additional:
             return [
-                NLToggle("Локальный премиум", "nameless.localPremium"),
-                NLToggle("Кнопка «Перевести» всегда видима", "nameless.alwaysShowTranslate"),
-                NLToggle("Zalgo-фильтр", "nameless.zalgoFilter"),
-                NLToggle("Вибрация в приложении", "nameless.appVibration"),
-                NLToggle("Бесконечные стикеры", "nameless.unlimitedStickers"),
-                NLToggle("Бесконечные избранные стикеры", "nameless.unlimitedFavoriteStickers"),
-                NLToggle("Ускорение отправки", "nameless.uploadSpeedBoost"),
-                NLToggle("Ускорение загрузки", "nameless.downloadSpeedBoost"),
+                NLToggle("Локальный премиум", read: { s.enableLocalPremium }, write: { s.enableLocalPremium = $0 }),
+                NLToggle("Кнопка «Перевести» всегда видима", read: { s.quickTranslateButton }, write: { s.quickTranslateButton = $0 }),
+                NLToggle("Zalgo-фильтр", read: { s.disableZalgoText }, write: { s.disableZalgoText = $0 }),
+                NLToggle("Ускорение отправки", read: { s.uploadSpeedBoost }, write: { s.uploadSpeedBoost = $0 }),
+                NLToggle("Ускорение загрузки", read: { s.downloadSpeedBoost != "none" }, write: { s.downloadSpeedBoost = $0 ? "6" : "none" }),
+                NLToggle("Безлимитные избранные стикеры", read: { s.unlimitedFavoriteStickers }, write: { s.unlimitedFavoriteStickers = $0 }),
+                NLToggle("Размер стикеров (%)", read: { s.stickerSize == 100 }, write: { s.stickerSize = $0 ? 100 : 120 }),
+                NLToggle("Временные метки на стикерах", read: { s.stickerTimestamp }, write: { s.stickerTimestamp = $0 }),
+                NLToggle("Скрыть свайп для записи сторис", read: { s.disableSwipeToRecordStory }, write: { s.disableSwipeToRecordStory = $0 }),
+                NLToggle("Предупреждение при открытии сторис", read: { s.warnOnStoriesOpen }, write: { s.warnOnStoriesOpen = $0 }),
+                NLToggle("Stealth-режим сторис", read: { s.storyStealthMode }, write: { s.storyStealthMode = $0 }),
+                NLToggle("Подтверждение звонков", read: { s.confirmCalls }, write: { s.confirmCalls = $0 }),
+                NLToggle("Запоминать последнюю папку", read: { s.rememberLastFolder }, write: { s.rememberLastFolder = $0 }),
+                NLToggle("Системный шэринг", read: { s.forceSystemSharing }, write: { s.forceSystemSharing = $0 }),
+                NLToggle("Качество исходящих фото (%)", read: { s.outgoingPhotoQuality == 70 }, write: { s.outgoingPhotoQuality = $0 ? 70 : 80 }),
             ]
         }
     }
 }
 
-// MARK: - Main Category List Controller
+// MARK: - Main Category List
 
 private enum MainSection: Int32 {
     case categories = 0
@@ -159,17 +176,14 @@ private enum MainEntry: ItemListNodeEntry {
     
     var section: ItemListSectionId {
         switch self {
-        case .categoryHeader, .categoryItem:
-            return MainSection.categories.rawValue
-        case .actionHeader, .exportSettings, .importSettings, .saveKeychain, .resetAll, .rollbackInfo:
-            return MainSection.actions.rawValue
+        case .categoryHeader, .categoryItem: return MainSection.categories.rawValue
+        case .actionHeader, .exportSettings, .importSettings, .saveKeychain, .resetAll, .rollbackInfo: return MainSection.actions.rawValue
         }
     }
-    
     var stableId: Int32 {
         switch self {
         case .categoryHeader: return 0
-        case let .categoryItem(idx, _, _): return Int32(100 + idx)
+        case let .categoryItem(i, _, _): return Int32(100 + i)
         case .actionHeader: return 200
         case .exportSettings: return 201
         case .importSettings: return 202
@@ -178,15 +192,11 @@ private enum MainEntry: ItemListNodeEntry {
         case .rollbackInfo: return 205
         }
     }
-    
-    static func < (lhs: MainEntry, rhs: MainEntry) -> Bool {
-        lhs.stableId < rhs.stableId
-    }
-    
+    static func < (lhs: MainEntry, rhs: MainEntry) -> Bool { lhs.stableId < rhs.stableId }
     static func == (lhs: MainEntry, rhs: MainEntry) -> Bool {
         switch (lhs, rhs) {
         case (.categoryHeader, .categoryHeader): return true
-        case let (.categoryItem(a, b, c), .categoryItem(d, e, f)): return a == d && b == e && c == f
+        case let (.categoryItem(a,b,c), .categoryItem(d,e,f)): return a==d && b==e && c==f
         case (.actionHeader, .actionHeader): return true
         case (.exportSettings, .exportSettings): return true
         case (.importSettings, .importSettings): return true
@@ -196,7 +206,6 @@ private enum MainEntry: ItemListNodeEntry {
         default: return false
         }
     }
-    
     func item(presentationData: ItemListPresentationData, arguments: Any) -> ListViewItem {
         guard let args = arguments as? MainArguments else {
             return ItemListTextItem(presentationData: presentationData, text: .plain(""), sectionId: 0)
@@ -205,34 +214,17 @@ private enum MainEntry: ItemListNodeEntry {
         case .categoryHeader:
             return ItemListSectionHeaderItem(presentationData: presentationData, text: "ФУНКЦИИ NAMELESS", sectionId: self.section)
         case let .categoryItem(_, title, count):
-            return ItemListDisclosureItem(
-                presentationData: presentationData,
-                title: title,
-                label: "\(count) функций",
-                sectionId: self.section,
-                style: .blocks,
-                action: {
-                    args.openCategory?(title)
-                }
-            )
+            return ItemListDisclosureItem(presentationData: presentationData, title: title, label: "\(count)", sectionId: self.section, style: .blocks, action: { args.openCategory?(title) })
         case .actionHeader:
             return ItemListSectionHeaderItem(presentationData: presentationData, text: "НАСТРОЙКИ", sectionId: self.section)
         case .exportSettings:
-            return ItemListActionItem(presentationData: presentationData, title: "Экспорт настроек в JSON", kind: .generic, alignment: .natural, sectionId: self.section, style: .blocks, action: {
-                args.exportSettings?()
-            })
+            return ItemListActionItem(presentationData: presentationData, title: "Экспорт настроек в JSON", kind: .generic, alignment: .natural, sectionId: self.section, style: .blocks, action: { args.exportSettings?() })
         case .importSettings:
-            return ItemListActionItem(presentationData: presentationData, title: "Импорт настроек из JSON", kind: .generic, alignment: .natural, sectionId: self.section, style: .blocks, action: {
-                args.importSettings?()
-            })
+            return ItemListActionItem(presentationData: presentationData, title: "Импорт настроек из JSON", kind: .generic, alignment: .natural, sectionId: self.section, style: .blocks, action: { args.importSettings?() })
         case .saveKeychain:
-            return ItemListActionItem(presentationData: presentationData, title: "Сохранить настройки в Keychain", kind: .generic, alignment: .natural, sectionId: self.section, style: .blocks, action: {
-                args.saveKeychain?()
-            })
+            return ItemListActionItem(presentationData: presentationData, title: "Сохранить настройки в Keychain", kind: .generic, alignment: .natural, sectionId: self.section, style: .blocks, action: { args.saveKeychain?() })
         case .resetAll:
-            return ItemListActionItem(presentationData: presentationData, title: "Сбросить все настройки nameless", kind: .destructive, alignment: .natural, sectionId: self.section, style: .blocks, action: {
-                args.resetAll?()
-            })
+            return ItemListActionItem(presentationData: presentationData, title: "Сбросить все настройки nameless", kind: .destructive, alignment: .natural, sectionId: self.section, style: .blocks, action: { args.resetAll?() })
         case .rollbackInfo:
             return ItemListTextItem(presentationData: presentationData, text: .plain("Возвращает все настройки nameless к значениям по умолчанию. Требует перезапуск приложения."), sectionId: self.section)
         }
@@ -245,228 +237,107 @@ private final class MainArguments {
     let importSettings: (() -> Void)?
     let saveKeychain: (() -> Void)?
     let resetAll: (() -> Void)?
-    
-    init(
-        openCategory: ((String) -> Void)?,
-        exportSettings: (() -> Void)?,
-        importSettings: (() -> Void)?,
-        saveKeychain: (() -> Void)?,
-        resetAll: (() -> Void)?
-    ) {
-        self.openCategory = openCategory
-        self.exportSettings = exportSettings
-        self.importSettings = importSettings
-        self.saveKeychain = saveKeychain
-        self.resetAll = resetAll
+    init(openCategory: ((String) -> Void)?, exportSettings: (() -> Void)?, importSettings: (() -> Void)?, saveKeychain: (() -> Void)?, resetAll: (() -> Void)?) {
+        self.openCategory = openCategory; self.exportSettings = exportSettings; self.importSettings = importSettings; self.saveKeychain = saveKeychain; self.resetAll = resetAll
     }
 }
 
 private func mainEntries() -> [MainEntry] {
-    var entries: [MainEntry] = [.categoryHeader]
-    
-    for cat in NLCategory.allCases {
-        entries.append(.categoryItem(cat.rawValue, cat.title, String(cat.toggles.count)))
-    }
-    
-    entries.append(.actionHeader)
-    entries.append(.exportSettings)
-    entries.append(.importSettings)
-    entries.append(.saveKeychain)
-    entries.append(.resetAll)
-    entries.append(.rollbackInfo)
-    
-    return entries
+    var e: [MainEntry] = [.categoryHeader]
+    for cat in NLCategory.allCases { e.append(.categoryItem(cat.rawValue, cat.title, String(cat.toggles.count))) }
+    e.append(.actionHeader); e.append(.exportSettings); e.append(.importSettings); e.append(.saveKeychain); e.append(.resetAll); e.append(.rollbackInfo)
+    return e
 }
 
-// MARK: - Category Detail Controller (toggles)
+// MARK: - Category Detail (toggles)
 
-private enum CatSection: Int32 {
-    case toggles = 0
-    case info = 1
-}
+private enum CatSection: Int32 { case toggles = 0, info = 1 }
 
 private enum CatEntry: ItemListNodeEntry {
     case toggleHeader(String)
-    case toggleItem(Int, String, String, Bool)
+    case toggleItem(Int, String, Bool, (Bool) -> Void)
     case infoText(String)
-    
     var section: ItemListSectionId {
-        switch self {
-        case .toggleHeader, .toggleItem:
-            return CatSection.toggles.rawValue
-        case .infoText:
-            return CatSection.info.rawValue
-        }
+        switch self { case .toggleHeader, .toggleItem: return CatSection.toggles.rawValue; case .infoText: return CatSection.info.rawValue }
     }
-    
     var stableId: Int32 {
-        switch self {
-        case .toggleHeader: return 0
-        case let .toggleItem(idx, _, _, _): return Int32(100 + idx)
-        case .infoText: return 500
-        }
+        switch self { case .toggleHeader: return 0; case let .toggleItem(i,_,_,_): return Int32(100+i); case .infoText: return 500 }
     }
-    
-    static func < (lhs: CatEntry, rhs: CatEntry) -> Bool {
-        lhs.stableId < rhs.stableId
-    }
-    
+    static func < (lhs: CatEntry, rhs: CatEntry) -> Bool { lhs.stableId < rhs.stableId }
     static func == (lhs: CatEntry, rhs: CatEntry) -> Bool {
         switch (lhs, rhs) {
-        case let (.toggleHeader(a), .toggleHeader(b)): return a == b
-        case let (.toggleItem(a, b, c, d), .toggleItem(e, f, g, h)): return a == e && b == f && c == g && d == h
-        case let (.infoText(a), .infoText(b)): return a == b
+        case let (.toggleHeader(a), .toggleHeader(b)): return a==b
+        case let (.toggleItem(a,b,c,_), .toggleItem(d,e,f,_)): return a==d && b==e && c==f
+        case let (.infoText(a), .infoText(b)): return a==b
         default: return false
         }
     }
-    
     func item(presentationData: ItemListPresentationData, arguments: Any) -> ListViewItem {
         switch self {
-        case let .toggleHeader(title):
-            return ItemListSectionHeaderItem(presentationData: presentationData, text: title.uppercased(), sectionId: self.section)
-        case let .toggleItem(_, title, key, value):
-            return ItemListSwitchItem(presentationData: presentationData, title: title, value: value, sectionId: self.section, style: .blocks, updated: { v in
-                UserDefaults.standard.set(v, forKey: key)
-            })
-        case let .infoText(text):
-            return ItemListTextItem(presentationData: presentationData, text: .plain(text), sectionId: self.section)
+        case let .toggleHeader(t): return ItemListSectionHeaderItem(presentationData: presentationData, text: t.uppercased(), sectionId: self.section)
+        case let .toggleItem(_, title, value, write): return ItemListSwitchItem(presentationData: presentationData, title: title, value: value, sectionId: self.section, style: .blocks, updated: write)
+        case let .infoText(t): return ItemListTextItem(presentationData: presentationData, text: .plain(t), sectionId: self.section)
         }
     }
 }
 
-private final class CatEmptyArguments {
-    init() {}
-}
+private final class CatEmptyArguments { init() {} }
 
 private func categoryEntries(category: NLCategory) -> [CatEntry] {
-    var entries: [CatEntry] = []
-    entries.append(.toggleHeader(category.title))
-    
-    let ud = UserDefaults.standard
+    var entries: [CatEntry] = [.toggleHeader(category.title)]
     for (idx, toggle) in category.toggles.enumerated() {
-        entries.append(.toggleItem(idx, toggle.title, toggle.key, ud.bool(forKey: toggle.key)))
+        let val = toggle.read()
+        entries.append(.toggleItem(idx, toggle.title, val, toggle.write))
     }
-    
     switch category {
-    case .ghostMode:
-        entries.append(.infoText("Включённые пункты скрывают ваши действия от других пользователей."))
-    case .liquidGlass:
-        entries.append(.infoText("Управление Liquid Glass-поверхностями по отдельным зонам."))
-    case .additional:
-        entries.append(.infoText("Локальный премиум убирает ограничения premium-функций на устройстве."))
-    default:
-        break
+    case .ghostMode: entries.append(.infoText("Включённые пункты скрывают ваши действия от других пользователей."))
+    case .liquidGlass: entries.append(.infoText("Управление Liquid Glass-поверхностями по отдельным зонам."))
+    case .additional: entries.append(.infoText("Локальный премиум убирает ограничения premium-функций на устройстве."))
+    case .privacy: entries.append(.infoText("Настройки конфиденциальности и защиты контента."))
+    default: break
     }
-    
     return entries
 }
 
 // MARK: - Public API
 
 public func namelessFeaturesController(context: AccountContext) -> ViewController {
-    let openCategory: (String) -> Void = { categoryName in
-        guard let navigationController = context.sharedContext.mainWindow?.viewController as? NavigationController else { return }
-        for cat in NLCategory.allCases where cat.title == categoryName {
-            navigationController.pushViewController(categoryDetailController(context: context, category: cat))
-            return
-        }
+    let openCategory: (String) -> Void = { name in
+        guard let nav = context.sharedContext.mainWindow?.viewController as? NavigationController else { return }
+        for cat in NLCategory.allCases where cat.title == name { nav.pushViewController(categoryDetailController(context: context, category: cat)); return }
     }
-    
     let exportAction: () -> Void = {
-        let defaults = UserDefaults.standard
         var dict: [String: Any] = [:]
-        for key in defaults.dictionaryRepresentation().keys where key.hasPrefix("nameless.") {
-            dict[key] = defaults.object(forKey: key)
-        }
-        if let data = try? JSONSerialization.data(withJSONObject: dict, options: .prettyPrinted),
-           let str = String(data: data, encoding: .utf8) {
-            UIPasteboard.general.string = str
-        }
+        for key in UserDefaults.standard.dictionaryRepresentation().keys where key.hasPrefix("nameless.") || key.hasPrefix("VoiceMorpher.") { dict[key] = UserDefaults.standard.object(forKey: key) }
+        if let d = try? JSONSerialization.data(withJSONObject: dict, options: .prettyPrinted), let s = String(data: d, encoding: .utf8) { UIPasteboard.general.string = s }
     }
-    
     let importAction: () -> Void = {
-        if let str = UIPasteboard.general.string,
-           let data = str.data(using: .utf8),
-           let dict = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
-            let defaults = UserDefaults.standard
-            for (key, value) in dict where key.hasPrefix("nameless.") {
-                defaults.set(value, forKey: key)
-            }
+        if let s = UIPasteboard.general.string, let d = s.data(using: .utf8), let dict = try? JSONSerialization.jsonObject(with: d) as? [String: Any] {
+            for (k,v) in dict where k.hasPrefix("nameless.") || k.hasPrefix("VoiceMorpher.") { UserDefaults.standard.set(v, forKey: k) }
         }
     }
-    
-    let saveKeychainAction: () -> Void = {
-        let defaults = UserDefaults.standard
-        for key in defaults.dictionaryRepresentation().keys where key.hasPrefix("nameless.") {
-            if let value = defaults.object(forKey: key) {
-                let data = try? NSKeyedArchiver.archivedData(withRootObject: value, requiringSecureCoding: false)
-                if let data = data {
-                    let query: [String: Any] = [
-                        kSecClass as String: kSecClassGenericPassword,
-                        kSecAttrAccount as String: key,
-                        kSecValueData as String: data
-                    ]
-                    SecItemDelete(query as CFDictionary)
-                    SecItemAdd(query as CFDictionary, nil)
-                }
-            }
-        }
-    }
-    
+    let saveKeychainAction: () -> Void = { SGSimpleSettings.shared.beginNamelessRollbackSnapshot() }
     let resetAction: () -> Void = {
+        SGSimpleSettings.shared.restoreNamelessRollbackSnapshot()
         let defaults = UserDefaults.standard
-        for key in defaults.dictionaryRepresentation().keys where key.hasPrefix("nameless.") {
-            defaults.removeObject(forKey: key)
-        }
+        for key in defaults.dictionaryRepresentation().keys where key.hasPrefix("nameless.") { defaults.removeObject(forKey: key) }
     }
-    
-    let arguments = MainArguments(
-        openCategory: openCategory,
-        exportSettings: exportAction,
-        importSettings: importAction,
-        saveKeychain: saveKeychainAction,
-        resetAll: resetAction
-    )
-    
+    let args = MainArguments(openCategory: openCategory, exportSettings: exportAction, importSettings: importAction, saveKeychain: saveKeychainAction, resetAll: resetAction)
     let signal: Signal<(ItemListControllerState, (ItemListNodeState, MainArguments)), NoError> = context.sharedContext.presentationData
-        |> map { presentationData -> (ItemListControllerState, (ItemListNodeState, MainArguments)) in
-            let controllerState = ItemListControllerState(
-                presentationData: ItemListPresentationData(presentationData),
-                title: .text("Функции nameless"),
-                leftNavigationButton: nil,
-                rightNavigationButton: nil,
-                backNavigationButton: ItemListBackButton(title: presentationData.strings.Common_Back)
-            )
-            let listState = ItemListNodeState(
-                presentationData: ItemListPresentationData(presentationData),
-                entries: mainEntries(),
-                style: .blocks
-            )
-            return (controllerState, (listState, arguments))
+        |> map { pd -> (ItemListControllerState, (ItemListNodeState, MainArguments)) in
+            let cs = ItemListControllerState(presentationData: ItemListPresentationData(pd), title: .text("Функции nameless"), leftNavigationButton: nil, rightNavigationButton: nil, backNavigationButton: ItemListBackButton(title: pd.strings.Common_Back))
+            let ls = ItemListNodeState(presentationData: ItemListPresentationData(pd), entries: mainEntries(), style: .blocks)
+            return (cs, (ls, args))
     }
-
-    let controller: ViewController = ItemListController(context: context, state: signal)
-    return controller
+    return ItemListController(context: context, state: signal)
 }
 
 private func categoryDetailController(context: AccountContext, category: NLCategory) -> ViewController {
     let signal: Signal<(ItemListControllerState, (ItemListNodeState, CatEmptyArguments)), NoError> = context.sharedContext.presentationData
-        |> map { presentationData -> (ItemListControllerState, (ItemListNodeState, CatEmptyArguments)) in
-            let controllerState = ItemListControllerState(
-                presentationData: ItemListPresentationData(presentationData),
-                title: .text(category.title),
-                leftNavigationButton: nil,
-                rightNavigationButton: nil,
-                backNavigationButton: ItemListBackButton(title: presentationData.strings.Common_Back)
-            )
-            let listState = ItemListNodeState(
-                presentationData: ItemListPresentationData(presentationData),
-                entries: categoryEntries(category: category),
-                style: .blocks
-            )
-            return (controllerState, (listState, CatEmptyArguments()))
-    }
-
-    let controller: ViewController = ItemListController(context: context, state: signal)
-    return controller
+        |> map { pd -> (ItemListControllerState, (ItemListNodeState, CatEmptyArguments)) in
+            let cs = ItemListControllerState(presentationData: ItemListPresentationData(pd), title: .text(category.title), leftNavigationButton: nil, rightNavigationButton: nil, backNavigationButton: ItemListBackButton(title: pd.strings.Common_Back))
+            let ls = ItemListNodeState(presentationData: ItemListPresentationData(pd), entries: categoryEntries(category: category), style: .blocks)
+            return (cs, (ls, CatEmptyArguments()))
+        }
+    return ItemListController(context: context, state: signal)
 }
