@@ -660,9 +660,15 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
             isICloudEnabled: buildConfig.isICloudEnabled
         )
         
-        guard let appGroupUrl = maybeAppGroupUrl else {
-            self.mainWindow?.presentNative(UIAlertController(title: nil, message: "Error 2", preferredStyle: .alert))
-            return true
+        let appGroupUrl: URL
+        if let url = maybeAppGroupUrl {
+            appGroupUrl = url
+        } else {
+            // Fallback: use Documents directory when app-group entitlement is unavailable (sideloaded builds)
+            let docsDir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+            let fallbackDir = docsDir.appendingPathComponent("app-group-fallback")
+            try? FileManager.default.createDirectory(at: fallbackDir, withIntermediateDirectories: true)
+            appGroupUrl = fallbackDir
         }
         
         var isDebugConfiguration = false
