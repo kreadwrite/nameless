@@ -1145,6 +1145,7 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
         launchLog("Starting currentPresentationDataAndSettings...")
         let sharedContextSignal = currentPresentationDataAndSettings(accountManager: accountManager, systemUserInterfaceStyle: systemUserInterfaceStyle)
         launchLog("sharedContextSignal created")
+        let sharedContextSignal2 = sharedContextSignal
         |> map { initialPresentationDataAndSettings -> (AccountManager, InitialPresentationDataAndSettings) in
             return (accountManager, initialPresentationDataAndSettings)
         }
@@ -1271,7 +1272,7 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
             }
         }
         launchLog("Setting sharedContextPromise...")
-        self.sharedContextPromise.set(sharedContextSignal
+        self.sharedContextPromise.set(sharedContextSignal2
         |> mapToSignal { sharedApplicationContext, loggingSettings -> Signal<SharedApplicationContext, NoError> in
             Logger.shared.logToFile = loggingSettings.logToFile
             Logger.shared.logToConsole = loggingSettings.logToConsole
