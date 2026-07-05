@@ -131,8 +131,7 @@ func infoItems(
         let ItemBotAddToChat = 9002
         let ItemBotAddToChatInfo = 9003
         let ItemVerification = 9004
-        let ItemNamelessDeveloper = 9100
-        let ItemNamelessVerification = 9101
+        let ItemNamelessVerification = 9100
         
         if let cachedUserData = data.cachedData as? CachedUserData, cachedUserData.flags.contains(.unofficialSecurityRisk) {
             items[.unofficial]!.append(PeerInfoScreenInfoItem(id: 0, title: "", text: .markdown(presentationData.strings.PeerInfo_UnofficialSecurityRisk(EnginePeer(user).compactDisplayTitle).string), style: .compact, linkAction: nil))
