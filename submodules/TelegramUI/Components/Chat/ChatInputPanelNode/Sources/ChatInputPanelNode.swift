@@ -65,7 +65,7 @@ open class ChatInputPanelNode: ASDisplayNode, SGLiquidGlassContainer {
         self.glassSetupDone = true
         let g = SGLiquidGlassNode()
         g.glassTintColor = .clear
-        g.isVisible = SGLiquidGlassZone.inputPanel.isEnabled
+        g.glassVisible = SGLiquidGlassZone.inputPanel.isEnabled
         self.addSubnode(g)
         self._glassNode = g
         if !self.glassRegistered {
@@ -90,15 +90,15 @@ open class ChatInputPanelNode: ASDisplayNode, SGLiquidGlassContainer {
         self.ensureGlassSetup()
         if let g = self._glassNode {
             g.frame = self.bounds
-            g.isVisible = SGLiquidGlassZone.inputPanel.isEnabled
+            g.glassVisible = SGLiquidGlassZone.inputPanel.isEnabled
         }
     }
 
-    public override func updateFrame(_ frame: CGRect, transition: ContainedViewLayoutTransition) {
-        super.updateFrame(frame, transition: transition)
+    public func updateGlassFrame(_ frame: CGRect, transition: ContainedViewLayoutTransition) {
+        self.frame = frame
         if let g = self._glassNode {
             transition.updateFrame(node: g, frame: self.bounds)
-            g.isVisible = SGLiquidGlassZone.inputPanel.isEnabled
+            g.glassVisible = SGLiquidGlassZone.inputPanel.isEnabled
         }
     }
 
@@ -106,7 +106,7 @@ open class ChatInputPanelNode: ASDisplayNode, SGLiquidGlassContainer {
 
     public func refreshGlass(zone: SGLiquidGlassZone) {
         guard let g = self._glassNode else { return }
-        g.isVisible = SGLiquidGlassZone.inputPanel.isEnabled
+        g.glassVisible = SGLiquidGlassZone.inputPanel.isEnabled
         g.refreshGlass(zone: .inputPanel)
     }
 }

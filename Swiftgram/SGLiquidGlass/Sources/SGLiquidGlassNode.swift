@@ -12,15 +12,15 @@ import SGLiquidGlassCore
 /// Use:
 ///   let glass = SGLiquidGlassNode()
 ///   glass.glassTintColor = .red
-///   glass.cornerRadii = .init(radius: 18)
+///   glass.glassCornerRadii = .init(radius: 18)
 ///   addSubnode(glass)
 ///   glass.frame = ...
 public final class SGLiquidGlassNode: ASDisplayNode, SGLiquidGlassContainer {
     private var effectView: UIVisualEffectView?
     private var _tintColor: UIColor = .clear
     private var _cornerRadii: GlassRadii = .init(radius: 0)
-    private var _isVisible: Bool = true
-    private var _isInteractive: Bool = false
+    private var _glassVisible: Bool = true
+    private var _interactive: Bool = false
 
     /// Tint color applied to the glass surface. Renamed from `tintColor` to
     /// avoid clashing with `ASDisplayNode.tintColor` (which is the standard
@@ -35,7 +35,9 @@ public final class SGLiquidGlassNode: ASDisplayNode, SGLiquidGlassContainer {
         }
     }
 
-    public var cornerRadii: GlassRadii {
+    /// Corner radii for the glass mask. Renamed from `cornerRadii` to
+    /// avoid clashing with `ASDisplayNode.cornerRadius` (CGFloat).
+    public var glassCornerRadii: GlassRadii {
         get { self._cornerRadii }
         set {
             self._cornerRadii = newValue
@@ -43,18 +45,21 @@ public final class SGLiquidGlassNode: ASDisplayNode, SGLiquidGlassContainer {
         }
     }
 
-    public var isVisible: Bool {
-        get { self._isVisible }
+    /// Visibility of the glass surface. Renamed from `isVisible` to
+    /// avoid clashing with `ASDisplayNode`'s `visible` getter (`isVisible`).
+    public var glassVisible: Bool {
+        get { self._glassVisible }
         set {
-            self._isVisible = newValue
+            self._glassVisible = newValue
             self.effectView?.isHidden = !newValue
         }
     }
 
-    public var isInteractive: Bool {
-        get { self._isInteractive }
+    /// Whether the glass surface is interactive (responds to touches).
+    public var interactive: Bool {
+        get { self._interactive }
         set {
-            self._isInteractive = newValue
+            self._interactive = newValue
             self.rebuildEffect()
         }
     }
@@ -79,7 +84,7 @@ public final class SGLiquidGlassNode: ASDisplayNode, SGLiquidGlassContainer {
             }
             if #available(iOS 26.0, *) {
                 let effect = UIGlassEffect(style: .regular)
-                effect.isInteractive = self._isInteractive
+                effect.isInteractive = self._interactive
                 if self._tintColor != .clear {
                     effect.tintColor = self._tintColor
                 }
@@ -139,8 +144,11 @@ public final class SGLiquidGlassNode: ASDisplayNode, SGLiquidGlassContainer {
         }
     }
 
-    public override func updateFrame(_ frame: CGRect, transition: ContainedViewLayoutTransition) {
-        super.updateFrame(frame, transition: transition)
+    /// Update both the node frame and the glass effect view frame in one shot.
+    /// Call this instead of `transition.updateFrame(node:...)` if you want
+    /// the inner effectView to stay in sync.
+    public func updateGlassFrame(_ frame: CGRect, transition: ContainedViewLayoutTransition) {
+        transition.updateFrame(node: self, frame: frame)
         if let ev = self.effectView {
             transition.updateFrame(view: ev, frame: self.bounds)
             self.applyMaskPath()
@@ -174,8 +182,8 @@ public final class SGLiquidGlassView: UIView, SGLiquidGlassViewProtocol, SGLiqui
     private var effectView: UIVisualEffectView?
     private var _tintColor: UIColor = .clear
     private var _cornerRadii: GlassRadii = .init(radius: 0)
-    private var _isInteractive: Bool = false
-    private var _isVisible: Bool = true
+    private var _interactive: Bool = false
+    private var _visible: Bool = true
 
     public var tintColorGlass: UIColor {
         get { self._tintColor }
@@ -194,17 +202,17 @@ public final class SGLiquidGlassView: UIView, SGLiquidGlassViewProtocol, SGLiqui
     }
 
     public var isInteractive: Bool {
-        get { self._isInteractive }
+        get { self._interactive }
         set {
-            self._isInteractive = newValue
+            self._interactive = newValue
             self.rebuildEffect()
         }
     }
 
     public var isVisible: Bool {
-        get { self._isVisible }
+        get { self._visible }
         set {
-            self._isVisible = newValue
+            self._visible = newValue
             self.effectView?.isHidden = !newValue
         }
     }
@@ -232,7 +240,7 @@ public final class SGLiquidGlassView: UIView, SGLiquidGlassViewProtocol, SGLiqui
         }
         if #available(iOS 26.0, *) {
             let effect = UIGlassEffect(style: .regular)
-            effect.isInteractive = self._isInteractive
+            effect.isInteractive = self._interactive
             if self._tintColor != .clear {
                 effect.tintColor = self._tintColor
             }
@@ -328,7 +336,7 @@ public extension SGLiquidGlassFactory {
 }
 
 /// Convenience: call from AppDelegate to register the Liquid Glass view
-/// factory. Idempotent and thread-safe via dispatch_once-like semantics.
+/// factory. Idempotent.
 public enum SGLiquidGlass {
     @discardableResult
     public static func registerFactory() -> Bool {

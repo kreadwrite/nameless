@@ -561,7 +561,7 @@ public final class ChatMessageBubbleBackdrop: ASDisplayNode, SGLiquidGlassContai
         self.addSubnode(self.glassNode)
         // Initial tint - no color until setType assigns one
         self.glassNode.glassTintColor = .clear
-        self.glassNode.isVisible = false
+        self.glassNode.glassVisible = false
     }
 
     deinit {
@@ -576,7 +576,7 @@ public final class ChatMessageBubbleBackdrop: ASDisplayNode, SGLiquidGlassContai
         let enabled = zone.isEnabled
         let tint = zone.isTinted ? self.currentBubbleColor.withAlphaComponent(0.55) : .clear
         self.glassNode.glassTintColor = tint
-        self.glassNode.isVisible = enabled
+        self.glassNode.glassVisible = enabled
         if enabled {
             self.glassNode.refreshGlass(zone: zone)
         }
@@ -613,7 +613,7 @@ public final class ChatMessageBubbleBackdrop: ASDisplayNode, SGLiquidGlassContai
             let tint = SGLiquidGlassZone.messages.isTinted ? bubbleColor.withAlphaComponent(0.55) : .clear
             self.glassNode.glassTintColor = tint
         }
-        self.glassNode.isVisible = SGLiquidGlassZone.messages.isEnabled
+        self.glassNode.glassVisible = SGLiquidGlassZone.messages.isEnabled
         self.glassNode.frame = self.bounds
 
         if self.currentType != type || self.theme != theme || self.currentMaskMode != maskMode || self.essentialGraphics !== essentialGraphics || self.backgroundNode !== backgroundNode {

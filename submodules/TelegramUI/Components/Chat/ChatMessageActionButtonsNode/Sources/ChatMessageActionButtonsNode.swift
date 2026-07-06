@@ -486,7 +486,7 @@ private final class ChatMessageActionButtonNode: ASDisplayNode {
                         if SGLiquidGlassZone.inlineButtons.isEnabled {
                             if node.glassNode == nil {
                                 let g = SGLiquidGlassNode()
-                                g.cornerRadii = GlassRadii(radius: 12.0)
+                                g.glassCornerRadii = GlassRadii(radius: 12.0)
                                 node.addSubnode(g)
                                 node.glassNode = g
                                 if !node.glassRegistered {
@@ -502,15 +502,15 @@ private final class ChatMessageActionButtonNode: ASDisplayNode {
                             }
                             node.glassNode?.glassTintColor = SGLiquidGlassZone.inlineButtons.isTinted ? glassColor.withAlphaComponent(0.5) : .clear
                             node.glassNode?.frame = CGRect(origin: .zero, size: CGSize(width: max(0.0, width), height: 42.0))
-                            node.glassNode?.isVisible = true
+                            node.glassNode?.glassVisible = true
                         } else {
-                            node.glassNode?.isVisible = false
+                            node.glassNode?.glassVisible = false
                         }
                     } else if let backgroundColorView = node.backgroundColorView {
                         node.backgroundColorView = nil
                         backgroundColorView.removeFromSuperview()
                         // nameless: hide glass when not in extra-bubble background mode
-                        node.glassNode?.isVisible = false
+                        node.glassNode?.glassVisible = false
                     }
                                         
                     if iconImage != nil {

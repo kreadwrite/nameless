@@ -58,20 +58,20 @@ public final class SGLiquidGlassItemBackground {
         get { self._cornerRadii }
         set {
             self._cornerRadii = newValue
-            self.glass.cornerRadii = newValue
+            self.glass.glassCornerRadii = newValue
         }
     }
 
     public func updateLayout(size: CGSize, cornerRadius: CGFloat = 0) {
         self.glass.frame = CGRect(origin: .zero, size: size)
         if cornerRadius > 0 {
-            self.glass.cornerRadii = GlassRadii(radius: cornerRadius)
+            self.glass.glassCornerRadii = GlassRadii(radius: cornerRadius)
         }
     }
 
     public func refresh() {
         let enabled = SGLiquidGlassZone.settings.isEnabled
-        self.glass.isVisible = enabled
+        self.glass.glassVisible = enabled
         self.glass.glassTintColor = SGLiquidGlassZone.settings.isTinted ? self._tint.withAlphaComponent(0.45) : .clear
         self.glass.refreshGlass(zone: .settings)
     }
