@@ -27,3 +27,13 @@ Stage Summary:
 - Module split (Core vs full) breaks the Display ↔ SGLiquidGlass circular dep cleanly using a factory hook.
 - Build: requires macOS 26 + Xcode 26.2 + Bazel 8.4.2 — the Linux sandbox cannot build iOS. Run scripts/build_nameless.sh on a Mac to compile.
 - Push: changes committed and pushed to https://github.com/kreadwrite/nameless.git on branch main.
+
+Commits:
+- d36677de feat: Liquid Glass everywhere — iOS 26 UIGlassEffect integration
+- 9c03dba6 fix: remove redundant removeFromSuperview() from SGLiquidGlassViewProtocol
+
+Coverage at the end:
+- 11/11 ItemListUI items patched (Switch, Action, Disclosure, Checkbox, MultilineText, Info, ExpandableSwitch, TextWithLabel, Placeholder, SingleLineInput, MultilineInput) — every settings screen uses these.
+- All 5 nav-bar / tab-bar / chat-input / profile / inline-button surfaces wired.
+- 7 existing toggle settings (nameless.liquidGlass.*) now actually do something — they were no-ops before this commit.
+- ButtonComponent .glass style now uses GlassBackgroundView (real UIGlassEffect) when liquidGlassEnabled is on, not just the legacy highlight container.
