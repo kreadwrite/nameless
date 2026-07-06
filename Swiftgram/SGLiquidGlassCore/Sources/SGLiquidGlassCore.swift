@@ -100,7 +100,6 @@ public protocol SGLiquidGlassViewProtocol: AnyObject {
     var cornerRadii: GlassRadii { get set }
     var isVisible: Bool { get set }
     func refreshGlass(zone: SGLiquidGlassZone)
-    func removeFromSuperview()
 }
 
 public extension SGLiquidGlassViewProtocol where Self: UIView {
