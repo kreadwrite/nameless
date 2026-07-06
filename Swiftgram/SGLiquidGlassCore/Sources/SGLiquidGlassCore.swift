@@ -163,7 +163,7 @@ public final class SGLiquidGlassCoordinator {
     public func unregister(node: AnyObject) {
         let id = ObjectIdentifier(node)
         queue.sync {
-            self.observers.removeValue(forKey: id)
+            _ = self.observers.removeValue(forKey: id)
         }
     }
 

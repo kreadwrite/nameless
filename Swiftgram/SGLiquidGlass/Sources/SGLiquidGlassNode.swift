@@ -21,7 +21,6 @@ public final class SGLiquidGlassNode: ASDisplayNode, SGLiquidGlassContainer {
     private var _cornerRadii: GlassRadii = .init(radius: 0)
     private var _isVisible: Bool = true
     private var _isInteractive: Bool = false
-    private var _cachedZone: SGLiquidGlassZone = .buttons
 
     /// Tint color applied to the glass surface. Renamed from `tintColor` to
     /// avoid clashing with `ASDisplayNode.tintColor` (which is the standard
@@ -151,7 +150,6 @@ public final class SGLiquidGlassNode: ASDisplayNode, SGLiquidGlassContainer {
     // MARK: SGLiquidGlassContainer
 
     public func refreshGlass(zone: SGLiquidGlassZone) {
-        self._cachedZone = zone
         let enabled = zone.isEnabled
         self.effectView?.isHidden = !enabled
         if zone.isTinted {
