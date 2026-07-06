@@ -1,5 +1,10 @@
 load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
+sgdeps = [
+    "//Swiftgram/SGSimpleSettings:SGSimpleSettings",
+    "//Swiftgram/SGLiquidGlass:SGLiquidGlass",
+]
+
 swift_library(
     name = "ChatMessageBackground",
     module_name = "ChatMessageBackground",
@@ -9,7 +14,7 @@ swift_library(
     copts = [
         "-warnings-as-errors",
     ],
-    deps = [
+    deps = sgdeps + [
         "//submodules/AsyncDisplayKit:AsyncDisplayKit",
     	"//submodules/Display:Display",
     	"//submodules/TelegramPresentationData:TelegramPresentationData",

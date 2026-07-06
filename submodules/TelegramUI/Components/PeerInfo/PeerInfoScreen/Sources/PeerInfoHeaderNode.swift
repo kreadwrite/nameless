@@ -17,6 +17,7 @@ import GalleryUI
 import UniversalMediaPlayer
 import RadialStatusNode
 import TelegramUIPreferences
+import SGLiquidGlassCore
 import PeerInfoAvatarListNode
 import AnimationUI
 import ContextUI
@@ -300,6 +301,8 @@ final class PeerInfoHeaderNode: ASDisplayNode {
         self.buttonsContainerNode.clipsToBounds = true
         
         self.buttonsBackgroundNode = NavigationBackgroundNode(color: .clear, enableBlur: true, enableSaturation: false)
+        // nameless: enable Liquid Glass on the profile action buttons backdrop
+        self.buttonsBackgroundNode.enableLiquidGlass = SGLiquidGlassZone.profile.isEnabled
         self.buttonsBackgroundNode.isUserInteractionEnabled = false
         self.buttonsContainerNode.addSubnode(self.buttonsBackgroundNode)
         self.buttonsMaskView = UIView()

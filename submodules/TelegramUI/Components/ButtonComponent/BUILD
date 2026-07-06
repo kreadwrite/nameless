@@ -10,6 +10,7 @@ swift_library(
         "-warnings-as-errors",
     ],
     deps = [
+        "//Swiftgram/SGLiquidGlassCore:SGLiquidGlassCore",
         "//submodules/Display",
         "//submodules/ComponentFlow",
         "//submodules/TelegramUI/Components/AnimatedTextComponent",
@@ -17,7 +18,7 @@ swift_library(
         "//submodules/ShimmerEffect",
         "//submodules/Components/BundleIconComponent",
         "//submodules/TelegramUI/Components/GlassBackgroundComponent",
-        
+
     ],
     visibility = [
         "//visibility:public",

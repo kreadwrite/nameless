@@ -7,6 +7,7 @@ import ActivityIndicator
 import BundleIconComponent
 import ShimmerEffect
 import GlassBackgroundComponent
+import SGLiquidGlassCore
 
 public final class ButtonBadgeComponent: Component {
     let fillColor: UIColor
@@ -726,11 +727,11 @@ public final class ButtonComponent: Component {
                     glassContainerView = current
                 } else {
                     self.containerView.removeFromSuperview()
-                    
+
                     glassContainerView = GlassBackgroundView()
                     self.glassContainerView = glassContainerView
                     self.insertSubview(glassContainerView, at: 0)
-                    
+
                     glassContainerView.contentView.addSubview(self.button)
                 }
                 let tintColor: GlassBackgroundView.TintColor
@@ -741,17 +742,49 @@ public final class ButtonComponent: Component {
                 }
                 glassContainerView.update(size: size, cornerRadius: cornerRadius, isDark: component.background.color.brightness < 0.2, tintColor: tintColor, isInteractive: true, transition: transition)
                 contentContainerView = glassContainerView.contentView
-                                
+
                 transition.setFrame(view: glassContainerView, frame: CGRect(origin: .zero, size: size))
             case .glass, .legacy:
-                if self.containerView.superview == nil {
-                    self.insertSubview(self.containerView, at: 0)
-                    self.addSubview(self.button)
+                // nameless: when Liquid Glass master toggle is on, .glass style
+                // also gets the real UIGlassEffect surface (not just the legacy
+                // highlight recognizer).
+                if component.background.style == .glass && SGLiquidGlassZone.buttons.isEnabled {
+                    let glassContainerView: GlassBackgroundView
+                    if let current = self.glassContainerView {
+                        glassContainerView = current
+                    } else {
+                        self.containerView.removeFromSuperview()
+
+                        glassContainerView = GlassBackgroundView()
+                        self.glassContainerView = glassContainerView
+                        self.insertSubview(glassContainerView, at: 0)
+
+                        glassContainerView.contentView.addSubview(self.button)
+                    }
+                    let tintColor: GlassBackgroundView.TintColor
+                    if component.background.color.alpha < 0.1 {
+                        tintColor = .init(kind: .panel)
+                    } else {
+                        tintColor = .init(kind: .panel, innerColor: component.background.color, innerInset: 0.0)
+                    }
+                    glassContainerView.update(size: size, cornerRadius: cornerRadius, isDark: component.background.color.brightness < 0.2, tintColor: tintColor, isInteractive: true, transition: transition)
+                    contentContainerView = glassContainerView.contentView
+
+                    transition.setFrame(view: glassContainerView, frame: CGRect(origin: .zero, size: size))
+                } else {
+                    if let g = self.glassContainerView {
+                        self.glassContainerView = nil
+                        g.removeFromSuperview()
+                    }
+                    if self.containerView.superview == nil {
+                        self.insertSubview(self.containerView, at: 0)
+                        self.addSubview(self.button)
+                    }
+                    contentContainerView = self.containerView
+
+                    transition.setBackgroundColor(view: self.containerView, color: component.background.color)
+                    transition.setCornerRadius(layer: self.containerView.layer, cornerRadius: cornerRadius)
                 }
-                contentContainerView = self.containerView
-                
-                transition.setBackgroundColor(view: self.containerView, color: component.background.color)
-                transition.setCornerRadius(layer: self.containerView.layer, cornerRadius: cornerRadius)
             }
             
             self.updateGradientBackground(component: component, contentContainerView: contentContainerView, size: size, cornerRadius: cornerRadius, transition: transition)

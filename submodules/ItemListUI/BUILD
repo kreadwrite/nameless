@@ -4,12 +4,14 @@ swift_library(
     name = "ItemListUI",
     module_name = "ItemListUI",
     srcs = glob([
-		"Sources/**/*.swift",
+                "Sources/**/*.swift",
     ]),
     copts = [
         "-warnings-as-errors",
     ],
     deps = [
+        "//Swiftgram/SGLiquidGlass:SGLiquidGlass",
+        "//Swiftgram/SGLiquidGlassCore:SGLiquidGlassCore",
         "//submodules/SSignalKit/SwiftSignalKit:SwiftSignalKit",
         "//submodules/AsyncDisplayKit:AsyncDisplayKit",
         "//submodules/Display:Display",

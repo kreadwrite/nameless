@@ -11,6 +11,7 @@ import SGAPIWebSettings
 import SGLogging
 import SGStrings
 import SGSimpleSettings
+import SGLiquidGlass
 import UIKit
 import SwiftSignalKit
 import Display
@@ -338,6 +339,10 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
         precondition(!testIsLaunched)
         testIsLaunched = true
+
+        // nameless: ensure the Liquid Glass factory is registered as early as
+        // possible so that low-level Display module can build glass surfaces.
+        sg_liquidglass_ensure_factory()
         
         let _ = voipTokenPromise.get().start(next: { token in
             self.voipDeviceToken.set(.single(token))

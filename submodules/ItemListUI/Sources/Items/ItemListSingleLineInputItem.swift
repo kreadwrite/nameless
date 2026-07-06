@@ -6,6 +6,8 @@ import SwiftSignalKit
 import TelegramPresentationData
 import TextNodeWithEntities
 import AccountContext
+import SGLiquidGlass
+import SGLiquidGlassCore
 
 private let validIdentifierSet: CharacterSet = {
     var set = CharacterSet(charactersIn: "a".unicodeScalars.first! ... "z".unicodeScalars.first!)
@@ -425,6 +427,13 @@ public class ItemListSingleLineInputItemNode: ListViewItemNode, UITextFieldDeleg
                     
                     if strongSelf.backgroundNode.supernode == nil {
                         strongSelf.insertSubnode(strongSelf.backgroundNode, at: 0)
+                    }
+                    // nameless: Liquid Glass for settings blocks
+                    if let glassOverlay = strongSelf.backgroundNode.sgGlassOverlay {
+                        glassOverlay.tint = itemBackgroundColor
+                        let bgFrame = CGRect(origin: CGPoint(x: 0.0, y: -min(insets.top, separatorHeight)), size: CGSize(width: params.width, height: contentSize.height + min(insets.top, separatorHeight) + min(insets.bottom, separatorHeight)))
+                        let cornerRadius: CGFloat = itemListHasRoundedBlockLayout(params) ? 11.0 : 0.0
+                        glassOverlay.updateLayout(size: bgFrame.size, cornerRadius: cornerRadius)
                     }
                     if strongSelf.topStripeNode.supernode == nil {
                         strongSelf.insertSubnode(strongSelf.topStripeNode, at: 1)

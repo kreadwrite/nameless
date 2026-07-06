@@ -4,6 +4,8 @@ import AsyncDisplayKit
 import Display
 import TelegramPresentationData
 import WallpaperBackgroundNode
+import SGLiquidGlassCore
+import SGLiquidGlass
 
 public enum ChatMessageBackgroundMergeType: Equatable {
     case None, Side, Top(side: Bool), Bottom, Both, Extracted
@@ -493,19 +495,27 @@ public func bubbleMaskForType(_ type: ChatMessageBackgroundType, graphics: Princ
     return image
 }
 
-public final class ChatMessageBubbleBackdrop: ASDisplayNode {
+public final class ChatMessageBubbleBackdrop: ASDisplayNode, SGLiquidGlassContainer {
     public private(set) var backgroundContent: WallpaperBubbleBackgroundNode?
-    
+
     private var currentType: ChatMessageBackgroundType?
     private var currentMaskMode: Bool?
     private var theme: ChatPresentationThemeData?
     private var essentialGraphics: PrincipalThemeEssentialGraphics?
     private weak var backgroundNode: WallpaperBackgroundNode?
-    
+
     public var maskView: UIImageView?
     private var fixedMaskMode: Bool?
 
     private var absolutePosition: (CGRect, CGSize)?
+
+    // MARK: nameless Liquid Glass
+    /// Liquid glass surface layered above the wallpaper background but below
+    /// the bubble mask image. When `nameless.liquidGlass.messages` is enabled
+    /// this gives every chat bubble the iOS 26 Liquid Glass look.
+    private let glassNode: SGLiquidGlassNode
+    private var currentBubbleColor: UIColor = .clear
+    private var glassRegistered: Bool = false
     
     public var overrideMask: Bool = false {
         didSet {
@@ -525,6 +535,10 @@ public final class ChatMessageBubbleBackdrop: ASDisplayNode {
                     maskView.frame = maskFrame
                 }
             }
+            // nameless: keep glass in sync
+            if self.glassNode.frame != self.bounds {
+                self.glassNode.frame = self.bounds
+            }
             if let backgroundContent = self.backgroundContent {
                 backgroundContent.frame = self.bounds
                 if let (rect, containerSize) = self.absolutePosition {
@@ -538,9 +552,34 @@ public final class ChatMessageBubbleBackdrop: ASDisplayNode {
     }
     
     public override init() {
+        self.glassNode = SGLiquidGlassNode()
         super.init()
-        
+
         self.clipsToBounds = true
+
+        // Insert glass below everything but above the wallpaper background.
+        self.addSubnode(self.glassNode)
+        // Initial tint - no color until setType assigns one
+        self.glassNode.tintColor = .clear
+        self.glassNode.isVisible = false
+    }
+
+    deinit {
+        if self.glassRegistered {
+            SGLiquidGlassCoordinator.shared.unregister(node: self.glassNode)
+        }
+    }
+
+    // MARK: SGLiquidGlassContainer
+
+    public func refreshGlass(zone: SGLiquidGlassZone) {
+        let enabled = zone.isEnabled
+        let tint = zone.isTinted ? self.currentBubbleColor.withAlphaComponent(0.55) : .clear
+        self.glassNode.tintColor = tint
+        self.glassNode.isVisible = enabled
+        if enabled {
+            self.glassNode.refreshGlass(zone: zone)
+        }
     }
     
     public func setMaskMode(_ maskMode: Bool) {
@@ -551,6 +590,31 @@ public final class ChatMessageBubbleBackdrop: ASDisplayNode {
         
     public func setType(type: ChatMessageBackgroundType, theme: ChatPresentationThemeData, essentialGraphics: PrincipalThemeEssentialGraphics, maskMode inputMaskMode: Bool, backgroundNode: WallpaperBackgroundNode?) {
         let maskMode = self.fixedMaskMode ?? inputMaskMode
+
+        // nameless: register with coordinator once
+        if !self.glassRegistered {
+            self.glassRegistered = true
+            SGLiquidGlassCoordinator.shared.register(node: self, zone: .messages)
+            SGLiquidGlassCoordinator.shared.register(node: self.glassNode, zone: .messages)
+        }
+
+        // nameless: pick a bubble color for tinting
+        let bubbleColor: UIColor
+        switch type {
+        case .none:
+            bubbleColor = .clear
+        case .incoming:
+            bubbleColor = theme.theme.chat.message.incoming.bubble.withWallpaper.fill.first ?? .clear
+        case .outgoing:
+            bubbleColor = theme.theme.chat.message.outgoing.bubble.withWallpaper.fill.first ?? .clear
+        }
+        if self.currentBubbleColor != bubbleColor {
+            self.currentBubbleColor = bubbleColor
+            let tint = SGLiquidGlassZone.messages.isTinted ? bubbleColor.withAlphaComponent(0.55) : .clear
+            self.glassNode.tintColor = tint
+        }
+        self.glassNode.isVisible = SGLiquidGlassZone.messages.isEnabled
+        self.glassNode.frame = self.bounds
 
         if self.currentType != type || self.theme != theme || self.currentMaskMode != maskMode || self.essentialGraphics !== essentialGraphics || self.backgroundNode !== backgroundNode {
             let typeUpdated = self.currentType != type || self.theme != theme || self.currentMaskMode != maskMode || self.backgroundNode !== backgroundNode
@@ -655,6 +719,8 @@ public final class ChatMessageBubbleBackdrop: ASDisplayNode {
         if let maskView = self.maskView {
             animator.updateFrame(layer: maskView.layer, frame: CGRect(origin: CGPoint(x: 0.0, y: 0.0), size: CGSize(width: value.size.width, height: value.size.height)).insetBy(dx: -maskInset, dy: -maskInset), completion: nil)
         }
+        // nameless: sync glass frame
+        animator.updateFrame(layer: self.glassNode.layer, frame: CGRect(origin: CGPoint(x: 0.0, y: 0.0), size: value.size), completion: nil)
         if let backgroundContent = self.backgroundContent {
             animator.updateFrame(layer: backgroundContent.layer, frame: CGRect(origin: CGPoint(x: 0.0, y: 0.0), size: CGSize(width: value.size.width, height: value.size.height)), completion: nil)
             if let (rect, containerSize) = self.absolutePosition {
@@ -673,6 +739,8 @@ public final class ChatMessageBubbleBackdrop: ASDisplayNode {
         if let maskView = self.maskView {
             transition.updateFrame(view: maskView, frame: CGRect(origin: CGPoint(x: 0.0, y: 0.0), size: CGSize(width: value.size.width, height: value.size.height)).insetBy(dx: -maskInset, dy: -maskInset))
         }
+        // nameless: sync glass frame
+        transition.updateFrame(node: self.glassNode, frame: CGRect(origin: CGPoint(x: 0.0, y: 0.0), size: value.size))
         if let backgroundContent = self.backgroundContent {
             transition.updateFrame(layer: backgroundContent.layer, frame: CGRect(origin: CGPoint(x: 0.0, y: 0.0), size: CGSize(width: value.size.width, height: value.size.height)))
             if let (rect, containerSize) = self.absolutePosition {
@@ -691,6 +759,8 @@ public final class ChatMessageBubbleBackdrop: ASDisplayNode {
         if let maskView = self.maskView {
             transition.updateFrame(layer: maskView.layer, frame: CGRect(origin: CGPoint(x: 0.0, y: 0.0), size: CGSize(width: value.size.width, height: value.size.height)).insetBy(dx: -maskInset, dy: -maskInset))
         }
+        // nameless: sync glass frame
+        transition.updateFrame(layer: self.glassNode.layer, frame: CGRect(origin: CGPoint(x: 0.0, y: 0.0), size: value.size))
         if let backgroundContent = self.backgroundContent {
             transition.updateFrame(layer: backgroundContent.layer, frame: CGRect(origin: CGPoint(x: 0.0, y: 0.0), size: CGSize(width: value.size.width, height: value.size.height)))
             if let (rect, containerSize) = self.absolutePosition {

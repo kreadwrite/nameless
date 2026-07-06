@@ -7,6 +7,7 @@ sgsrc = [
 sgdeps = [
     "//submodules/Utils/DeviceModel",
     "//Swiftgram/SGSimpleSettings:SGSimpleSettings",
+    "//Swiftgram/SGLiquidGlassCore:SGLiquidGlassCore",
 ]
 
 swift_library(
@@ -19,10 +20,10 @@ swift_library(
         "-warnings-as-errors",
     ],
     deps = sgdeps + [
-    	"//submodules/ObjCRuntimeUtils:ObjCRuntimeUtils",
-    	"//submodules/UIKitRuntimeUtils:UIKitRuntimeUtils",
+        "//submodules/ObjCRuntimeUtils:ObjCRuntimeUtils",
+        "//submodules/UIKitRuntimeUtils:UIKitRuntimeUtils",
         "//submodules/AppBundle:AppBundle",
-    	"//submodules/SSignalKit/SwiftSignalKit:SwiftSignalKit",
+        "//submodules/SSignalKit/SwiftSignalKit:SwiftSignalKit",
         "//submodules/Markdown:Markdown",
         "//submodules/AsyncDisplayKit:AsyncDisplayKit",
     ],

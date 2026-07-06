@@ -6,6 +6,7 @@ import GlassBackgroundComponent
 import AsyncDisplayKit
 import EdgeEffect
 import ComponentDisplayAdapters
+import SGLiquidGlassCore
 
 public final class NavigationBarImpl: ASDisplayNode, NavigationBar {
     public static var defaultSecondaryContentHeight: CGFloat {
@@ -644,6 +645,8 @@ public final class NavigationBarImpl: ASDisplayNode, NavigationBar {
         self.stripeNode.backgroundColor = self.presentationData.theme.separatorColor
 
         self.backgroundNode = NavigationBackgroundNode(color: self.presentationData.theme.backgroundColor, enableBlur: self.presentationData.theme.enableBackgroundBlur)
+        // nameless: enable Liquid Glass overlay on the navigation bar
+        self.backgroundNode.enableLiquidGlass = true
         self.additionalContentNode = SparseNode()
         
         self.secondaryContentHeight = NavigationBarImpl.defaultSecondaryContentHeight

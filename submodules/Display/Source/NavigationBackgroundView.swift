@@ -1,22 +1,38 @@
 import Foundation
 import UIKit
 import AsyncDisplayKit
+import SGLiquidGlassCore
+import SGSimpleSettings
 
 private var sharedIsReduceTransparencyEnabled = UIAccessibility.isReduceTransparencyEnabled
 
-public final class NavigationBackgroundNode: ASDisplayNode {
+public final class NavigationBackgroundNode: ASDisplayNode, SGLiquidGlassContainer {
     private var _color: UIColor
 
     public var color: UIColor {
         return self._color
     }
-    
+
     private var enableBlur: Bool
     private var enableSaturation: Bool
     private var customBlurRadius: CGFloat?
 
     public var effectView: UIVisualEffectView?
     private let backgroundNode: ASDisplayNode
+
+    // nameless: optional Liquid Glass overlay for navigation bars
+    private var glassView: (UIView & SGLiquidGlassViewProtocol)?
+    private var glassRegistered: Bool = false
+    /// Set to true to enable the Liquid Glass overlay (defaults to false; the
+    /// tab bar / nav bar / chat input panel opt-in explicitly).
+    public var enableLiquidGlass: Bool = false {
+        didSet {
+            self.updateGlass()
+        }
+    }
+    /// Optional tint color for the glass. When nil, the glass uses the
+    /// navigation background color.
+    public var glassTintColor: UIColor?
     
     public var backgroundView: UIView {
         return self.backgroundNode.view
@@ -45,6 +61,50 @@ public final class NavigationBackgroundNode: ASDisplayNode {
         self.addSubnode(self.backgroundNode)
 
         self.updateColor(color: color, transition: .immediate)
+    }
+
+    deinit {
+        if let v = self.glassView, self.glassRegistered {
+            SGLiquidGlassCoordinator.shared.unregister(node: v)
+        }
+    }
+
+    // MARK: nameless Liquid Glass
+
+    private func updateGlass() {
+        let shouldHave = self.enableLiquidGlass && SGLiquidGlassZone.navigationBar.isEnabled
+        if shouldHave {
+            if self.glassView == nil {
+                guard let v = SGLiquidGlassFactory.shared.create?() as? (UIView & SGLiquidGlassViewProtocol) else {
+                    return
+                }
+                v.tintColorGlass = self.glassTintColor ?? self._color.withAlphaComponent(0.5)
+                self.view.addSubview(v)
+                self.glassView = v
+                if let (size, cornerRadius) = self.validLayout {
+                    v.frame = CGRect(origin: .zero, size: size)
+                    v.cornerRadii = GlassRadii(radius: cornerRadius)
+                }
+                if !self.glassRegistered {
+                    self.glassRegistered = true
+                    SGLiquidGlassCoordinator.shared.register(node: v, zone: .navigationBar)
+                }
+            } else {
+                self.glassView?.tintColorGlass = (self.glassTintColor ?? self._color.withAlphaComponent(0.5))
+                self.glassView?.refreshGlass(zone: .navigationBar)
+            }
+        } else if let v = self.glassView {
+            v.removeFromSuperview()
+            if self.glassRegistered {
+                SGLiquidGlassCoordinator.shared.unregister(node: v)
+                self.glassRegistered = false
+            }
+            self.glassView = nil
+        }
+    }
+
+    public func refreshGlass(zone: SGLiquidGlassZone) {
+        self.updateGlass()
     }
 
     
@@ -115,7 +175,7 @@ public final class NavigationBackgroundNode: ASDisplayNode {
     public func updateColor(color: UIColor, enableBlur: Bool? = nil, enableSaturation: Bool? = nil, forceKeepBlur: Bool = false, transition: ContainedViewLayoutTransition) {
         let effectiveEnableBlur = enableBlur ?? self.enableBlur
         let effectiveEnableSaturation = enableSaturation ?? self.enableSaturation
-        
+
         if self._color.isEqual(color) && self.enableBlur == effectiveEnableBlur && self.enableSaturation == effectiveEnableSaturation {
             return
         }
@@ -130,6 +190,11 @@ public final class NavigationBackgroundNode: ASDisplayNode {
         }
 
         self.updateBackgroundBlur(forceKeepBlur: forceKeepBlur)
+        // nameless: refresh tint after color change
+        if let v = self.glassView {
+            v.tintColorGlass = self.glassTintColor ?? self._color.withAlphaComponent(0.5)
+        }
+        self.updateGlass()
     }
 
     public func update(size: CGSize, cornerRadius: CGFloat = 0.0, transition: ContainedViewLayoutTransition, beginWithCurrentState: Bool = true) {
@@ -144,6 +209,11 @@ public final class NavigationBackgroundNode: ASDisplayNode {
                     transition.updateFrame(layer: sublayer, frame: contentFrame, beginWithCurrentState: true)
                 }
             }
+        }
+        // nameless: sync Liquid Glass frame
+        if let v = self.glassView {
+            transition.updateFrame(view: v, frame: contentFrame)
+            v.cornerRadii = GlassRadii(radius: cornerRadius)
         }
 
         transition.updateCornerRadius(node: self.backgroundNode, cornerRadius: cornerRadius)
@@ -165,6 +235,11 @@ public final class NavigationBackgroundNode: ASDisplayNode {
                     animator.updateFrame(layer: sublayer, frame: contentFrame, completion: nil)
                 }
             }
+        }
+        // nameless: sync Liquid Glass frame
+        if let v = self.glassView {
+            animator.updateFrame(layer: v.layer, frame: contentFrame, completion: nil)
+            v.cornerRadii = GlassRadii(radius: cornerRadius)
         }
 
         animator.updateCornerRadius(layer: self.backgroundNode.layer, cornerRadius: cornerRadius, completion: nil)

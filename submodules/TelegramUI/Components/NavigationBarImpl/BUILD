@@ -10,6 +10,7 @@ swift_library(
         "-warnings-as-errors",
     ],
     deps = [
+        "//Swiftgram/SGLiquidGlassCore:SGLiquidGlassCore",
         "//submodules/AsyncDisplayKit",
         "//submodules/Display",
         "//submodules/ComponentFlow",

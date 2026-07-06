@@ -1,4 +1,6 @@
 import SGSimpleSettings
+import SGLiquidGlassCore
+import SGLiquidGlass
 import Foundation
 import UIKit
 import AsyncDisplayKit
@@ -354,6 +356,10 @@ class TabBarNode: ASDisplayNode, ASGestureRecognizerDelegate {
 
     let backgroundNode: NavigationBackgroundNode
     private var tabBarNodeContainers: [TabBarNodeContainer] = []
+
+    // nameless: Liquid Glass overlay for the tab bar background
+    private var glassNode: SGLiquidGlassNode?
+    private var glassRegistered: Bool = false
     
     private var tapRecognizer: TapLongTapOrDoubleTapGestureRecognizer?
     
@@ -378,6 +384,23 @@ class TabBarNode: ASDisplayNode, ASGestureRecognizerDelegate {
         self.isExclusiveTouch = true
 
         self.addSubnode(self.backgroundNode)
+
+        // nameless: add Liquid Glass overlay on top of the tab bar background
+        let g = SGLiquidGlassNode()
+        g.tintColor = .clear
+        g.isVisible = SGLiquidGlassZone.tabBar.isEnabled
+        self.addSubnode(g)
+        self.glassNode = g
+        if !self.glassRegistered {
+            self.glassRegistered = true
+            SGLiquidGlassCoordinator.shared.register(node: g, zone: .tabBar)
+        }
+    }
+
+    deinit {
+        if let g = self.glassNode, self.glassRegistered {
+            SGLiquidGlassCoordinator.shared.unregister(node: g)
+        }
     }
     
     override func didLoad() {
@@ -660,6 +683,12 @@ class TabBarNode: ASDisplayNode, ASGestureRecognizerDelegate {
 
         transition.updateFrame(node: self.backgroundNode, frame: CGRect(origin: CGPoint(), size: size))
         self.backgroundNode.update(size: size, transition: transition)
+
+        // nameless: sync Liquid Glass frame with tab bar background
+        if let g = self.glassNode {
+            transition.updateFrame(node: g, frame: CGRect(origin: CGPoint(), size: size))
+            g.isVisible = SGLiquidGlassZone.tabBar.isEnabled
+        }
         
         let horizontal = !leftInset.isZero
         if self.horizontal != horizontal {

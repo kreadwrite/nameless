@@ -6,22 +6,28 @@ import TelegramCore
 import AccountContext
 import ChatPresentationInterfaceState
 import ChatControllerInteraction
+import SGLiquidGlassCore
+import SGLiquidGlass
 
 public protocol ChatInputPanelViewForOverlayContent: UIView {
     func maybeDismissContent(point: CGPoint)
 }
 
-open class ChatInputPanelNode: ASDisplayNode {
+open class ChatInputPanelNode: ASDisplayNode, SGLiquidGlassContainer {
     open var context: AccountContext?
     open var chatControllerInteraction: ChatControllerInteraction?
     open var interfaceInteraction: ChatPanelInterfaceInteraction?
     open var prevInputPanelNode: ChatInputPanelNode?
-    
+
     open var viewForOverlayContent: ChatInputPanelViewForOverlayContent?
-    
+
+    // nameless: Liquid Glass overlay for the chat input panel
+    private var glassNode: SGLiquidGlassNode?
+    private var glassRegistered: Bool = false
+
     open func updateAbsoluteRect(_ rect: CGRect, within containerSize: CGSize, transition: ContainedViewLayoutTransition) {
     }
-    
+
     public final func compactBottomSideInset(bottomInset: CGFloat, deviceMetrics: DeviceMetrics) -> CGFloat {
         if bottomInset <= 32.0 && deviceMetrics.screenCornerRadius > 0.0 {
             return 18.0
@@ -29,15 +35,15 @@ open class ChatInputPanelNode: ASDisplayNode {
             return 0.0
         }
     }
-    
+
     open func updateLayout(width: CGFloat, leftInset: CGFloat, rightInset: CGFloat, bottomInset: CGFloat, additionalSideInsets: UIEdgeInsets, maxHeight: CGFloat, maxOverlayHeight: CGFloat, isSecondary: Bool, transition: ContainedViewLayoutTransition, interfaceState: ChatPresentationInterfaceState, metrics: LayoutMetrics, deviceMetrics: DeviceMetrics, isMediaInputExpanded: Bool) -> CGFloat {
         return 0.0
     }
-    
+
     open func minimalHeight(interfaceState: ChatPresentationInterfaceState, metrics: LayoutMetrics) -> CGFloat {
         return 0.0
     }
-    
+
     open func defaultHeight(metrics: LayoutMetrics) -> CGFloat {
         if case .regular = metrics.widthClass, case .regular = metrics.heightClass {
             return 40.0
@@ -45,8 +51,52 @@ open class ChatInputPanelNode: ASDisplayNode {
             return 40.0
         }
     }
-    
+
     open func canHandleTransition(from prevInputPanelNode: ChatInputPanelNode?) -> Bool {
         return false
+    }
+
+    public override init() {
+        super.init()
+        // nameless: add Liquid Glass overlay to the chat input panel
+        let g = SGLiquidGlassNode()
+        g.tintColor = .clear
+        g.isVisible = SGLiquidGlassZone.inputPanel.isEnabled
+        self.addSubnode(g)
+        self.glassNode = g
+        if !self.glassRegistered {
+            self.glassRegistered = true
+            SGLiquidGlassCoordinator.shared.register(node: g, zone: .inputPanel)
+        }
+    }
+
+    deinit {
+        if let g = self.glassNode, self.glassRegistered {
+            SGLiquidGlassCoordinator.shared.unregister(node: g)
+        }
+    }
+
+    open override func layout() {
+        super.layout()
+        if let g = self.glassNode {
+            g.frame = self.bounds
+            g.isVisible = SGLiquidGlassZone.inputPanel.isEnabled
+        }
+    }
+
+    public override func updateFrame(_ frame: CGRect, transition: ContainedViewLayoutTransition) {
+        super.updateFrame(frame, transition: transition)
+        if let g = self.glassNode {
+            transition.updateFrame(node: g, frame: self.bounds)
+            g.isVisible = SGLiquidGlassZone.inputPanel.isEnabled
+        }
+    }
+
+    // MARK: SGLiquidGlassContainer
+
+    public func refreshGlass(zone: SGLiquidGlassZone) {
+        guard let g = self.glassNode else { return }
+        g.isVisible = SGLiquidGlassZone.inputPanel.isEnabled
+        g.refreshGlass(zone: .inputPanel)
     }
 }

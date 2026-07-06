@@ -12,6 +12,8 @@ import TextLoadingEffect
 import ComponentFlow
 import ComponentDisplayAdapters
 import EmojiStatusComponent
+import SGLiquidGlassCore
+import SGLiquidGlass
 
 private let titleFont = Font.medium(16.0)
 
@@ -67,21 +69,25 @@ private extension UIBezierPath {
 
 private final class ChatMessageActionButtonNode: ASDisplayNode {
     private var backgroundBlurView: PortalView?
-    
+
     private var titleNode: TextNode?
     private var iconNode: ASImageNode?
     private var buttonView: HighlightTrackingButton?
-    
+
     private var icon: ComponentView<Empty>?
-    
+
     private var wallpaperBackgroundNode: WallpaperBackgroundNode?
     private var backgroundContent: WallpaperBubbleBackgroundNode?
     private var backgroundColorNode: ASDisplayNode?
     private var backgroundColorView: UIImageView?
-    
+
+    // nameless: Liquid Glass overlay for inline buttons
+    private var glassNode: SGLiquidGlassNode?
+    private var glassRegistered: Bool = false
+
     private var maskPath: CGPath?
     private var loadingEffectView: TextLoadingEffectView?
-    
+
     private var absolutePosition: (CGRect, CGSize)?
     
     private var button: ReplyMarkupButton?
@@ -110,6 +116,9 @@ private final class ChatMessageActionButtonNode: ASDisplayNode {
     
     deinit {
         self.progressDisposable?.dispose()
+        if let g = self.glassNode, self.glassRegistered {
+            SGLiquidGlassCoordinator.shared.unregister(node: g)
+        }
     }
     
     override func didLoad() {
@@ -472,9 +481,36 @@ private final class ChatMessageActionButtonNode: ASDisplayNode {
                         case .success:
                             backgroundColorView.backgroundColor = theme.theme.list.freeTextSuccessColor.withMultipliedAlpha(0.7)
                         }
+
+                        // nameless: add Liquid Glass overlay for inline buttons
+                        if SGLiquidGlassZone.inlineButtons.isEnabled {
+                            if node.glassNode == nil {
+                                let g = SGLiquidGlassNode()
+                                g.cornerRadii = GlassRadii(radius: 12.0)
+                                node.addSubnode(g)
+                                node.glassNode = g
+                                if !node.glassRegistered {
+                                    node.glassRegistered = true
+                                    SGLiquidGlassCoordinator.shared.register(node: g, zone: .inlineButtons)
+                                }
+                            }
+                            let glassColor: UIColor
+                            switch color {
+                            case .primary:  glassColor = theme.theme.list.itemAccentColor
+                            case .danger:   glassColor = theme.theme.contextMenu.destructiveColor
+                            case .success:  glassColor = theme.theme.list.freeTextSuccessColor
+                            }
+                            node.glassNode?.tintColor = SGLiquidGlassZone.inlineButtons.isTinted ? glassColor.withAlphaComponent(0.5) : .clear
+                            node.glassNode?.frame = CGRect(origin: .zero, size: CGSize(width: max(0.0, width), height: 42.0))
+                            node.glassNode?.isVisible = true
+                        } else {
+                            node.glassNode?.isVisible = false
+                        }
                     } else if let backgroundColorView = node.backgroundColorView {
                         node.backgroundColorView = nil
                         backgroundColorView.removeFromSuperview()
+                        // nameless: hide glass when not in extra-bubble background mode
+                        node.glassNode?.isVisible = false
                     }
                                         
                     if iconImage != nil {

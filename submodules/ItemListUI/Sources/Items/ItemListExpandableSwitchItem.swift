@@ -7,6 +7,8 @@ import TelegramPresentationData
 import SwitchNode
 import AppBundle
 import CheckNode
+import SGLiquidGlass
+import SGLiquidGlassCore
 
 public enum ItemListExpandableSwitchItemNodeType {
     case regular
@@ -470,6 +472,13 @@ public class ItemListExpandableSwitchItemNode: ListViewItemNode, ItemListItemNod
                         case .blocks:
                             if strongSelf.backgroundNode.supernode == nil {
                                 strongSelf.insertSubnode(strongSelf.backgroundNode, at: 0)
+                            }
+// nameless: Liquid Glass for settings blocks
+                            if let glassOverlay = strongSelf.backgroundNode.sgGlassOverlay {
+                                glassOverlay.tint = itemBackgroundColor
+                                let bgFrame = CGRect(origin: CGPoint(x: 0.0, y: -min(insets.top, separatorHeight)), size: CGSize(width: params.width, height: contentSize.height + min(insets.top, separatorHeight) + min(insets.bottom, separatorHeight)))
+                                let cornerRadius: CGFloat = itemListHasRoundedBlockLayout(params) ? 11.0 : 0.0
+                                glassOverlay.updateLayout(size: bgFrame.size, cornerRadius: cornerRadius)
                             }
                             if strongSelf.topStripeNode.supernode == nil {
                                 strongSelf.insertSubnode(strongSelf.topStripeNode, at: 1)

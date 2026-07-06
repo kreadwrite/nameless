@@ -2,6 +2,8 @@ load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
 sgdeps = [
     "//Swiftgram/SGSimpleSettings:SGSimpleSettings",
+    "//Swiftgram/SGLiquidGlass:SGLiquidGlass",
+    "//Swiftgram/SGLiquidGlassCore:SGLiquidGlassCore",
 ]
 
 sgsrc = [
@@ -12,7 +14,7 @@ swift_library(
     name = "TabBarUI",
     module_name = "TabBarUI",
     srcs = sgsrc + glob([
-		"Sources/**/*.swift",
+                "Sources/**/*.swift",
     ]),
     copts = [
         "-warnings-as-errors",
@@ -20,7 +22,7 @@ swift_library(
     deps = sgdeps + [
         "//submodules/AsyncDisplayKit",
         "//submodules/Display",
-    	"//submodules/SSignalKit/SwiftSignalKit",
+        "//submodules/SSignalKit/SwiftSignalKit",
         "//submodules/AnimatedStickerNode",
         "//submodules/TelegramAnimatedStickerNode",
         "//submodules/TelegramPresentationData",
