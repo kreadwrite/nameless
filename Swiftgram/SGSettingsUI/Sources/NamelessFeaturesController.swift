@@ -1,343 +1,557 @@
 // MARK: nameless
 import SGSimpleSettings
+import SGItemListUI
 import Foundation
 import UIKit
 import Display
 import SwiftSignalKit
 import AccountContext
-import ItemListUI
 import TelegramPresentationData
 import PresentationDataUtils
 import UndoUI
+import TelegramCore
+import TelegramUIPreferences
 
-// MARK: - Data Model
+// MARK: - Section
 
-private struct NLToggle {
-    let title: String
-    let read: () -> Bool
-    let write: (Bool) -> Void
+private enum NLSectionId: Int32, SGItemListSection {
+    case search = 0
+    case items = 1
+    case actions = 2
 }
 
-private enum NLCategory: Int, CaseIterable {
-    case appearance = 0
-    case messages = 1
-    case camera = 2
-    case ghostMode = 3
-    case liquidGlass = 4
-    case privacy = 5
-    case information = 6
-    case additional = 7
-    
-    var title: String {
-        switch self {
-        case .appearance: return "Внешний вид"
-        case .messages: return "Сообщения"
-        case .camera: return "Камера"
-        case .ghostMode: return "Режим призрака"
-        case .liquidGlass: return "Жидкое стекло"
-        case .privacy: return "Конфиденциальность"
-        case .information: return "Информация"
-        case .additional: return "Дополнительно"
-        }
-    }
-    
-    var toggles: [NLToggle] {
-        let s = SGSimpleSettings.shared
-        switch self {
-        case .appearance:
-            return [
-                NLToggle("Скрыть номер телефона", read: { s.hidePhoneInSettings }, write: { s.hidePhoneInSettings = $0 }),
-                NLToggle("Показывать имена вкладок", read: { s.showTabNames }, write: { s.showTabNames = $0 }),
-                NLToggle("Широкая панель вкладок", read: { s.wideTabBar }, write: { s.wideTabBar = $0 }),
-                NLToggle("Скрыть истории", read: { s.hideStories }, write: { s.hideStories = $0 }),
-                NLToggle("Компактный список чатов", read: { s.compactChatList }, write: { s.compactChatList = $0 }),
-                NLToggle("Скрыть кнопку записи в панели", read: { s.hideRecordingButton }, write: { s.hideRecordingButton = $0 }),
-                NLToggle("Отправка по клавише Return", read: { s.sendWithReturnKey }, write: { s.sendWithReturnKey = $0 }),
-                NLToggle("Широкие посты каналов", read: { s.wideChannelPosts }, write: { s.wideChannelPosts = $0 }),
-            ]
-        case .messages:
-            return [
-                NLToggle("Показывать удалённые сообщения", read: { s.showDeletedMessages }, write: { s.showDeletedMessages = $0 }),
-                NLToggle("Сохранять медиа удалённых", read: { s.saveDeletedMessagesMedia }, write: { s.saveDeletedMessagesMedia = $0 }),
-                NLToggle("Сохранять историю редактирований", read: { s.saveEditHistory }, write: { s.saveEditHistory = $0 }),
-                NLToggle("Локальное редактирование сообщений", read: { s.enableLocalMessageEditing }, write: { s.enableLocalMessageEditing = $0 }),
-                NLToggle("Кнопка «Наверх»", read: { s.scrollToTopButtonEnabled }, write: { s.scrollToTopButtonEnabled = $0 }),
-                NLToggle("Скрыть реакции", read: { s.hideReactions }, write: { s.hideReactions = $0 }),
-                NLToggle("Секунды в метке времени", read: { s.secondsInMessages }, write: { s.secondsInMessages = $0 }),
-                NLToggle("Скрыть эффект удаления", read: { s.disableSnapDeletionEffect }, write: { s.disableSnapDeletionEffect = $0 }),
-                NLToggle("Скрыть кнопку «Send As»", read: { s.disableSendAsButton }, write: { s.disableSendAsButton = $0 }),
-                NLToggle("Скрыть кнопку канала внизу", read: { s.hideChannelBottomButton }, write: { s.hideChannelBottomButton = $0 }),
-            ]
-        case .camera:
-            return [
-                NLToggle("Телескоп (зум камеры)", read: { s.enableTelescope }, write: { s.enableTelescope = $0 }),
-                NLToggle("Начинать с задней камеры", read: { s.startTelescopeWithRearCam }, write: { s.startTelescopeWithRearCam = $0 }),
-                NLToggle("Скрыть камеру в галерее", read: { s.disableGalleryCamera }, write: { s.disableGalleryCamera = $0 }),
-                NLToggle("Скрыть превью камеры в галерее", read: { s.disableGalleryCameraPreview }, write: { s.disableGalleryCameraPreview = $0 }),
-                NLToggle("Видео-фон чатов", read: { s.namelessVideoBackgroundEnabled }, write: { s.namelessVideoBackgroundEnabled = $0 }),
-                NLToggle("Скачивание эмодзи", read: { s.emojiDownloaderEnabled }, write: { s.emojiDownloaderEnabled = $0 }),
-                NLToggle("Конвертировать видео в кружок/голосовое", read: { s.enableVideoToCircleOrVoice }, write: { s.enableVideoToCircleOrVoice = $0 }),
-            ]
-        case .ghostMode:
-            return [
-                NLToggle("Скрыть онлайн-статус", read: { s.disableOnlineStatus }, write: { s.disableOnlineStatus = $0 }),
-                NLToggle("Скрыть статус набора текста", read: { s.disableTypingStatus }, write: { s.disableTypingStatus = $0 }),
-                NLToggle("Скрыть статус записи голосового", read: { s.disableVCMessageRecordingStatus }, write: { s.disableVCMessageRecordingStatus = $0 }),
-                NLToggle("Скрыть статус загрузки файлов", read: { s.disableUploadingFileStatus }, write: { s.disableUploadingFileStatus = $0 }),
-                NLToggle("Скрыть отправку фото", read: { s.disableUploadingPhotoStatus }, write: { s.disableUploadingPhotoStatus = $0 }),
-                NLToggle("Скрыть отправку видео", read: { s.disableUploadingVideoStatus }, write: { s.disableUploadingVideoStatus = $0 }),
-                NLToggle("Скрыть запись видео", read: { s.disableRecordingVideoStatus }, write: { s.disableRecordingVideoStatus = $0 }),
-                NLToggle("Скрыть выбор локации", read: { s.disableChoosingLocationStatus }, write: { s.disableChoosingLocationStatus = $0 }),
-                NLToggle("Скрыть выбор контакта", read: { s.disableChoosingContactStatus }, write: { s.disableChoosingContactStatus = $0 }),
-                NLToggle("Скрыть прочтение сообщений", read: { s.disableMessageReadReceipt }, write: { s.disableMessageReadReceipt = $0 }),
-                NLToggle("Скрыть просмотр сторис", read: { s.disableStoryReadReceipt }, write: { s.disableStoryReadReceipt = $0 }),
-                NLToggle("Скрыть статус записи круглого видео", read: { s.disableRecordingRoundVideoStatus }, write: { s.disableRecordingRoundVideoStatus = $0 }),
-                NLToggle("Скрыть отправку круглого видео", read: { s.disableUploadingRoundVideoStatus }, write: { s.disableUploadingRoundVideoStatus = $0 }),
-                NLToggle("Скрыть статус игры", read: { s.disablePlayingGameStatus }, write: { s.disablePlayingGameStatus = $0 }),
-                NLToggle("Скрыть выбор стикера", read: { s.disableChoosingStickerStatus }, write: { s.disableChoosingStickerStatus = $0 }),
-                NLToggle("Скрыть эмодзи-взаимодействие", read: { s.disableEmojiInteractionStatus }, write: { s.disableEmojiInteractionStatus = $0 }),
-                NLToggle("Скрыть эмодзи-подтверждение", read: { s.disableEmojiAcknowledgementStatus }, write: { s.disableEmojiAcknowledgementStatus = $0 }),
-                NLToggle("История онлайн", read: { s.enableOnlineStatusRecording }, write: { s.enableOnlineStatusRecording = $0 }),
-                NLToggle("Подмена геолокации", read: { s.fakeLocationEnabled }, write: { s.fakeLocationEnabled = $0 }),
-                NLToggle("Задержка отправки (призрак)", read: { s.ghostModeMessageSendDelaySeconds > 0 }, write: { s.ghostModeMessageSendDelaySeconds = $0 ? 12 : 0 }),
-            ]
-        case .liquidGlass:
-            return [
-                NLToggle("Жидкое стекло (общее)", read: { s.liquidGlassEnabled }, write: { v in s.liquidGlassEnabled = v; NotificationCenter.default.post(name: .luxgramLiquidGlassDidChange, object: nil) }),
-                NLToggle("Сообщения", read: { s.namelessLiquidGlassMessages }, write: { s.namelessLiquidGlassMessages = $0; NotificationCenter.default.post(name: .luxgramLiquidGlassDidChange, object: nil) }),
-                NLToggle("Настройки", read: { s.namelessLiquidGlassSettings }, write: { s.namelessLiquidGlassSettings = $0; NotificationCenter.default.post(name: .luxgramLiquidGlassDidChange, object: nil) }),
-                NLToggle("Профиль", read: { s.namelessLiquidGlassProfile }, write: { s.namelessLiquidGlassProfile = $0; NotificationCenter.default.post(name: .luxgramLiquidGlassDidChange, object: nil) }),
-                NLToggle("Подарки профиля", read: { s.namelessLiquidGlassProfileGifts }, write: { s.namelessLiquidGlassProfileGifts = $0; NotificationCenter.default.post(name: .luxgramLiquidGlassDidChange, object: nil) }),
-                NLToggle("Инлайн-кнопки", read: { s.namelessLiquidGlassInlineButtons }, write: { s.namelessLiquidGlassInlineButtons = $0; NotificationCenter.default.post(name: .luxgramLiquidGlassDidChange, object: nil) }),
-                NLToggle("Тонирование", read: { s.namelessLiquidGlassTinting }, write: { s.namelessLiquidGlassTinting = $0; NotificationCenter.default.post(name: .luxgramLiquidGlassDidChange, object: nil) }),
-            ]
-        case .privacy:
-            return [
-                NLToggle("Отключить рекламу", read: { s.disableAllAds }, write: { s.disableAllAds = $0 }),
-                NLToggle("Сохранять защищённый контент", read: { s.enableSavingProtectedContent }, write: { s.enableSavingProtectedContent = $0 }),
-                NLToggle("Сохранять самоуничтожающиеся сообщения", read: { s.enableSavingSelfDestructingMessages }, write: { s.enableSavingSelfDestructingMessages = $0 }),
-                NLToggle("Отключить определение скриншотов", read: { s.disableScreenshotDetection }, write: { s.disableScreenshotDetection = $0 }),
-                NLToggle("Отключить размытие при скриншоте (секретные чаты)", read: { s.disableSecretChatBlurOnScreenshot }, write: { s.disableSecretChatBlurOnScreenshot = $0 }),
-                NLToggle("Скрыть статус отправки фото", read: { s.disableUploadingPhotoStatus }, write: { s.disableUploadingPhotoStatus = $0 }),
-                NLToggle("Скрыть отправку видео", read: { s.disableUploadingVideoStatus }, write: { s.disableUploadingVideoStatus = $0 }),
-                NLToggle("Скрыть запись видео", read: { s.disableRecordingVideoStatus }, write: { s.disableRecordingVideoStatus = $0 }),
-                NLToggle("Скрыть выбор локации", read: { s.disableChoosingLocationStatus }, write: { s.disableChoosingLocationStatus = $0 }),
-                NLToggle("Скрыть просмотр сторис", read: { s.disableStoryReadReceipt }, write: { s.disableStoryReadReceipt = $0 }),
-                NLToggle("Скрыть прочтение сообщений", read: { s.disableMessageReadReceipt }, write: { s.disableMessageReadReceipt = $0 }),
-                NLToggle("Не скроллить к следующему каналу", read: { s.disableScrollToNextChannel }, write: { s.disableScrollToNextChannel = $0 }),
-                NLToggle("Не скроллить к следующему топику", read: { s.disableScrollToNextTopic }, write: { s.disableScrollToNextTopic = $0 }),
-            ]
-        case .information:
-            return [
-                NLToggle("ID и DC в профиле", read: { s.showProfileId }, write: { s.showProfileId = $0 }),
-                NLToggle("Показывать DC", read: { s.showDC }, write: { s.showDC = $0 }),
-                NLToggle("Дата создания чата/канала", read: { s.showCreationDate }, write: { s.showCreationDate = $0 }),
-                NLToggle("Дата регистрации пользователя", read: { s.showRegDate }, write: { s.showRegDate = $0 }),
-                NLToggle("Компактные числа", read: { !s.disableCompactNumbers }, write: { s.disableCompactNumbers = !$0 }),
-            ]
-        case .additional:
-            return [
-                NLToggle("Локальный премиум", read: { s.enableLocalPremium }, write: { s.enableLocalPremium = $0 }),
-                NLToggle("Кнопка «Перевести» всегда видима", read: { s.quickTranslateButton }, write: { s.quickTranslateButton = $0 }),
-                NLToggle("Zalgo-фильтр", read: { s.disableZalgoText }, write: { s.disableZalgoText = $0 }),
-                NLToggle("Ускорение отправки", read: { s.uploadSpeedBoost }, write: { s.uploadSpeedBoost = $0 }),
-                NLToggle("Ускорение загрузки", read: { s.downloadSpeedBoost != "none" }, write: { s.downloadSpeedBoost = $0 ? "6" : "none" }),
-                NLToggle("Безлимитные избранные стикеры", read: { s.unlimitedFavoriteStickers }, write: { s.unlimitedFavoriteStickers = $0 }),
-                NLToggle("Размер стикеров (%)", read: { s.stickerSize == 100 }, write: { s.stickerSize = $0 ? 100 : 120 }),
-                NLToggle("Временные метки на стикерах", read: { s.stickerTimestamp }, write: { s.stickerTimestamp = $0 }),
-                NLToggle("Скрыть свайп для записи сторис", read: { s.disableSwipeToRecordStory }, write: { s.disableSwipeToRecordStory = $0 }),
-                NLToggle("Предупреждение при открытии сторис", read: { s.warnOnStoriesOpen }, write: { s.warnOnStoriesOpen = $0 }),
-                NLToggle("Stealth-режим сторис", read: { s.storyStealthMode }, write: { s.storyStealthMode = $0 }),
-                NLToggle("Подтверждение звонков", read: { s.confirmCalls }, write: { s.confirmCalls = $0 }),
-                NLToggle("Запоминать последнюю папку", read: { s.rememberLastFolder }, write: { s.rememberLastFolder = $0 }),
-                NLToggle("Системный шэринг", read: { s.forceSystemSharing }, write: { s.forceSystemSharing = $0 }),
-                NLToggle("Качество исходящих фото (%)", read: { s.outgoingPhotoQuality == 70 }, write: { s.outgoingPhotoQuality = $0 ? 70 : 80 }),
-            ]
-        }
-    }
+// MARK: - Settings
+
+private enum NLBoolSetting: String {
+    case hidePhoneInSettings
+    case showTabNames
+    case wideTabBar
+    case hideStories
+    case compactChatList
+    case hideRecordingButton
+    case sendWithReturnKey
+    case wideChannelPosts
+    case compactMessagePreview
+    case disableChatSwipeOptions
+    case disableDeleteChatSwipeOption
+    case secondsInMessages
+    case hideReactions
+    case hideChannelBottomButton
+    case disableSnapDeletionEffect
+    case disableSendAsButton
+    case hideTabBar
+    case tabBarSearchEnabled
+    case allChatsHidden
+    case compactFolderNames
+    case forceEmojiTab
+    case defaultEmojisFirst
+    case messageDoubleTapActionOutgoingEdit
+    case showProfileId
+    case showDC
+    case showCreationDate
+    case showRegDate
+    case confirmCalls
+    case swipeForVideoPIP
+    case sendLargePhotos
+    case stickerTimestamp
+    case forceBuiltInMic
+    case rememberLastFolder
+    case showDeletedMessages
+    case saveDeletedMessagesMedia
+    case saveEditHistory
+    case enableLocalMessageEditing
+    case scrollToTopButtonEnabled
+    case enableSavingProtectedContent
+    case enableSavingSelfDestructingMessages
+    case disableScreenshotDetection
+    case disableSecretChatBlurOnScreenshot
+    case disableAllAds
+    case hideProxySponsor
+    case disableScrollToNextChannel2
+    case disableScrollToNextTopic2
+    case disableZalgoText
+    case quickTranslateButton
+    case enableLocalPremium
+    case uploadSpeedBoost
+    case unlimitedFavoriteStickers
+    case storyStealthMode
+    case warnOnStoriesOpen
+    case disableSwipeToRecordStory
+    case forceSystemSharing
+    case startTelescopeWithRearCam
+    case disableGalleryCamera
+    case disableGalleryCameraPreview
+    case disableOnlineStatus
+    case disableTypingStatus
+    case disableVCMessageRecordingStatus
+    case disableUploadingFileStatus
+    case disableUploadingPhotoStatus
+    case disableUploadingVideoStatus
+    case disableRecordingVideoStatus
+    case disableChoosingLocationStatus
+    case disableChoosingContactStatus
+    case disablePlayingGameStatus
+    case disableRecordingRoundVideoStatus
+    case disableUploadingRoundVideoStatus
+    case disableSpeakingInGroupCallStatus
+    case disableChoosingStickerStatus
+    case disableEmojiInteractionStatus
+    case disableEmojiAcknowledgementStatus
+    case disableMessageReadReceipt
+    case disableStoryReadReceipt
+    case enableOnlineStatusRecording
+    case fakeLocationEnabled
+    case ghostModeMessageSendDelay
+    case liquidGlassEnabled
+    case namelessLiquidGlassMessages
+    case namelessLiquidGlassSettings
+    case namelessLiquidGlassProfile
+    case namelessLiquidGlassProfileGifts
+    case namelessLiquidGlassInlineButtons
+    case namelessLiquidGlassTinting
+    case enableTelescope
+    case emojiDownloaderEnabled
+    case enableVideoToCircleOrVoice
+    case namelessVideoBackgroundEnabled
+    case namelessMusicCardStyle
+    case namelessRoundProfileButtons
+    case disableCompactNumbers
+    case contextShowSaveToCloud
+    case contextShowHideForwardName
+    case contextShowSelectFromUser
+    case contextShowRestrict
+    case contextShowReport
+    case contextShowReply
+    case contextShowPin
+    case contextShowSaveMedia
+    case contextShowMessageReplies
+    case contextShowJson
+    case showRepostToStory
 }
 
-// MARK: - Main Category List
-
-private enum MainSection: Int32 {
-    case categories = 0
-    case actions = 1
+private enum NLSliderSetting: String {
+    case outgoingPhotoQuality
+    case stickerSize
+    case accountColorsSaturation
 }
 
-private enum MainEntry: ItemListNodeEntry {
-    case categoryHeader
-    case categoryItem(Int, String, String)
-    case actionHeader
+private enum NLOneFromManySetting: String {
+    case downloadSpeedBoost
+}
+
+private enum NLDisclosureLink: String {
+    case none
+}
+
+private enum NLAction: Int, CaseIterable {
     case exportSettings
     case importSettings
     case saveKeychain
     case resetAll
-    case rollbackInfo
-    
-    var section: ItemListSectionId {
-        switch self {
-        case .categoryHeader, .categoryItem: return MainSection.categories.rawValue
-        case .actionHeader, .exportSettings, .importSettings, .saveKeychain, .resetAll, .rollbackInfo: return MainSection.actions.rawValue
-        }
-    }
-    var stableId: Int32 {
-        switch self {
-        case .categoryHeader: return 0
-        case let .categoryItem(i, _, _): return Int32(100 + i)
-        case .actionHeader: return 200
-        case .exportSettings: return 201
-        case .importSettings: return 202
-        case .saveKeychain: return 203
-        case .resetAll: return 204
-        case .rollbackInfo: return 205
-        }
-    }
-    static func < (lhs: MainEntry, rhs: MainEntry) -> Bool { lhs.stableId < rhs.stableId }
-    static func == (lhs: MainEntry, rhs: MainEntry) -> Bool {
-        switch (lhs, rhs) {
-        case (.categoryHeader, .categoryHeader): return true
-        case let (.categoryItem(a,b,c), .categoryItem(d,e,f)): return a==d && b==e && c==f
-        case (.actionHeader, .actionHeader): return true
-        case (.exportSettings, .exportSettings): return true
-        case (.importSettings, .importSettings): return true
-        case (.saveKeychain, .saveKeychain): return true
-        case (.resetAll, .resetAll): return true
-        case (.rollbackInfo, .rollbackInfo): return true
-        default: return false
-        }
-    }
-    func item(presentationData: ItemListPresentationData, arguments: Any) -> ListViewItem {
-        guard let args = arguments as? MainArguments else {
-            return ItemListTextItem(presentationData: presentationData, text: .plain(""), sectionId: 0)
-        }
-        switch self {
-        case .categoryHeader:
-            return ItemListSectionHeaderItem(presentationData: presentationData, text: "ФУНКЦИИ NAMELESS", sectionId: self.section)
-        case let .categoryItem(_, title, count):
-            return ItemListDisclosureItem(presentationData: presentationData, title: title, label: "\(count)", sectionId: self.section, style: .blocks, action: { args.openCategory?(title) })
-        case .actionHeader:
-            return ItemListSectionHeaderItem(presentationData: presentationData, text: "НАСТРОЙКИ", sectionId: self.section)
-        case .exportSettings:
-            return ItemListActionItem(presentationData: presentationData, title: "Экспорт настроек в JSON", kind: .generic, alignment: .natural, sectionId: self.section, style: .blocks, action: { args.exportSettings?() })
-        case .importSettings:
-            return ItemListActionItem(presentationData: presentationData, title: "Импорт настроек из JSON", kind: .generic, alignment: .natural, sectionId: self.section, style: .blocks, action: { args.importSettings?() })
-        case .saveKeychain:
-            return ItemListActionItem(presentationData: presentationData, title: "Сохранить настройки в Keychain", kind: .generic, alignment: .natural, sectionId: self.section, style: .blocks, action: { args.saveKeychain?() })
-        case .resetAll:
-            return ItemListActionItem(presentationData: presentationData, title: "Сбросить все настройки nameless", kind: .destructive, alignment: .natural, sectionId: self.section, style: .blocks, action: { args.resetAll?() })
-        case .rollbackInfo:
-            return ItemListTextItem(presentationData: presentationData, text: .plain("Возвращает все настройки nameless к значениям по умолчанию. Требует перезапуск приложения."), sectionId: self.section)
-        }
-    }
 }
 
-private final class MainArguments {
-    let openCategory: ((String) -> Void)?
-    let exportSettings: (() -> Void)?
-    let importSettings: (() -> Void)?
-    let saveKeychain: (() -> Void)?
-    let resetAll: (() -> Void)?
-    init(openCategory: ((String) -> Void)?, exportSettings: (() -> Void)?, importSettings: (() -> Void)?, saveKeychain: (() -> Void)?, resetAll: (() -> Void)?) {
-        self.openCategory = openCategory; self.exportSettings = exportSettings; self.importSettings = importSettings; self.saveKeychain = saveKeychain; self.resetAll = resetAll
-    }
+// MARK: - State
+
+private struct NLControllerState: Equatable {
+    var searchQuery: String?
 }
 
-private func mainEntries() -> [MainEntry] {
-    var e: [MainEntry] = [.categoryHeader]
-    for cat in NLCategory.allCases { e.append(.categoryItem(cat.rawValue, cat.title, String(cat.toggles.count))) }
-    e.append(.actionHeader); e.append(.exportSettings); e.append(.importSettings); e.append(.saveKeychain); e.append(.resetAll); e.append(.rollbackInfo)
-    return e
-}
+// MARK: - Entry type
 
-// MARK: - Category Detail (toggles)
+private typealias NLEntry = SGItemListUIEntry<NLSectionId, NLBoolSetting, NLSliderSetting, NLOneFromManySetting, NLDisclosureLink, NLAction>
 
-private enum CatSection: Int32 { case toggles = 0, info = 1 }
+// MARK: - Build Entries
 
-private enum CatEntry: ItemListNodeEntry {
-    case toggleHeader(String)
-    case toggleItem(Int, String, Bool, (Bool) -> Void)
-    case infoText(String)
-    var section: ItemListSectionId {
-        switch self { case .toggleHeader, .toggleItem: return CatSection.toggles.rawValue; case .infoText: return CatSection.info.rawValue }
-    }
-    var stableId: Int32 {
-        switch self { case .toggleHeader: return 0; case let .toggleItem(i,_,_,_): return Int32(100+i); case .infoText: return 500 }
-    }
-    static func < (lhs: CatEntry, rhs: CatEntry) -> Bool { lhs.stableId < rhs.stableId }
-    static func == (lhs: CatEntry, rhs: CatEntry) -> Bool {
-        switch (lhs, rhs) {
-        case let (.toggleHeader(a), .toggleHeader(b)): return a==b
-        case let (.toggleItem(a,b,c,_), .toggleItem(d,e,f,_)): return a==d && b==e && c==f
-        case let (.infoText(a), .infoText(b)): return a==b
-        default: return false
-        }
-    }
-    func item(presentationData: ItemListPresentationData, arguments: Any) -> ListViewItem {
-        switch self {
-        case let .toggleHeader(t): return ItemListSectionHeaderItem(presentationData: presentationData, text: t.uppercased(), sectionId: self.section)
-        case let .toggleItem(_, title, value, write): return ItemListSwitchItem(presentationData: presentationData, title: title, value: value, sectionId: self.section, style: .blocks, updated: write)
-        case let .infoText(t): return ItemListTextItem(presentationData: presentationData, text: .plain(t), sectionId: self.section)
-        }
-    }
-}
+private func nlBuildEntries(presentationData: PresentationData, state: NLControllerState, simpleUpdated: Bool) -> [NLEntry] {
+    let s = SGSimpleSettings.shared
+    var entries: [NLEntry] = []
+    let id = SGItemListCounter()
 
-private final class CatEmptyArguments { init() {} }
+    entries.append(.searchInput(id: id.count, section: .search, title: NSAttributedString(string: "🔍"), text: state.searchQuery ?? "", placeholder: "Поиск настроек"))
 
-private func categoryEntries(category: NLCategory) -> [CatEntry] {
-    var entries: [CatEntry] = [.toggleHeader(category.title)]
-    for (idx, toggle) in category.toggles.enumerated() {
-        let val = toggle.read()
-        entries.append(.toggleItem(idx, toggle.title, val, toggle.write))
+    let sec: NLSectionId = .items
+
+    // ВНЕШНИЙ ВИД
+    entries.append(.header(id: id.count, section: sec, text: "ВНЕШНИЙ ВИД", badge: nil))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .hidePhoneInSettings, value: s.hidePhoneInSettings, text: "Скрыть номер телефона", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .showTabNames, value: s.showTabNames, text: "Подписи вкладок", enabled: !s.hideTabBar))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .wideTabBar, value: s.wideTabBar, text: "Широкая панель вкладок", enabled: !s.hideTabBar))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .hideTabBar, value: s.hideTabBar, text: "Скрыть нижний таббар", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .tabBarSearchEnabled, value: s.tabBarSearchEnabled, text: "Кнопка поиска в списке чатов", enabled: !s.hideTabBar))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .allChatsHidden, value: s.allChatsHidden, text: "Скрыть «Все чаты»", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .compactFolderNames, value: s.compactFolderNames, text: "Компактные имена папок", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .rememberLastFolder, value: s.rememberLastFolder, text: "Запоминать последнюю папку", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .hideStories, value: s.hideStories, text: "Скрыть истории", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .compactChatList, value: s.compactChatList, text: "Компактный список чатов", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .compactMessagePreview, value: s.chatListLines != SGSimpleSettings.ChatListLines.three.rawValue, text: "Компактный превью сообщений", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .disableChatSwipeOptions, value: !s.disableChatSwipeOptions, text: "Свайп-опции чатов", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .disableDeleteChatSwipeOption, value: !s.disableDeleteChatSwipeOption, text: "Свайп для удаления чата", enabled: !s.disableChatSwipeOptions))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .hideRecordingButton, value: !s.hideRecordingButton, text: "Кнопка записи голосовых", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .sendWithReturnKey, value: s.sendWithReturnKey, text: "Отправка по клавише Return", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .wideChannelPosts, value: s.wideChannelPosts, text: "Широкие посты в каналах", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .secondsInMessages, value: s.secondsInMessages, text: "Секунды в метке времени", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .hideReactions, value: s.hideReactions, text: "Скрыть реакции", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .hideChannelBottomButton, value: !s.hideChannelBottomButton, text: "Кнопка канала внизу", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .disableSnapDeletionEffect, value: !s.disableSnapDeletionEffect, text: "Эффект удаления", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .disableSendAsButton, value: !s.disableSendAsButton, text: "Кнопка «Send As»", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .disableGalleryCamera, value: !s.disableGalleryCamera, text: "Камера в галерее", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .disableGalleryCameraPreview, value: !s.disableGalleryCameraPreview, text: "Превью камеры в галерее", enabled: !s.disableGalleryCamera))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .messageDoubleTapActionOutgoingEdit, value: s.messageDoubleTapActionOutgoing == SGSimpleSettings.MessageDoubleTapAction.edit.rawValue, text: "Двойной тап = редактирование", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .forceEmojiTab, value: s.forceEmojiTab, text: "Вкладка эмодзи по умолчанию", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .defaultEmojisFirst, value: s.defaultEmojisFirst, text: "Стандартные эмодзи первыми", enabled: true))
+    entries.append(.header(id: id.count, section: sec, text: "НАСЫЩЕННОСТЬ ЦВЕТОВ", badge: nil))
+    entries.append(.percentageSlider(id: id.count, section: sec, settingName: .accountColorsSaturation, value: s.accountColorsSaturation))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .namelessMusicCardStyle, value: s.namelessMusicCardStyle, text: "Стиль карточки музыки", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .namelessRoundProfileButtons, value: s.namelessRoundProfileButtons, text: "Круглые кнопки в профиле", enabled: true))
+
+    // УВЕДОМЛЕНИЯ
+    entries.append(.header(id: id.count, section: sec, text: "УВЕДОМЛЕНИЯ", badge: nil))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .confirmCalls, value: s.confirmCalls, text: "Предупреждение при звонке", enabled: true))
+
+    // LIQUID GLASS
+    entries.append(.header(id: id.count, section: sec, text: "LIQUID GLASS", badge: nil))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .liquidGlassEnabled, value: s.liquidGlassEnabled, text: "Liquid Glass (общее)", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .namelessLiquidGlassMessages, value: s.namelessLiquidGlassMessages, text: "Liquid Glass сообщения", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .namelessLiquidGlassSettings, value: s.namelessLiquidGlassSettings, text: "Liquid Glass настройки", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .namelessLiquidGlassProfile, value: s.namelessLiquidGlassProfile, text: "Liquid Glass профиль", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .namelessLiquidGlassProfileGifts, value: s.namelessLiquidGlassProfileGifts, text: "Liquid Glass подарки", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .namelessLiquidGlassInlineButtons, value: s.namelessLiquidGlassInlineButtons, text: "Liquid Glass инлайн-кнопки", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .namelessLiquidGlassTinting, value: s.namelessLiquidGlassTinting, text: "Liquid Glass тонирование", enabled: true))
+
+    // СООБЩЕНИЯ
+    entries.append(.header(id: id.count, section: sec, text: "СООБЩЕНИЯ", badge: nil))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .showDeletedMessages, value: s.showDeletedMessages, text: "Показывать удалённые сообщения", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .saveDeletedMessagesMedia, value: s.saveDeletedMessagesMedia, text: "Сохранять медиа удалённых", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .saveEditHistory, value: s.saveEditHistory, text: "Сохранять историю редактирований", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .enableLocalMessageEditing, value: s.enableLocalMessageEditing, text: "Локальное редактирование сообщений", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .scrollToTopButtonEnabled, value: s.scrollToTopButtonEnabled, text: "Кнопка «Наверх»", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .disableScrollToNextChannel2, value: !s.disableScrollToNextChannel, text: "Скролл к следующему каналу", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .disableScrollToNextTopic2, value: !s.disableScrollToNextTopic, text: "Скролл к следующему топику", enabled: true))
+
+    // КАМЕРА
+    entries.append(.header(id: id.count, section: sec, text: "КАМЕРА", badge: nil))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .enableTelescope, value: s.enableTelescope, text: "Телескоп (зум камеры)", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .startTelescopeWithRearCam, value: s.startTelescopeWithRearCam, text: "Начинать с задней камеры", enabled: true))
+
+    // РЕЖИМ ПРИЗРАКА
+    entries.append(.header(id: id.count, section: sec, text: "РЕЖИМ ПРИЗРАКА", badge: nil))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .disableOnlineStatus, value: s.disableOnlineStatus, text: "Онлайн-статус", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .disableTypingStatus, value: s.disableTypingStatus, text: "Набор текста", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .disableVCMessageRecordingStatus, value: s.disableVCMessageRecordingStatus, text: "Запись голосового", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .disableUploadingFileStatus, value: s.disableUploadingFileStatus, text: "Загрузка файлов", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .disableUploadingPhotoStatus, value: s.disableUploadingPhotoStatus, text: "Отправка фото", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .disableUploadingVideoStatus, value: s.disableUploadingVideoStatus, text: "Отправка видео", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .disableRecordingVideoStatus, value: s.disableRecordingVideoStatus, text: "Запись видео", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .disableChoosingLocationStatus, value: s.disableChoosingLocationStatus, text: "Выбор локации", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .disableChoosingContactStatus, value: s.disableChoosingContactStatus, text: "Выбор контакта", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .disablePlayingGameStatus, value: s.disablePlayingGameStatus, text: "Статус игры", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .disableRecordingRoundVideoStatus, value: s.disableRecordingRoundVideoStatus, text: "Запись кружка", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .disableUploadingRoundVideoStatus, value: s.disableUploadingRoundVideoStatus, text: "Отправка кружка", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .disableSpeakingInGroupCallStatus, value: s.disableSpeakingInGroupCallStatus, text: "Говорение в групповом звонке", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .disableChoosingStickerStatus, value: s.disableChoosingStickerStatus, text: "Выбор стикера", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .disableEmojiInteractionStatus, value: s.disableEmojiInteractionStatus, text: "Эмодзи-взаимодействие", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .disableEmojiAcknowledgementStatus, value: s.disableEmojiAcknowledgementStatus, text: "Эмодзи-подтверждение", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .disableMessageReadReceipt, value: s.disableMessageReadReceipt, text: "Прочтение сообщений", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .disableStoryReadReceipt, value: s.disableStoryReadReceipt, text: "Просмотр сторис", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .enableOnlineStatusRecording, value: s.enableOnlineStatusRecording, text: "История онлайн", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .fakeLocationEnabled, value: s.fakeLocationEnabled, text: "Подмена геолокации", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .ghostModeMessageSendDelay, value: s.ghostModeMessageSendDelaySeconds > 0, text: "Задержка отправки (призрак)", enabled: true))
+
+    // КОНФИДЕНЦИАЛЬНОСТЬ
+    entries.append(.header(id: id.count, section: sec, text: "КОНФИДЕНЦИАЛЬНОСТЬ", badge: nil))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .disableAllAds, value: s.disableAllAds, text: "Отключить рекламу", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .enableSavingProtectedContent, value: s.enableSavingProtectedContent, text: "Сохранять защищённый контент", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .enableSavingSelfDestructingMessages, value: s.enableSavingSelfDestructingMessages, text: "Сохранять самоуничтожающиеся", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .disableScreenshotDetection, value: s.disableScreenshotDetection, text: "Отключить определение скриншотов", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .disableSecretChatBlurOnScreenshot, value: s.disableSecretChatBlurOnScreenshot, text: "Без размытия при скриншоте", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .hideProxySponsor, value: s.hideProxySponsor, text: "Скрыть спонсора прокси", enabled: true))
+
+    // ИНФОРМАЦИЯ
+    entries.append(.header(id: id.count, section: sec, text: "ИНФОРМАЦИЯ", badge: nil))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .showProfileId, value: s.showProfileId, text: "ID и DC в профиле", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .showDC, value: s.showDC, text: "Показывать DC", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .showCreationDate, value: s.showCreationDate, text: "Дата создания чата/канала", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .showRegDate, value: s.showRegDate, text: "Дата регистрации пользователя", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .disableCompactNumbers, value: !s.disableCompactNumbers, text: "Компактные числа", enabled: true))
+
+    // КОНТЕКСТНОЕ МЕНЮ
+    entries.append(.header(id: id.count, section: sec, text: "КОНТЕКСТНОЕ МЕНЮ", badge: nil))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .contextShowSaveToCloud, value: s.contextShowSaveToCloud, text: "Сохранить в облако", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .contextShowHideForwardName, value: s.contextShowHideForwardName, text: "Скрыть имя пересылки", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .contextShowSelectFromUser, value: s.contextShowSelectFromUser, text: "Выбрать от пользователя", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .contextShowRestrict, value: s.contextShowRestrict, text: "Ограничить", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .contextShowReport, value: s.contextShowReport, text: "Пожаловаться", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .contextShowReply, value: s.contextShowReply, text: "Ответить", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .contextShowPin, value: s.contextShowPin, text: "Закрепить", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .contextShowSaveMedia, value: s.contextShowSaveMedia, text: "Сохранить медиа", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .contextShowMessageReplies, value: s.contextShowMessageReplies, text: "Ответы на сообщение", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .contextShowJson, value: s.contextShowJson, text: "JSON", enabled: true))
+
+    // ДОПОЛНИТЕЛЬНО
+    entries.append(.header(id: id.count, section: sec, text: "ДОПОЛНИТЕЛЬНО", badge: nil))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .enableLocalPremium, value: s.enableLocalPremium, text: "Локальный премиум", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .quickTranslateButton, value: s.quickTranslateButton, text: "Кнопка «Перевести» видима", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .disableZalgoText, value: s.disableZalgoText, text: "Zalgo-фильтр", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .uploadSpeedBoost, value: s.uploadSpeedBoost, text: "Ускорение отправки", enabled: true))
+    entries.append(.oneFromManySelector(id: id.count, section: sec, settingName: .downloadSpeedBoost, text: "Ускорение загрузки", value: s.downloadSpeedBoost, enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .unlimitedFavoriteStickers, value: s.unlimitedFavoriteStickers, text: "Безлимитные избранные стикеры", enabled: true))
+
+    // СТИКЕРЫ
+    entries.append(.header(id: id.count, section: sec, text: "СТИКЕРЫ", badge: nil))
+    entries.append(.percentageSlider(id: id.count, section: sec, settingName: .stickerSize, value: s.stickerSize))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .stickerTimestamp, value: s.stickerTimestamp, text: "Временные метки на стикерах", enabled: true))
+
+    // ФОТО
+    entries.append(.header(id: id.count, section: sec, text: "ФОТО", badge: nil))
+    entries.append(.percentageSlider(id: id.count, section: sec, settingName: .outgoingPhotoQuality, value: s.outgoingPhotoQuality))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .sendLargePhotos, value: s.sendLargePhotos, text: "Отправлять большие фото", enabled: true))
+
+    // СТОРИС
+    entries.append(.header(id: id.count, section: sec, text: "СТОРИС", badge: nil))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .disableSwipeToRecordStory, value: s.disableSwipeToRecordStory, text: "Скрыть свайп для записи сторис", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .warnOnStoriesOpen, value: s.warnOnStoriesOpen, text: "Предупреждение при открытии сторис", enabled: true))
+    if s.canUseStealthMode {
+        entries.append(.toggle(id: id.count, section: sec, settingName: .storyStealthMode, value: s.storyStealthMode, text: "Stealth-режим сторис", enabled: true))
+    } else {
+        id.increment(1)
     }
-    switch category {
-    case .ghostMode: entries.append(.infoText("Включённые пункты скрывают ваши действия от других пользователей."))
-    case .liquidGlass: entries.append(.infoText("Управление Liquid Glass-поверхностями по отдельным зонам."))
-    case .additional: entries.append(.infoText("Локальный премиум убирает ограничения premium-функций на устройстве."))
-    case .privacy: entries.append(.infoText("Настройки конфиденциальности и защиты контента."))
-    default: break
-    }
-    return entries
+    entries.append(.toggle(id: id.count, section: sec, settingName: .showRepostToStory, value: s.showRepostToStoryV2, text: "Переслать в историю", enabled: true))
+
+    // ПРОЧЕЕ
+    entries.append(.header(id: id.count, section: sec, text: "ПРОЧЕЕ", badge: nil))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .forceSystemSharing, value: s.forceSystemSharing, text: "Системный шэринг", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .emojiDownloaderEnabled, value: s.emojiDownloaderEnabled, text: "Скачивание эмодзи", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .enableVideoToCircleOrVoice, value: s.enableVideoToCircleOrVoice, text: "Видео в кружок/голосовое", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .namelessVideoBackgroundEnabled, value: s.namelessVideoBackgroundEnabled, text: "Видео-фон чатов", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .swipeForVideoPIP, value: s.videoPIPSwipeDirection == SGSimpleSettings.VideoPIPSwipeDirection.up.rawValue, text: "Свайп для PiP видео", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .forceBuiltInMic, value: s.forceBuiltInMic, text: "Встроенный микрофон", enabled: true))
+
+    // ЭКСПОРТ / ИМПОРТ
+    let actSec: NLSectionId = .actions
+    entries.append(.header(id: id.count, section: actSec, text: "ЭКСПОРТ / ИМПОРТ", badge: nil))
+    entries.append(.action(id: id.count, section: actSec, actionType: .exportSettings, text: "Экспорт настроек в JSON", kind: .generic))
+    entries.append(.action(id: id.count, section: actSec, actionType: .importSettings, text: "Импорт настроек из JSON", kind: .generic))
+    entries.append(.action(id: id.count, section: actSec, actionType: .saveKeychain, text: "Сохранить настройки в Keychain", kind: .generic))
+    entries.append(.action(id: id.count, section: actSec, actionType: .resetAll, text: "Сбросить все настройки nameless", kind: .destructive))
+
+    return filterSGItemListUIEntrires(entries: entries, by: state.searchQuery)
 }
 
 // MARK: - Public API
 
 public func namelessFeaturesController(context: AccountContext) -> ViewController {
-    let openCategory: (String) -> Void = { name in
-        guard let nav = context.sharedContext.mainWindow?.viewController as? NavigationController else { return }
-        for cat in NLCategory.allCases where cat.title == name { nav.pushViewController(categoryDetailController(context: context, category: cat)); return }
-    }
-    let exportAction: () -> Void = {
-        var dict: [String: Any] = [:]
-        for key in UserDefaults.standard.dictionaryRepresentation().keys where key.hasPrefix("nameless.") || key.hasPrefix("VoiceMorpher.") { dict[key] = UserDefaults.standard.object(forKey: key) }
-        if let d = try? JSONSerialization.data(withJSONObject: dict, options: .prettyPrinted), let s = String(data: d, encoding: .utf8) { UIPasteboard.general.string = s }
-    }
-    let importAction: () -> Void = {
-        if let s = UIPasteboard.general.string, let d = s.data(using: .utf8), let dict = try? JSONSerialization.jsonObject(with: d) as? [String: Any] {
-            for (k,v) in dict where k.hasPrefix("nameless.") || k.hasPrefix("VoiceMorpher.") { UserDefaults.standard.set(v, forKey: k) }
-        }
-    }
-    let saveKeychainAction: () -> Void = { SGSimpleSettings.shared.beginNamelessRollbackSnapshot() }
-    let resetAction: () -> Void = {
-        SGSimpleSettings.shared.restoreNamelessRollbackSnapshot()
-        let defaults = UserDefaults.standard
-        for key in defaults.dictionaryRepresentation().keys where key.hasPrefix("nameless.") { defaults.removeObject(forKey: key) }
-    }
-    let args = MainArguments(openCategory: openCategory, exportSettings: exportAction, importSettings: importAction, saveKeychain: saveKeychainAction, resetAll: resetAction)
-    let signal: Signal<(ItemListControllerState, (ItemListNodeState, MainArguments)), NoError> = context.sharedContext.presentationData
-        |> map { pd -> (ItemListControllerState, (ItemListNodeState, MainArguments)) in
-            let cs = ItemListControllerState(presentationData: ItemListPresentationData(pd), title: .text("Функции nameless"), leftNavigationButton: nil, rightNavigationButton: nil, backNavigationButton: ItemListBackButton(title: pd.strings.Common_Back))
-            let ls = ItemListNodeState(presentationData: ItemListPresentationData(pd), entries: mainEntries(), style: .blocks)
-            return (cs, (ls, args))
-    }
-    return ItemListController(context: context, state: signal)
-}
+    var presentControllerImpl: ((ViewController, ViewControllerPresentationArguments?) -> Void)?
+    var askForRestart: (() -> Void)?
 
-private func categoryDetailController(context: AccountContext, category: NLCategory) -> ViewController {
-    let signal: Signal<(ItemListControllerState, (ItemListNodeState, CatEmptyArguments)), NoError> = context.sharedContext.presentationData
-        |> map { pd -> (ItemListControllerState, (ItemListNodeState, CatEmptyArguments)) in
-            let cs = ItemListControllerState(presentationData: ItemListPresentationData(pd), title: .text(category.title), leftNavigationButton: nil, rightNavigationButton: nil, backNavigationButton: ItemListBackButton(title: pd.strings.Common_Back))
-            let ls = ItemListNodeState(presentationData: ItemListPresentationData(pd), entries: categoryEntries(category: category), style: .blocks)
-            return (cs, (ls, CatEmptyArguments()))
+    let initialState = NLControllerState()
+    let statePromise = ValuePromise(initialState, ignoreRepeated: true)
+    let stateValue = Atomic(value: initialState)
+    let updateState: ((NLControllerState) -> NLControllerState) -> Void = { f in
+        statePromise.set(stateValue.modify { f($0) })
+    }
+
+    let simplePromise = ValuePromise(true, ignoreRepeated: false)
+
+    let arguments = SGItemListArguments<NLBoolSetting, NLSliderSetting, NLOneFromManySetting, NLDisclosureLink, NLAction>(
+        context: context,
+        setBoolValue: { setting, value in
+            let s = SGSimpleSettings.shared
+            switch setting {
+            case .hidePhoneInSettings: s.hidePhoneInSettings = value; askForRestart?()
+            case .showTabNames: s.showTabNames = value; askForRestart?()
+            case .wideTabBar: s.wideTabBar = value; askForRestart?()
+            case .hideStories: s.hideStories = value
+            case .compactChatList: s.compactChatList = value; askForRestart?()
+            case .hideRecordingButton: s.hideRecordingButton = !value
+            case .sendWithReturnKey: s.sendWithReturnKey = value
+            case .wideChannelPosts: s.wideChannelPosts = value
+            case .compactMessagePreview: s.chatListLines = value ? SGSimpleSettings.ChatListLines.two.rawValue : SGSimpleSettings.ChatListLines.three.rawValue; askForRestart?()
+            case .disableChatSwipeOptions: s.disableChatSwipeOptions = !value; simplePromise.set(true); askForRestart?()
+            case .disableDeleteChatSwipeOption: s.disableDeleteChatSwipeOption = !value; askForRestart?()
+            case .secondsInMessages: s.secondsInMessages = value
+            case .hideReactions: s.hideReactions = value
+            case .hideChannelBottomButton: s.hideChannelBottomButton = !value
+            case .disableSnapDeletionEffect: s.disableSnapDeletionEffect = !value
+            case .disableSendAsButton: s.disableSendAsButton = !value
+            case .hideTabBar: s.hideTabBar = value; simplePromise.set(true); askForRestart?()
+            case .tabBarSearchEnabled: s.tabBarSearchEnabled = value
+            case .allChatsHidden: s.allChatsHidden = value; askForRestart?()
+            case .compactFolderNames: s.compactFolderNames = value; askForRestart?()
+            case .forceEmojiTab: s.forceEmojiTab = value
+            case .defaultEmojisFirst: s.defaultEmojisFirst = value
+            case .messageDoubleTapActionOutgoingEdit: s.messageDoubleTapActionOutgoing = value ? SGSimpleSettings.MessageDoubleTapAction.edit.rawValue : SGSimpleSettings.MessageDoubleTapAction.default.rawValue
+            case .showProfileId: s.showProfileId = value
+            case .showDC: s.showDC = value
+            case .showCreationDate: s.showCreationDate = value
+            case .showRegDate: s.showRegDate = value
+            case .confirmCalls: s.confirmCalls = value
+            case .swipeForVideoPIP: s.videoPIPSwipeDirection = value ? SGSimpleSettings.VideoPIPSwipeDirection.up.rawValue : SGSimpleSettings.VideoPIPSwipeDirection.none.rawValue
+            case .sendLargePhotos: s.sendLargePhotos = value
+            case .stickerTimestamp: s.stickerTimestamp = value
+            case .forceBuiltInMic: s.forceBuiltInMic = value
+            case .rememberLastFolder: s.rememberLastFolder = value
+            case .showDeletedMessages: s.showDeletedMessages = value
+            case .saveDeletedMessagesMedia: s.saveDeletedMessagesMedia = value
+            case .saveEditHistory: s.saveEditHistory = value
+            case .enableLocalMessageEditing: s.enableLocalMessageEditing = value
+            case .scrollToTopButtonEnabled: s.scrollToTopButtonEnabled = value
+            case .enableSavingProtectedContent: s.enableSavingProtectedContent = value
+            case .enableSavingSelfDestructingMessages: s.enableSavingSelfDestructingMessages = value
+            case .disableScreenshotDetection: s.disableScreenshotDetection = value
+            case .disableSecretChatBlurOnScreenshot: s.disableSecretChatBlurOnScreenshot = value
+            case .disableAllAds: s.disableAllAds = value
+            case .hideProxySponsor: s.hideProxySponsor = value
+            case .disableScrollToNextChannel2: s.disableScrollToNextChannel = !value
+            case .disableScrollToNextTopic2: s.disableScrollToNextTopic = !value
+            case .disableZalgoText: s.disableZalgoText = value
+            case .quickTranslateButton: s.quickTranslateButton = value
+            case .enableLocalPremium: s.enableLocalPremium = value
+            case .uploadSpeedBoost: s.uploadSpeedBoost = value
+            case .unlimitedFavoriteStickers: s.unlimitedFavoriteStickers = value
+            case .storyStealthMode: s.storyStealthMode = value
+            case .warnOnStoriesOpen: s.warnOnStoriesOpen = value
+            case .disableSwipeToRecordStory: s.disableSwipeToRecordStory = value
+            case .forceSystemSharing: s.forceSystemSharing = value
+            case .startTelescopeWithRearCam: s.startTelescopeWithRearCam = value
+            case .disableGalleryCamera: s.disableGalleryCamera = !value; simplePromise.set(true)
+            case .disableGalleryCameraPreview: s.disableGalleryCameraPreview = !value
+            case .disableOnlineStatus: s.disableOnlineStatus = value
+            case .disableTypingStatus: s.disableTypingStatus = value
+            case .disableVCMessageRecordingStatus: s.disableVCMessageRecordingStatus = value
+            case .disableUploadingFileStatus: s.disableUploadingFileStatus = value
+            case .disableUploadingPhotoStatus: s.disableUploadingPhotoStatus = value
+            case .disableUploadingVideoStatus: s.disableUploadingVideoStatus = value
+            case .disableRecordingVideoStatus: s.disableRecordingVideoStatus = value
+            case .disableChoosingLocationStatus: s.disableChoosingLocationStatus = value
+            case .disableChoosingContactStatus: s.disableChoosingContactStatus = value
+            case .disablePlayingGameStatus: s.disablePlayingGameStatus = value
+            case .disableRecordingRoundVideoStatus: s.disableRecordingRoundVideoStatus = value
+            case .disableUploadingRoundVideoStatus: s.disableUploadingRoundVideoStatus = value
+            case .disableSpeakingInGroupCallStatus: s.disableSpeakingInGroupCallStatus = value
+            case .disableChoosingStickerStatus: s.disableChoosingStickerStatus = value
+            case .disableEmojiInteractionStatus: s.disableEmojiInteractionStatus = value
+            case .disableEmojiAcknowledgementStatus: s.disableEmojiAcknowledgementStatus = value
+            case .disableMessageReadReceipt: s.disableMessageReadReceipt = value
+            case .disableStoryReadReceipt: s.disableStoryReadReceipt = value
+            case .enableOnlineStatusRecording: s.enableOnlineStatusRecording = value
+            case .fakeLocationEnabled: s.fakeLocationEnabled = value
+            case .ghostModeMessageSendDelay: s.ghostModeMessageSendDelaySeconds = value ? 12 : 0
+            case .liquidGlassEnabled: s.liquidGlassEnabled = value; NotificationCenter.default.post(name: .luxgramLiquidGlassDidChange, object: nil)
+            case .namelessLiquidGlassMessages: s.namelessLiquidGlassMessages = value; NotificationCenter.default.post(name: .luxgramLiquidGlassDidChange, object: nil)
+            case .namelessLiquidGlassSettings: s.namelessLiquidGlassSettings = value; NotificationCenter.default.post(name: .luxgramLiquidGlassDidChange, object: nil)
+            case .namelessLiquidGlassProfile: s.namelessLiquidGlassProfile = value; NotificationCenter.default.post(name: .luxgramLiquidGlassDidChange, object: nil)
+            case .namelessLiquidGlassProfileGifts: s.namelessLiquidGlassProfileGifts = value; NotificationCenter.default.post(name: .luxgramLiquidGlassDidChange, object: nil)
+            case .namelessLiquidGlassInlineButtons: s.namelessLiquidGlassInlineButtons = value; NotificationCenter.default.post(name: .luxgramLiquidGlassDidChange, object: nil)
+            case .namelessLiquidGlassTinting: s.namelessLiquidGlassTinting = value; NotificationCenter.default.post(name: .luxgramLiquidGlassDidChange, object: nil)
+            case .enableTelescope: s.enableTelescope = value
+            case .emojiDownloaderEnabled: s.emojiDownloaderEnabled = value
+            case .enableVideoToCircleOrVoice: s.enableVideoToCircleOrVoice = value
+            case .namelessVideoBackgroundEnabled: s.namelessVideoBackgroundEnabled = value
+            case .namelessMusicCardStyle: s.namelessMusicCardStyle = value
+            case .namelessRoundProfileButtons: s.namelessRoundProfileButtons = value
+            case .disableCompactNumbers: s.disableCompactNumbers = !value
+            case .contextShowSaveToCloud: s.contextShowSaveToCloud = value
+            case .contextShowHideForwardName: s.contextShowHideForwardName = value
+            case .contextShowSelectFromUser: s.contextShowSelectFromUser = value
+            case .contextShowRestrict: s.contextShowRestrict = value
+            case .contextShowReport: s.contextShowReport = value
+            case .contextShowReply: s.contextShowReply = value
+            case .contextShowPin: s.contextShowPin = value
+            case .contextShowSaveMedia: s.contextShowSaveMedia = value
+            case .contextShowMessageReplies: s.contextShowMessageReplies = value
+            case .contextShowJson: s.contextShowJson = value
+            case .showRepostToStory: s.showRepostToStoryV2 = value
+            }
+        },
+        updateSliderValue: { slider, value in
+            let s = SGSimpleSettings.shared
+            switch slider {
+            case .outgoingPhotoQuality: if s.outgoingPhotoQuality != value { s.outgoingPhotoQuality = value; simplePromise.set(true) }
+            case .stickerSize: if s.stickerSize != value { s.stickerSize = value; simplePromise.set(true) }
+            case .accountColorsSaturation: if s.accountColorsSaturation != value { s.accountColorsSaturation = value; simplePromise.set(true) }
+            }
+        },
+        setOneFromManyValue: { setting in
+            let presentationData = context.sharedContext.currentPresentationData.with { $0 }
+            let actionSheet = ActionSheetController(presentationData: presentationData)
+            var items: [ActionSheetItem] = []
+
+            switch setting {
+            case .downloadSpeedBoost:
+                let setAction: (String) -> Void = { value in
+                    SGSimpleSettings.shared.downloadSpeedBoost = value
+                    simplePromise.set(true)
+                    let enableDownloadX: Bool = value != SGSimpleSettings.DownloadSpeedBoostValues.none.rawValue
+                    let _ = updateNetworkSettingsInteractively(postbox: context.account.postbox, network: context.account.network, { settings in
+                        var settings = settings
+                        settings.useExperimentalDownload = enableDownloadX
+                        return settings
+                    }).start(completed: {
+                        Queue.mainQueue().async { askForRestart?() }
+                    })
+                }
+                for value in SGSimpleSettings.DownloadSpeedBoostValues.allCases {
+                    items.append(ActionSheetButtonItem(title: value.rawValue, color: .accent, action: { [weak actionSheet] in
+                        actionSheet?.dismissAnimated()
+                        setAction(value.rawValue)
+                    }))
+                }
+            }
+            actionSheet.setItemGroups([ActionSheetItemGroup(items: items), ActionSheetItemGroup(items: [
+                ActionSheetButtonItem(title: presentationData.strings.Common_Cancel, color: .accent, font: .bold, action: { [weak actionSheet] in
+                    actionSheet?.dismissAnimated()
+                })
+            ])])
+            presentControllerImpl?(actionSheet, ViewControllerPresentationArguments(presentationAnimation: .modalSheet))
+        },
+        openDisclosureLink: { _ in },
+        action: { actionType in
+            switch actionType {
+            case .exportSettings:
+                var dict: [String: Any] = [:]
+                for key in UserDefaults.standard.dictionaryRepresentation().keys where key.hasPrefix("nameless.") || key.hasPrefix("VoiceMorpher.") { dict[key] = UserDefaults.standard.object(forKey: key) }
+                if let d = try? JSONSerialization.data(withJSONObject: dict, options: .prettyPrinted), let s = String(data: d, encoding: .utf8) { UIPasteboard.general.string = s }
+            case .importSettings:
+                if let s = UIPasteboard.general.string, let d = s.data(using: .utf8), let dict = try? JSONSerialization.jsonObject(with: d) as? [String: Any] {
+                    for (k, v) in dict where k.hasPrefix("nameless.") || k.hasPrefix("VoiceMorpher.") { UserDefaults.standard.set(v, forKey: k) }
+                }
+                simplePromise.set(true)
+            case .saveKeychain:
+                SGSimpleSettings.shared.beginNamelessRollbackSnapshot()
+            case .resetAll:
+                SGSimpleSettings.shared.restoreNamelessRollbackSnapshot()
+                for key in UserDefaults.standard.dictionaryRepresentation().keys where key.hasPrefix("nameless.") { UserDefaults.standard.removeObject(forKey: key) }
+                simplePromise.set(true)
+            }
+        },
+        searchInput: { query in
+            updateState { state in
+                var updated = state
+                updated.searchQuery = query
+                return updated
+            }
         }
-    return ItemListController(context: context, state: signal)
+    )
+
+    let signal = combineLatest(simplePromise.get(), statePromise.get(), context.sharedContext.presentationData)
+    |> map { _, state, presentationData -> (ItemListControllerState, (ItemListNodeState, Any)) in
+        let entries = nlBuildEntries(presentationData: presentationData, state: state, simpleUpdated: true)
+        let cs = ItemListControllerState(presentationData: ItemListPresentationData(presentationData), title: .text("Функции nameless"), leftNavigationButton: nil, rightNavigationButton: nil, backNavigationButton: ItemListBackButton(title: presentationData.strings.Common_Back))
+        let ls = ItemListNodeState(presentationData: ItemListPresentationData(presentationData), entries: entries, style: .blocks)
+        return (cs, (ls, arguments))
+    }
+
+    let controller = ItemListController(context: context, state: signal)
+    presentControllerImpl = { [weak controller] c, a in
+        controller?.present(c, in: .window(.root), with: a)
+    }
+    askForRestart = { [weak context] in
+        guard let context = context else { return }
+        let pd = context.sharedContext.currentPresentationData.with { $0 }
+        presentControllerImpl?(
+            UndoOverlayController(presentationData: pd, content: .info(title: nil, text: "Пожалуйста, перезапустите приложение", timeout: nil, customUndoText: "Перезапустить"), elevatedLayout: false, action: { action in if action == .undo { exit(0) }; return true }),
+            nil
+        )
+    }
+    return controller
 }
