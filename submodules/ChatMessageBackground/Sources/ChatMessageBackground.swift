@@ -560,7 +560,7 @@ public final class ChatMessageBubbleBackdrop: ASDisplayNode, SGLiquidGlassContai
         // Insert glass below everything but above the wallpaper background.
         self.addSubnode(self.glassNode)
         // Initial tint - no color until setType assigns one
-        self.glassNode.tintColor = .clear
+        self.glassNode.glassTintColor = .clear
         self.glassNode.isVisible = false
     }
 
@@ -575,7 +575,7 @@ public final class ChatMessageBubbleBackdrop: ASDisplayNode, SGLiquidGlassContai
     public func refreshGlass(zone: SGLiquidGlassZone) {
         let enabled = zone.isEnabled
         let tint = zone.isTinted ? self.currentBubbleColor.withAlphaComponent(0.55) : .clear
-        self.glassNode.tintColor = tint
+        self.glassNode.glassTintColor = tint
         self.glassNode.isVisible = enabled
         if enabled {
             self.glassNode.refreshGlass(zone: zone)
@@ -611,7 +611,7 @@ public final class ChatMessageBubbleBackdrop: ASDisplayNode, SGLiquidGlassContai
         if self.currentBubbleColor != bubbleColor {
             self.currentBubbleColor = bubbleColor
             let tint = SGLiquidGlassZone.messages.isTinted ? bubbleColor.withAlphaComponent(0.55) : .clear
-            self.glassNode.tintColor = tint
+            self.glassNode.glassTintColor = tint
         }
         self.glassNode.isVisible = SGLiquidGlassZone.messages.isEnabled
         self.glassNode.frame = self.bounds

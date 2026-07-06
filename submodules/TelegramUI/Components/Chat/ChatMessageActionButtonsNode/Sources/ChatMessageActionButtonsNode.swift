@@ -500,7 +500,7 @@ private final class ChatMessageActionButtonNode: ASDisplayNode {
                             case .danger:   glassColor = theme.theme.contextMenu.destructiveColor
                             case .success:  glassColor = theme.theme.list.freeTextSuccessColor
                             }
-                            node.glassNode?.tintColor = SGLiquidGlassZone.inlineButtons.isTinted ? glassColor.withAlphaComponent(0.5) : .clear
+                            node.glassNode?.glassTintColor = SGLiquidGlassZone.inlineButtons.isTinted ? glassColor.withAlphaComponent(0.5) : .clear
                             node.glassNode?.frame = CGRect(origin: .zero, size: CGSize(width: max(0.0, width), height: 42.0))
                             node.glassNode?.isVisible = true
                         } else {

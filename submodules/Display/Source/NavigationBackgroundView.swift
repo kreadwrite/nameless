@@ -21,7 +21,11 @@ public final class NavigationBackgroundNode: ASDisplayNode, SGLiquidGlassContain
     private let backgroundNode: ASDisplayNode
 
     // nameless: optional Liquid Glass overlay for navigation bars
-    private var glassView: (UIView & SGLiquidGlassViewProtocol)?
+    // We keep both an `any SGLiquidGlassViewProtocol` (for the glass API) and
+    // the same instance as `UIView` (for frame / superview ops) — split
+    // because some Swift versions refuse `any P & UIView` existentials.
+    private var glassViewProtocol: (any SGLiquidGlassViewProtocol)?
+    private var glassView: UIView?
     private var glassRegistered: Bool = false
     /// Set to true to enable the Liquid Glass overlay (defaults to false; the
     /// tab bar / nav bar / chat input panel opt-in explicitly).
@@ -64,7 +68,7 @@ public final class NavigationBackgroundNode: ASDisplayNode, SGLiquidGlassContain
     }
 
     deinit {
-        if let v = self.glassView, self.glassRegistered {
+        if let v = self.glassViewProtocol, self.glassRegistered {
             SGLiquidGlassCoordinator.shared.unregister(node: v)
         }
     }
@@ -75,31 +79,36 @@ public final class NavigationBackgroundNode: ASDisplayNode, SGLiquidGlassContain
         let shouldHave = self.enableLiquidGlass && SGLiquidGlassZone.navigationBar.isEnabled
         if shouldHave {
             if self.glassView == nil {
-                guard let v = SGLiquidGlassFactory.shared.create?() as? (UIView & SGLiquidGlassViewProtocol) else {
+                guard let proto = SGLiquidGlassFactory.shared.create?() else {
                     return
                 }
-                v.tintColorGlass = self.glassTintColor ?? self._color.withAlphaComponent(0.5)
+                guard let v = proto as? UIView else {
+                    return
+                }
+                proto.tintColorGlass = self.glassTintColor ?? self._color.withAlphaComponent(0.5)
                 self.view.addSubview(v)
                 self.glassView = v
+                self.glassViewProtocol = proto
                 if let (size, cornerRadius) = self.validLayout {
                     v.frame = CGRect(origin: .zero, size: size)
-                    v.cornerRadii = GlassRadii(radius: cornerRadius)
+                    proto.cornerRadii = GlassRadii(radius: cornerRadius)
                 }
                 if !self.glassRegistered {
                     self.glassRegistered = true
-                    SGLiquidGlassCoordinator.shared.register(node: v, zone: .navigationBar)
+                    SGLiquidGlassCoordinator.shared.register(node: proto, zone: .navigationBar)
                 }
             } else {
-                self.glassView?.tintColorGlass = (self.glassTintColor ?? self._color.withAlphaComponent(0.5))
-                self.glassView?.refreshGlass(zone: .navigationBar)
+                self.glassViewProtocol?.tintColorGlass = (self.glassTintColor ?? self._color.withAlphaComponent(0.5))
+                self.glassViewProtocol?.refreshGlass(zone: .navigationBar)
             }
         } else if let v = self.glassView {
             v.removeFromSuperview()
-            if self.glassRegistered {
-                SGLiquidGlassCoordinator.shared.unregister(node: v)
+            if let proto = self.glassViewProtocol, self.glassRegistered {
+                SGLiquidGlassCoordinator.shared.unregister(node: proto)
                 self.glassRegistered = false
             }
             self.glassView = nil
+            self.glassViewProtocol = nil
         }
     }
 
@@ -191,7 +200,7 @@ public final class NavigationBackgroundNode: ASDisplayNode, SGLiquidGlassContain
 
         self.updateBackgroundBlur(forceKeepBlur: forceKeepBlur)
         // nameless: refresh tint after color change
-        if let v = self.glassView {
+        if let v = self.glassViewProtocol {
             v.tintColorGlass = self.glassTintColor ?? self._color.withAlphaComponent(0.5)
         }
         self.updateGlass()
@@ -211,9 +220,9 @@ public final class NavigationBackgroundNode: ASDisplayNode, SGLiquidGlassContain
             }
         }
         // nameless: sync Liquid Glass frame
-        if let v = self.glassView {
+        if let v = self.glassView, let proto = self.glassViewProtocol {
             transition.updateFrame(view: v, frame: contentFrame)
-            v.cornerRadii = GlassRadii(radius: cornerRadius)
+            proto.cornerRadii = GlassRadii(radius: cornerRadius)
         }
 
         transition.updateCornerRadius(node: self.backgroundNode, cornerRadius: cornerRadius)
@@ -222,7 +231,7 @@ public final class NavigationBackgroundNode: ASDisplayNode, SGLiquidGlassContain
             effectView.clipsToBounds = !cornerRadius.isZero
         }
     }
-    
+
     public func update(size: CGSize, cornerRadius: CGFloat = 0.0, animator: ControlledTransitionAnimator) {
         self.validLayout = (size, cornerRadius)
 
@@ -237,9 +246,9 @@ public final class NavigationBackgroundNode: ASDisplayNode, SGLiquidGlassContain
             }
         }
         // nameless: sync Liquid Glass frame
-        if let v = self.glassView {
+        if let v = self.glassView, let proto = self.glassViewProtocol {
             animator.updateFrame(layer: v.layer, frame: contentFrame, completion: nil)
-            v.cornerRadii = GlassRadii(radius: cornerRadius)
+            proto.cornerRadii = GlassRadii(radius: cornerRadius)
         }
 
         animator.updateCornerRadius(layer: self.backgroundNode.layer, cornerRadius: cornerRadius, completion: nil)

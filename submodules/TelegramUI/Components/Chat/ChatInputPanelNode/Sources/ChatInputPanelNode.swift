@@ -22,8 +22,9 @@ open class ChatInputPanelNode: ASDisplayNode, SGLiquidGlassContainer {
     open var viewForOverlayContent: ChatInputPanelViewForOverlayContent?
 
     // nameless: Liquid Glass overlay for the chat input panel
-    private var glassNode: SGLiquidGlassNode?
+    private var _glassNode: SGLiquidGlassNode?
     private var glassRegistered: Bool = false
+    private var glassSetupDone: Bool = false
 
     open func updateAbsoluteRect(_ rect: CGRect, within containerSize: CGSize, transition: ContainedViewLayoutTransition) {
     }
@@ -56,29 +57,38 @@ open class ChatInputPanelNode: ASDisplayNode, SGLiquidGlassContainer {
         return false
     }
 
-    public override init() {
-        super.init()
-        // nameless: add Liquid Glass overlay to the chat input panel
+    // nameless: lazy Liquid Glass setup. Done in `didLoad` so we don't have to
+    // override `init()` (which could conflict with subclass designated
+    // initializers).
+    private func ensureGlassSetup() {
+        guard !self.glassSetupDone else { return }
+        self.glassSetupDone = true
         let g = SGLiquidGlassNode()
-        g.tintColor = .clear
+        g.glassTintColor = .clear
         g.isVisible = SGLiquidGlassZone.inputPanel.isEnabled
         self.addSubnode(g)
-        self.glassNode = g
+        self._glassNode = g
         if !self.glassRegistered {
             self.glassRegistered = true
             SGLiquidGlassCoordinator.shared.register(node: g, zone: .inputPanel)
         }
     }
 
+    open override func didLoad() {
+        super.didLoad()
+        self.ensureGlassSetup()
+    }
+
     deinit {
-        if let g = self.glassNode, self.glassRegistered {
+        if let g = self._glassNode, self.glassRegistered {
             SGLiquidGlassCoordinator.shared.unregister(node: g)
         }
     }
 
     open override func layout() {
         super.layout()
-        if let g = self.glassNode {
+        self.ensureGlassSetup()
+        if let g = self._glassNode {
             g.frame = self.bounds
             g.isVisible = SGLiquidGlassZone.inputPanel.isEnabled
         }
@@ -86,7 +96,7 @@ open class ChatInputPanelNode: ASDisplayNode, SGLiquidGlassContainer {
 
     public override func updateFrame(_ frame: CGRect, transition: ContainedViewLayoutTransition) {
         super.updateFrame(frame, transition: transition)
-        if let g = self.glassNode {
+        if let g = self._glassNode {
             transition.updateFrame(node: g, frame: self.bounds)
             g.isVisible = SGLiquidGlassZone.inputPanel.isEnabled
         }
@@ -95,7 +105,7 @@ open class ChatInputPanelNode: ASDisplayNode, SGLiquidGlassContainer {
     // MARK: SGLiquidGlassContainer
 
     public func refreshGlass(zone: SGLiquidGlassZone) {
-        guard let g = self.glassNode else { return }
+        guard let g = self._glassNode else { return }
         g.isVisible = SGLiquidGlassZone.inputPanel.isEnabled
         g.refreshGlass(zone: .inputPanel)
     }

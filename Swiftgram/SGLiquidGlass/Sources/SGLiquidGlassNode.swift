@@ -4,9 +4,6 @@ import AsyncDisplayKit
 import Display
 import SGLiquidGlassCore
 
-// Re-export Core symbols so consumers importing only `SGLiquidGlass` see them.
-@_exported import SGLiquidGlassCore
-
 // MARK: - Glass Node (AsyncDisplayKit)
 
 /// ASDisplayNode wrapper around UIVisualEffectView + UIGlassEffect (iOS 26+).
@@ -14,7 +11,7 @@ import SGLiquidGlassCore
 ///
 /// Use:
 ///   let glass = SGLiquidGlassNode()
-///   glass.tintColor = .red
+///   glass.glassTintColor = .red
 ///   glass.cornerRadii = .init(radius: 18)
 ///   addSubnode(glass)
 ///   glass.frame = ...
@@ -26,7 +23,10 @@ public final class SGLiquidGlassNode: ASDisplayNode, SGLiquidGlassContainer {
     private var _isInteractive: Bool = false
     private var _cachedZone: SGLiquidGlassZone = .buttons
 
-    public var tintColor: UIColor {
+    /// Tint color applied to the glass surface. Renamed from `tintColor` to
+    /// avoid clashing with `ASDisplayNode.tintColor` (which is the standard
+    /// UIKit tinting color, semantically unrelated to glass tint).
+    public var glassTintColor: UIColor {
         get { self._tintColor }
         set {
             if self._tintColor != newValue {
@@ -315,12 +315,25 @@ public final class SGLiquidGlassView: UIView, SGLiquidGlassViewProtocol, SGLiqui
 
 /// On first use, register the concrete glass view factory with Core so that
 /// low-level Display module can create one without a circular dep.
-private let _factoryRegistered: Bool = {
-    SGLiquidGlassFactory.shared.create = { SGLiquidGlassView() }
-    return true
-}()
+/// Call `SGLiquidGlass.registerFactory()` once at app launch (e.g. from
+/// `AppDelegate.didFinishLaunchingWithOptions`).
+public extension SGLiquidGlassFactory {
+    /// Registers the concrete `SGLiquidGlassView` as the factory's product.
+    /// Idempotent.
+    @discardableResult
+    func registerConcreteGlassView() -> Bool {
+        if self.create == nil {
+            self.create = { SGLiquidGlassView() }
+        }
+        return true
+    }
+}
 
-@_cdecl("sg_liquidglass_ensure_factory")
-public func sg_liquidglass_ensure_factory() {
-    _ = _factoryRegistered
+/// Convenience: call from AppDelegate to register the Liquid Glass view
+/// factory. Idempotent and thread-safe via dispatch_once-like semantics.
+public enum SGLiquidGlass {
+    @discardableResult
+    public static func registerFactory() -> Bool {
+        return SGLiquidGlassFactory.shared.registerConcreteGlassView()
+    }
 }

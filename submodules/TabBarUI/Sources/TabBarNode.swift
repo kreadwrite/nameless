@@ -387,7 +387,7 @@ class TabBarNode: ASDisplayNode, ASGestureRecognizerDelegate {
 
         // nameless: add Liquid Glass overlay on top of the tab bar background
         let g = SGLiquidGlassNode()
-        g.tintColor = .clear
+        g.glassTintColor = .clear
         g.isVisible = SGLiquidGlassZone.tabBar.isEnabled
         self.addSubnode(g)
         self.glassNode = g

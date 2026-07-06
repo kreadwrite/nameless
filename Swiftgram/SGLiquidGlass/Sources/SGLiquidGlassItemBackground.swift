@@ -50,7 +50,7 @@ public final class SGLiquidGlassItemBackground {
         get { self._tint }
         set {
             self._tint = newValue
-            self.glass.tintColor = SGLiquidGlassZone.settings.isTinted ? newValue.withAlphaComponent(0.45) : .clear
+            self.glass.glassTintColor = SGLiquidGlassZone.settings.isTinted ? newValue.withAlphaComponent(0.45) : .clear
         }
     }
 
@@ -72,7 +72,7 @@ public final class SGLiquidGlassItemBackground {
     public func refresh() {
         let enabled = SGLiquidGlassZone.settings.isEnabled
         self.glass.isVisible = enabled
-        self.glass.tintColor = SGLiquidGlassZone.settings.isTinted ? self._tint.withAlphaComponent(0.45) : .clear
+        self.glass.glassTintColor = SGLiquidGlassZone.settings.isTinted ? self._tint.withAlphaComponent(0.45) : .clear
         self.glass.refreshGlass(zone: .settings)
     }
 }

@@ -342,7 +342,7 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
 
         // nameless: ensure the Liquid Glass factory is registered as early as
         // possible so that low-level Display module can build glass surfaces.
-        sg_liquidglass_ensure_factory()
+        _ = SGLiquidGlass.registerFactory()
         
         let _ = voipTokenPromise.get().start(next: { token in
             self.voipDeviceToken.set(.single(token))
