@@ -303,7 +303,7 @@ public class ItemListTextWithLabelItemNode: ListViewItemNode {
                             }
 // nameless: Liquid Glass for settings blocks
                             if let glassOverlay = strongSelf.backgroundNode.sgGlassOverlay {
-                                glassOverlay.tint = itemBackgroundColor
+                                glassOverlay.tint = item.presentationData.theme.list.itemBlocksBackgroundColor
                                 let bgFrame = CGRect(origin: CGPoint(x: 0.0, y: -min(insets.top, separatorHeight)), size: CGSize(width: params.width, height: contentSize.height + min(insets.top, separatorHeight) + min(insets.bottom, separatorHeight)))
                                 let cornerRadius: CGFloat = itemListHasRoundedBlockLayout(params) ? 11.0 : 0.0
                                 glassOverlay.updateLayout(size: bgFrame.size, cornerRadius: cornerRadius)
