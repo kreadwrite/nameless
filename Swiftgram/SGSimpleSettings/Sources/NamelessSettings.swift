@@ -426,7 +426,6 @@ public extension SGSimpleSettings {
     var namelessRoundProfileButtons: Bool { get { storage.namelessBool(NamelessSettingsKey.roundProfileButtons) } set { storage.set(newValue, forKey: NamelessSettingsKey.roundProfileButtons) } }
     // MARK: Appearance
     var squareAvatars: Bool { get { storage.namelessBool(NamelessSettingsKey.squareAvatars) } set { storage.set(newValue, forKey: NamelessSettingsKey.squareAvatars) } }
-    var compactChatList: Bool { get { storage.namelessBool(NamelessSettingsKey.compactChatList) } set { storage.set(newValue, forKey: NamelessSettingsKey.compactChatList) } }
     var newChatList: Bool { get { storage.namelessBool(NamelessSettingsKey.newChatList) } set { storage.set(newValue, forKey: NamelessSettingsKey.newChatList) } }
     var newChatHeader: Bool { get { storage.namelessBool(NamelessSettingsKey.newChatHeader) } set { storage.set(newValue, forKey: NamelessSettingsKey.newChatHeader) } }
     var blurInsteadGlass: Bool { get { storage.namelessBool(NamelessSettingsKey.blurInsteadGlass) } set { storage.set(newValue, forKey: NamelessSettingsKey.blurInsteadGlass) } }
@@ -452,14 +451,9 @@ public extension SGSimpleSettings {
     var messageTransparent: Bool { get { storage.namelessBool(NamelessSettingsKey.messageTransparent) } set { storage.set(newValue, forKey: NamelessSettingsKey.messageTransparent) } }
     var messageSemiTransparent: Bool { get { storage.namelessBool(NamelessSettingsKey.messageSemiTransparent) } set { storage.set(newValue, forKey: NamelessSettingsKey.messageSemiTransparent) } }
     var messageBlurEffect: Bool { get { storage.namelessBool(NamelessSettingsKey.messageBlurEffect) } set { storage.set(newValue, forKey: NamelessSettingsKey.messageBlurEffect) } }
-    var wideChannelPosts: Bool { get { storage.namelessBool(NamelessSettingsKey.wideChannelPosts) } set { storage.set(newValue, forKey: NamelessSettingsKey.wideChannelPosts) } }
     var particleEffectEnabled: Bool { get { storage.namelessBool(NamelessSettingsKey.particleEffectEnabled) } set { storage.set(newValue, forKey: NamelessSettingsKey.particleEffectEnabled) } }
     var particleEffectSpeed: Double { get { storage.namelessDouble(NamelessSettingsKey.particleEffectSpeed, default: 0.5) } set { storage.set(newValue, forKey: NamelessSettingsKey.particleEffectSpeed) } }
     var particleEffectDensity: Double { get { storage.namelessDouble(NamelessSettingsKey.particleEffectDensity, default: 0.5) } set { storage.set(newValue, forKey: NamelessSettingsKey.particleEffectDensity) } }
-    var stickerSize: Int32 { get { storage.namelessInt32(NamelessSettingsKey.stickerSize, default: 100) } set { storage.set(Int(newValue), forKey: NamelessSettingsKey.stickerSize) } }
-    var accountColorsSaturation: Int32 { get { storage.namelessInt32(NamelessSettingsKey.accountColorsSaturation, default: 100) } set { storage.set(Int(newValue), forKey: NamelessSettingsKey.accountColorsSaturation) } }
-    var outgoingPhotoQuality: Int32 { get { storage.namelessInt32(NamelessSettingsKey.outgoingPhotoQuality, default: 100) } set { storage.set(Int(newValue), forKey: NamelessSettingsKey.outgoingPhotoQuality) } }
-    // MARK: Messages
     var deletedMessageOpacity: Int32 { get { storage.namelessInt32(NamelessSettingsKey.deletedMessageOpacity, default: 37) } set { storage.set(Int(newValue), forKey: NamelessSettingsKey.deletedMessageOpacity) } }
     var showOriginalEdited: Bool { get { storage.namelessBool(NamelessSettingsKey.showOriginalEdited, default: true) } set { storage.set(newValue, forKey: NamelessSettingsKey.showOriginalEdited) } }
     var truncateLongMessages: Bool { get { storage.namelessBool(NamelessSettingsKey.truncateLongMessages, default: true) } set { storage.set(newValue, forKey: NamelessSettingsKey.truncateLongMessages) } }
@@ -487,7 +481,6 @@ public extension SGSimpleSettings {
     var showSeconds: Bool { get { storage.namelessBool(NamelessSettingsKey.showSeconds, default: true) } set { storage.set(newValue, forKey: NamelessSettingsKey.showSeconds) } }
     var showFullViews: Bool { get { storage.namelessBool(NamelessSettingsKey.showFullViews, default: true) } set { storage.set(newValue, forKey: NamelessSettingsKey.showFullViews) } }
     var hidePhoneNumber: Bool { get { storage.namelessBool(NamelessSettingsKey.hidePhoneNumber) } set { storage.set(newValue, forKey: NamelessSettingsKey.hidePhoneNumber) } }
-    var showCreationDate: Bool { get { storage.namelessBool(NamelessSettingsKey.showCreationDate, default: true) } set { storage.set(newValue, forKey: NamelessSettingsKey.showCreationDate) } }
     var visualUsername: Bool { get { storage.namelessBool(NamelessSettingsKey.visualUsername) } set { storage.set(newValue, forKey: NamelessSettingsKey.visualUsername) } }
     var showIfMutualContacts: Bool { get { storage.namelessBool(NamelessSettingsKey.showIfMutualContacts, default: true) } set { storage.set(newValue, forKey: NamelessSettingsKey.showIfMutualContacts) } }
     var showRegistrationDate: Bool { get { storage.namelessBool(NamelessSettingsKey.showRegistrationDate, default: true) } set { storage.set(newValue, forKey: NamelessSettingsKey.showRegistrationDate) } }
