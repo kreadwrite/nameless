@@ -37,3 +37,45 @@ Coverage at the end:
 - All 5 nav-bar / tab-bar / chat-input / profile / inline-button surfaces wired.
 - 7 existing toggle settings (nameless.liquidGlass.*) now actually do something — they were no-ops before this commit.
 - ButtonComponent .glass style now uses GlassBackgroundView (real UIGlassEffect) when liquidGlassEnabled is on, not just the legacy highlight container.
+
+## v3 — 2026-07-22 (капибара)
+
+### Анализ видео (Whitegram 12.8)
+Извлечены все функции: Внешний вид, Уведомления, Liquid Glass, Сообщения, Камера, Режим призрака, Конфид., Инфо, Дополнительно, Разделы меню, Вкладки, Локальные звёзды, Шрифты, Перевод, VirusTotal, Смена голоса, Плеер, Радио, nameless AI, Функции nameless, Плагины.
+
+### Сделано
+
+#### Замена брендинга
+- `Whitegram` → `nameless` везде в коде (PluginMetadata.swift)
+
+#### Ghost Mode — полная реализация
+- **Мастер-тоггл** `ghostModeEnabled` — 1 кнопка активирует ВСЕ статусы сразу через `applyGhostModeAll(enabled:)`
+- **Всегда онлайн** `ghostModeAlwaysOnline` — противоположность скрытию онлайна (взаимоисключающие)
+- **Скрытие прочтения** `disableMessageReadReceipt` — галочки собеседнику не ставятся
+- **Скрытие просмотра сторис** `disableStoryReadReceipt`
+- **Задержка отправки** 12 сек — уже было, доработано
+- **Fake typing** `ghostModeFakeTyping` — показывает «печатает» когда не печатаешь
+- **Анти-спам** `ghostModeAntiSpam` — фильтр входящих
+- **Скрыть просмотр видео/кружка** `ghostModeHideVideoWatch`
+- **Авто-очистка истории** `ghostModeAutoCleanHistory` + `ghostModeAutoCleanDays`
+- Секции в UI: СКРЫТИЕ СТАТУСОВ / ПРОЧТЕНИЕ И ПРОСМОТР / ДОПОЛНИТЕЛЬНО
+- Notification: `nameless.ghostModeDidChange`
+
+#### Таб-бар настроек
+- `NamelessTabSettingsController.swift` — горизонтальный скролл вкладок сверху
+- `NamelessSettingsTabBar` — UIGlassEffect фон, анимированный pill-индикатор, fade/scale анимация
+- `NamelessGhostModeBanner` — стеклянный баннер статуса призрака
+
+#### Liquid Glass компоненты
+- `SGGlassCircleButton` — круглые стеклянные кнопки профиля (как iOS 26)
+- `SGLiquidGlassTabBarBackground` — стекло на нижнем таббаре
+- `SGLiquidGlassNavBarBackground` — стекло на навбаре
+- `SGLiquidGlassReactionsPanelBackground` — стекло на панели реакций
+- `SGLiquidGlassVoiceButtonBackground` — стекло на кнопке голосового
+- `SGLiquidGlassChatSearchBackground` — стекло на строке поиска чатов
+
+#### Новые зоны Liquid Glass
+`reactions`, `stickers`, `calls`, `media`, `chatList`
+
+#### Settings keys
+`ghostMode.fakeTyping`, `ghostMode.antiSpam`, `ghostMode.hideVideoWatch`, `ghostMode.autoCleanHistory`, `ghostMode.autoCleanDays`, `ghostMode.alwaysOnline`

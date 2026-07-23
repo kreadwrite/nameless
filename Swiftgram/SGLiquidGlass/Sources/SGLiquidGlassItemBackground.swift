@@ -7,14 +7,10 @@ import SGLiquidGlassCore
 // MARK: - Per-item glass overlay
 
 /// Lightweight overlay that turns any flat `ASDisplayNode` background into a
-/// Liquid Glass surface. Used by `ItemListUI` items (Switch, Action,
-/// Disclosure, Checkbox, etc.) to give settings screens the iOS 26 glass look.
-///
-/// Usage:
-///   let glass = SGLiquidGlassItemBackground()
-///   glass.attach(to: backgroundNode)
-///   // when item is updated:
-///   glass.updateLayout(size: ...)
+/// Liquid Glass surface. Used by `ItemListUI` items to give settings screens
+/// the iOS 26 glass look. Bug fixes in v2:
+/// - effectView background is always `.clear` (no white stripes)
+/// - frame is set AFTER insertion so mask has non-zero bounds
 public final class SGLiquidGlassItemBackground {
     private weak var host: ASDisplayNode?
     private let glass: SGLiquidGlassNode
@@ -29,7 +25,6 @@ public final class SGLiquidGlassItemBackground {
     public func attach(to node: ASDisplayNode) {
         self.host = node
         node.addSubnode(self.glass)
-        self.glass.frame = node.bounds
         if !self.registered {
             self.registered = true
             SGLiquidGlassCoordinator.shared.register(node: self.glass, zone: .settings)
@@ -50,7 +45,9 @@ public final class SGLiquidGlassItemBackground {
         get { self._tint }
         set {
             self._tint = newValue
-            self.glass.glassTintColor = SGLiquidGlassZone.settings.isTinted ? newValue.withAlphaComponent(0.45) : .clear
+            self.glass.glassTintColor = SGLiquidGlassZone.settings.isTinted
+                ? newValue.withAlphaComponent(0.45)
+                : .clear
         }
     }
 
@@ -63,6 +60,7 @@ public final class SGLiquidGlassItemBackground {
     }
 
     public func updateLayout(size: CGSize, cornerRadius: CGFloat = 0) {
+        // Set frame BEFORE applying mask so mask bounds are non-zero (stripe fix)
         self.glass.frame = CGRect(origin: .zero, size: size)
         if cornerRadius > 0 {
             self.glass.glassCornerRadii = GlassRadii(radius: cornerRadius)
@@ -72,7 +70,9 @@ public final class SGLiquidGlassItemBackground {
     public func refresh() {
         let enabled = SGLiquidGlassZone.settings.isEnabled
         self.glass.glassVisible = enabled
-        self.glass.glassTintColor = SGLiquidGlassZone.settings.isTinted ? self._tint.withAlphaComponent(0.45) : .clear
+        self.glass.glassTintColor = SGLiquidGlassZone.settings.isTinted
+            ? self._tint.withAlphaComponent(0.45)
+            : .clear
         self.glass.refreshGlass(zone: .settings)
     }
 }
@@ -82,8 +82,6 @@ public final class SGLiquidGlassItemBackground {
 private var sgGlassOverlayKey: UInt8 = 0
 
 public extension ASDisplayNode {
-    /// Returns (lazily creating) the Liquid Glass overlay attached to this node.
-    /// Returns `nil` if Liquid Glass is disabled in settings.
     var sgGlassOverlay: SGLiquidGlassItemBackground? {
         if SGLiquidGlassZone.settings.isEnabled {
             if let existing = objc_getAssociatedObject(self, &sgGlassOverlayKey) as? SGLiquidGlassItemBackground {
@@ -98,7 +96,6 @@ public extension ASDisplayNode {
         }
     }
 
-    /// Force-refresh any glass overlay attached to this node.
     func sgRefreshGlass() {
         if let overlay = objc_getAssociatedObject(self, &sgGlassOverlayKey) as? SGLiquidGlassItemBackground {
             overlay.refresh()

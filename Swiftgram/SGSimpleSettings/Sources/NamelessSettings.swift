@@ -51,6 +51,14 @@ private enum NamelessSettingsKey {
     static let enableOnlineStatusRecording = "nameless.enableOnlineStatusRecording"
     static let onlineStatusRecordingIntervalMinutes = "nameless.onlineStatusRecordingIntervalMinutes"
     static let ghostModeMessageSendDelaySeconds = "nameless.ghostModeMessageSendDelaySeconds"
+    static let ghostModeEnabled = "nameless.ghostMode.enabled"
+    static let ghostModeAllStatuses = "nameless.ghostMode.allStatuses"
+    static let ghostModeFakeTyping = "nameless.ghostMode.fakeTyping"
+    static let ghostModeAntiSpam = "nameless.ghostMode.antiSpam"
+    static let ghostModeHideVideoWatch = "nameless.ghostMode.hideVideoWatch"
+    static let ghostModeAutoCleanHistory = "nameless.ghostMode.autoCleanHistory"
+    static let ghostModeAutoCleanDays = "nameless.ghostMode.autoCleanDays"
+    static let ghostModeAlwaysOnline = "nameless.ghostMode.alwaysOnline"
     static let giftIdEnabled = "nameless.giftIdEnabled"
     static let fakeProfileEnabled = "nameless.fakeProfileEnabled"
     static let fakeProfileTargetUserId = "nameless.fakeProfileTargetUserId"
@@ -83,15 +91,105 @@ private enum NamelessSettingsKey {
     static let unlockedFeatureKeys = "nameless.unlockedFeatureKeys"
 
     static let liquidGlassMessages = "nameless.liquidGlass.messages"
+    static let liquidGlassOutgoingMessages = "nameless.liquidGlass.outgoingMessages"
     static let liquidGlassSettings = "nameless.liquidGlass.settings"
     static let liquidGlassProfile = "nameless.liquidGlass.profile"
     static let liquidGlassProfileGifts = "nameless.liquidGlass.profileGifts"
     static let liquidGlassInlineButtons = "nameless.liquidGlass.inlineButtons"
     static let liquidGlassTinting = "nameless.liquidGlass.tinting"
+    static let liquidGlassPopup = "nameless.liquidGlass.popup"
+    static let liquidGlassContextMenu = "nameless.liquidGlass.contextMenu"
+    static let liquidGlassSearch = "nameless.liquidGlass.search"
+    static let liquidGlassIntensity = "nameless.liquidGlass.intensity"
+    static let liquidGlassFadeAnimation = "nameless.liquidGlass.fadeAnimation"
+    static let liquidGlassReactions = "nameless.liquidGlass.reactions"
+    static let liquidGlassStickers = "nameless.liquidGlass.stickers"
+    static let liquidGlassCalls = "nameless.liquidGlass.calls"
+    static let liquidGlassMedia = "nameless.liquidGlass.media"
+    static let liquidGlassChatList = "nameless.liquidGlass.chatList"
     static let videoBackgroundEnabled = "nameless.videoBackground.enabled"
     static let videoBackgroundPath = "nameless.videoBackground.path"
     static let musicCardStyle = "nameless.musicCardStyle"
     static let roundProfileButtons = "nameless.roundProfileButtons"
+    // MARK: - Appearance (Внешний вид)
+    static let squareAvatars = "nameless.squareAvatars"
+    static let compactChatList = "nameless.compactChatList"
+    static let newChatList = "nameless.newChatList"
+    static let newChatHeader = "nameless.newChatHeader"
+    static let blurInsteadGlass = "nameless.blurInsteadGlass"
+    static let oledMode = "nameless.oledMode"
+    static let customSettingsIcons = "nameless.customSettingsIcons"
+    static let telegramAppIcons = "nameless.telegramAppIcons"
+    static let swipeChatOptions = "nameless.swipeChatOptions"
+    static let hideVoiceRecordButton = "nameless.hideVoiceRecordButton"
+    static let foldersAtBottom = "nameless.foldersAtBottom"
+    static let ramUsageUnderClock = "nameless.ramUsageUnderClock"
+    static let chatListTitle = "nameless.chatListTitle"
+    static let premiumStatusInHeader = "nameless.premiumStatusInHeader"
+    static let searchButtonInChatList = "nameless.searchButtonInChatList"
+    static let unlimitedPinnedChats = "nameless.unlimitedPinnedChats"
+    static let newAccountSwitcher = "nameless.newAccountSwitcher"
+    static let profileColorBackground = "nameless.profileColorBackground"
+    static let profileAvatarBlur = "nameless.profileAvatarBlur"
+    static let profileAvatarBlurMinimal = "nameless.profileAvatarBlurMinimal"
+    static let profileAvatarBlurTinting = "nameless.profileAvatarBlurTinting"
+    static let musicAlbumBlur = "nameless.musicAlbumBlur"
+    static let musicPlayerEffect = "nameless.musicPlayerEffect"
+    static let badgeIslandColor = "nameless.badgeIslandColor"
+    static let messageOutline = "nameless.messageOutline"
+    static let messageTransparent = "nameless.messageTransparent"
+    static let messageSemiTransparent = "nameless.messageSemiTransparent"
+    static let messageBlurEffect = "nameless.messageBlurEffect"
+    static let wideChannelPosts = "nameless.wideChannelPosts"
+    static let particleEffectEnabled = "nameless.particleEffect.enabled"
+    static let particleEffectSpeed = "nameless.particleEffect.speed"
+    static let particleEffectDensity = "nameless.particleEffect.density"
+    static let stickerSize = "nameless.stickerSize"
+    static let accountColorsSaturation = "nameless.accountColorsSaturation"
+    // MARK: - Messages (Сообщения)
+    static let deletedMessageOpacity = "nameless.deletedMessageOpacity"
+    static let showOriginalEdited = "nameless.showOriginalEdited"
+    static let truncateLongMessages = "nameless.truncateLongMessages"
+    static let saveChatHistory = "nameless.saveChatHistory"
+    static let saveOnceMedia = "nameless.saveOnceMedia"
+    static let noAutoNextVoice = "nameless.noAutoNextVoice"
+    static let semiTransparentWhenMentioned = "nameless.semiTransparentWhenMentioned"
+    static let charCounterInput = "nameless.charCounterInput"
+    static let charCounterInChat = "nameless.charCounterInChat"
+    static let hideMyDeleted = "nameless.hideMyDeleted"
+    static let hideMyEdited = "nameless.hideMyEdited"
+    static let hideBotEdited = "nameless.hideBotEdited"
+    static let hideBotDeleted = "nameless.hideBotDeleted"
+    static let doubleTapToEdit = "nameless.doubleTapToEdit"
+    // MARK: - Camera (Камера)
+    static let defaultCameraBack = "nameless.camera.defaultBack"
+    static let useDeviceMicrophone = "nameless.camera.useDeviceMic"
+    static let sendHDPhoto = "nameless.camera.sendHDPhoto"
+    static let jpegQuality = "nameless.camera.jpegQuality"
+    static let rememberLastCamera = "nameless.camera.rememberLast"
+    static let staticZoomRecording = "nameless.camera.staticZoom"
+    static let alwaysSendHD = "nameless.camera.alwaysSendHD"
+    // MARK: - Info (Информация)
+    static let showIdAndDC = "nameless.showIdAndDC"
+    static let showSeconds = "nameless.showSeconds"
+    static let showFullViews = "nameless.showFullViews"
+    static let hidePhoneNumber = "nameless.hidePhoneNumber"
+    static let showCreationDate = "nameless.showCreationDate"
+    static let visualUsername = "nameless.visualUsername"
+    static let showIfMutualContacts = "nameless.showIfMutualContacts"
+    static let showRegistrationDate = "nameless.showRegistrationDate"
+    // MARK: - Additional (Дополнительно)
+    static let vibrationEnabled = "nameless.vibration.enabled"
+    static let reactionsEnabled = "nameless.reactions.enabled"
+    static let speedBoostEnabled = "nameless.speedBoost.enabled"
+    // MARK: - Notifications
+    static let localNotificationsEnabled = "nameless.notifications.local"
+    // MARK: - Privacy/Confidentiality
+    static let bypassProtectedContent = "nameless.bypassProtectedContent"
+    static let removeSpoilersEverywhere = "nameless.removeSpoilersEverywhere"
+    static let antiScamEnabled = "nameless.antiScam"
+    static let warnBeforeCall = "nameless.warnBeforeCall"
+    static let outgoingPhotoQuality = "nameless.outgoingPhotoQuality"
 }
 
 private enum NamelessRollbackStorage {
@@ -238,6 +336,41 @@ public extension SGSimpleSettings {
     var enableOnlineStatusRecording: Bool { get { storage.namelessBool(NamelessSettingsKey.enableOnlineStatusRecording) } set { storage.set(newValue, forKey: NamelessSettingsKey.enableOnlineStatusRecording) } }
     var onlineStatusRecordingIntervalMinutes: Int32 { get { storage.namelessInt32(NamelessSettingsKey.onlineStatusRecordingIntervalMinutes, default: 10) } set { storage.set(Int(newValue), forKey: NamelessSettingsKey.onlineStatusRecordingIntervalMinutes) } }
     var ghostModeMessageSendDelaySeconds: Int32 { get { storage.namelessInt32(NamelessSettingsKey.ghostModeMessageSendDelaySeconds) } set { storage.set(Int(newValue), forKey: NamelessSettingsKey.ghostModeMessageSendDelaySeconds) } }
+    /// Master ghost mode toggle — when ON, enables ALL individual ghost sub-settings at once
+    var ghostModeEnabled: Bool { get { storage.namelessBool(NamelessSettingsKey.ghostModeEnabled) } set { storage.set(newValue, forKey: NamelessSettingsKey.ghostModeEnabled) } }
+    /// Fake typing — show "typing..." to contact even when not typing
+    var ghostModeFakeTyping: Bool { get { storage.namelessBool(NamelessSettingsKey.ghostModeFakeTyping) } set { storage.set(newValue, forKey: NamelessSettingsKey.ghostModeFakeTyping) } }
+    /// Anti-spam: auto-delete messages from non-contacts
+    var ghostModeAntiSpam: Bool { get { storage.namelessBool(NamelessSettingsKey.ghostModeAntiSpam) } set { storage.set(newValue, forKey: NamelessSettingsKey.ghostModeAntiSpam) } }
+    /// Hide that you are watching a video/circle
+    var ghostModeHideVideoWatch: Bool { get { storage.namelessBool(NamelessSettingsKey.ghostModeHideVideoWatch) } set { storage.set(newValue, forKey: NamelessSettingsKey.ghostModeHideVideoWatch) } }
+    /// Auto-clean history older than N days
+    var ghostModeAutoCleanHistory: Bool { get { storage.namelessBool(NamelessSettingsKey.ghostModeAutoCleanHistory) } set { storage.set(newValue, forKey: NamelessSettingsKey.ghostModeAutoCleanHistory) } }
+    var ghostModeAutoCleanDays: Int32 { get { storage.namelessInt32(NamelessSettingsKey.ghostModeAutoCleanDays, default: 30) } set { storage.set(Int(newValue), forKey: NamelessSettingsKey.ghostModeAutoCleanDays) } }
+    /// Always show online status (overrides disableOnlineStatus)
+    var ghostModeAlwaysOnline: Bool { get { storage.namelessBool(NamelessSettingsKey.ghostModeAlwaysOnline) } set { storage.set(newValue, forKey: NamelessSettingsKey.ghostModeAlwaysOnline) } }
+    /// Convenience: activate every "disable status" flag in one shot
+    func applyGhostModeAll(enabled: Bool) {
+        disableOnlineStatus = enabled
+        disableTypingStatus = enabled
+        disableVCMessageRecordingStatus = enabled
+        disableUploadingVideoStatus = enabled
+        disableRecordingVideoStatus = enabled
+        disableUploadingPhotoStatus = enabled
+        disableUploadingFileStatus = enabled
+        disableChoosingLocationStatus = enabled
+        disableChoosingContactStatus = enabled
+        disablePlayingGameStatus = enabled
+        disableRecordingRoundVideoStatus = enabled
+        disableUploadingRoundVideoStatus = enabled
+        disableSpeakingInGroupCallStatus = enabled
+        disableChoosingStickerStatus = enabled
+        disableEmojiInteractionStatus = enabled
+        disableEmojiAcknowledgementStatus = enabled
+        disableMessageReadReceipt = enabled
+        disableStoryReadReceipt = enabled
+        ghostModeHideVideoWatch = enabled
+    }
     var giftIdEnabled: Bool { get { storage.namelessBool(NamelessSettingsKey.giftIdEnabled) } set { storage.set(newValue, forKey: NamelessSettingsKey.giftIdEnabled) } }
     var fakeProfileEnabled: Bool { get { storage.namelessBool(NamelessSettingsKey.fakeProfileEnabled) } set { storage.set(newValue, forKey: NamelessSettingsKey.fakeProfileEnabled) } }
     var fakeProfileTargetUserId: Int64 { get { storage.namelessInt64(NamelessSettingsKey.fakeProfileTargetUserId) } set { storage.set(Int(newValue), forKey: NamelessSettingsKey.fakeProfileTargetUserId) } }
@@ -269,15 +402,105 @@ public extension SGSimpleSettings {
     var currentAccountPeerId: String { get { storage.namelessString(NamelessSettingsKey.currentAccountPeerId) } set { storage.set(newValue, forKey: NamelessSettingsKey.currentAccountPeerId) } }
 
     var namelessLiquidGlassMessages: Bool { get { storage.namelessBool(NamelessSettingsKey.liquidGlassMessages, default: true) } set { storage.set(newValue, forKey: NamelessSettingsKey.liquidGlassMessages) } }
+    var namelessLiquidGlassOutgoingMessages: Bool { get { storage.namelessBool(NamelessSettingsKey.liquidGlassOutgoingMessages, default: true) } set { storage.set(newValue, forKey: NamelessSettingsKey.liquidGlassOutgoingMessages) } }
     var namelessLiquidGlassSettings: Bool { get { storage.namelessBool(NamelessSettingsKey.liquidGlassSettings, default: true) } set { storage.set(newValue, forKey: NamelessSettingsKey.liquidGlassSettings) } }
     var namelessLiquidGlassProfile: Bool { get { storage.namelessBool(NamelessSettingsKey.liquidGlassProfile, default: true) } set { storage.set(newValue, forKey: NamelessSettingsKey.liquidGlassProfile) } }
     var namelessLiquidGlassProfileGifts: Bool { get { storage.namelessBool(NamelessSettingsKey.liquidGlassProfileGifts, default: true) } set { storage.set(newValue, forKey: NamelessSettingsKey.liquidGlassProfileGifts) } }
     var namelessLiquidGlassInlineButtons: Bool { get { storage.namelessBool(NamelessSettingsKey.liquidGlassInlineButtons, default: true) } set { storage.set(newValue, forKey: NamelessSettingsKey.liquidGlassInlineButtons) } }
     var namelessLiquidGlassTinting: Bool { get { storage.namelessBool(NamelessSettingsKey.liquidGlassTinting) } set { storage.set(newValue, forKey: NamelessSettingsKey.liquidGlassTinting) } }
+    var namelessLiquidGlassPopup: Bool { get { storage.namelessBool(NamelessSettingsKey.liquidGlassPopup, default: true) } set { storage.set(newValue, forKey: NamelessSettingsKey.liquidGlassPopup) } }
+    var namelessLiquidGlassContextMenu: Bool { get { storage.namelessBool(NamelessSettingsKey.liquidGlassContextMenu, default: true) } set { storage.set(newValue, forKey: NamelessSettingsKey.liquidGlassContextMenu) } }
+    var namelessLiquidGlassSearch: Bool { get { storage.namelessBool(NamelessSettingsKey.liquidGlassSearch, default: true) } set { storage.set(newValue, forKey: NamelessSettingsKey.liquidGlassSearch) } }
+    /// Glass intensity 0.0 (off) … 1.0 (full). Default = 1.0
+    var namelessLiquidGlassIntensity: Double { get { storage.namelessDouble(NamelessSettingsKey.liquidGlassIntensity, default: 1.0) } set { storage.set(newValue, forKey: NamelessSettingsKey.liquidGlassIntensity) } }
+    /// Fade in/out animation when toggling glass on/off
+    var namelessLiquidGlassFadeAnimation: Bool { get { storage.namelessBool(NamelessSettingsKey.liquidGlassFadeAnimation, default: true) } set { storage.set(newValue, forKey: NamelessSettingsKey.liquidGlassFadeAnimation) } }
+    var namelessLiquidGlassReactions: Bool { get { storage.namelessBool(NamelessSettingsKey.liquidGlassReactions, default: true) } set { storage.set(newValue, forKey: NamelessSettingsKey.liquidGlassReactions) } }
+    var namelessLiquidGlassStickers: Bool { get { storage.namelessBool(NamelessSettingsKey.liquidGlassStickers, default: true) } set { storage.set(newValue, forKey: NamelessSettingsKey.liquidGlassStickers) } }
+    var namelessLiquidGlassCalls: Bool { get { storage.namelessBool(NamelessSettingsKey.liquidGlassCalls, default: true) } set { storage.set(newValue, forKey: NamelessSettingsKey.liquidGlassCalls) } }
+    var namelessLiquidGlassMedia: Bool { get { storage.namelessBool(NamelessSettingsKey.liquidGlassMedia, default: true) } set { storage.set(newValue, forKey: NamelessSettingsKey.liquidGlassMedia) } }
+    var namelessLiquidGlassChatList: Bool { get { storage.namelessBool(NamelessSettingsKey.liquidGlassChatList, default: true) } set { storage.set(newValue, forKey: NamelessSettingsKey.liquidGlassChatList) } }
     var namelessVideoBackgroundEnabled: Bool { get { storage.namelessBool(NamelessSettingsKey.videoBackgroundEnabled) } set { storage.set(newValue, forKey: NamelessSettingsKey.videoBackgroundEnabled) } }
     var namelessVideoBackgroundPath: String { get { storage.namelessString(NamelessSettingsKey.videoBackgroundPath) } set { storage.set(newValue, forKey: NamelessSettingsKey.videoBackgroundPath) } }
     var namelessMusicCardStyle: Bool { get { storage.namelessBool(NamelessSettingsKey.musicCardStyle) } set { storage.set(newValue, forKey: NamelessSettingsKey.musicCardStyle) } }
     var namelessRoundProfileButtons: Bool { get { storage.namelessBool(NamelessSettingsKey.roundProfileButtons) } set { storage.set(newValue, forKey: NamelessSettingsKey.roundProfileButtons) } }
+    // MARK: Appearance
+    var squareAvatars: Bool { get { storage.namelessBool(NamelessSettingsKey.squareAvatars) } set { storage.set(newValue, forKey: NamelessSettingsKey.squareAvatars) } }
+    var compactChatList: Bool { get { storage.namelessBool(NamelessSettingsKey.compactChatList) } set { storage.set(newValue, forKey: NamelessSettingsKey.compactChatList) } }
+    var newChatList: Bool { get { storage.namelessBool(NamelessSettingsKey.newChatList) } set { storage.set(newValue, forKey: NamelessSettingsKey.newChatList) } }
+    var newChatHeader: Bool { get { storage.namelessBool(NamelessSettingsKey.newChatHeader) } set { storage.set(newValue, forKey: NamelessSettingsKey.newChatHeader) } }
+    var blurInsteadGlass: Bool { get { storage.namelessBool(NamelessSettingsKey.blurInsteadGlass) } set { storage.set(newValue, forKey: NamelessSettingsKey.blurInsteadGlass) } }
+    var oledMode: Bool { get { storage.namelessBool(NamelessSettingsKey.oledMode) } set { storage.set(newValue, forKey: NamelessSettingsKey.oledMode) } }
+    var customSettingsIcons: Bool { get { storage.namelessBool(NamelessSettingsKey.customSettingsIcons) } set { storage.set(newValue, forKey: NamelessSettingsKey.customSettingsIcons) } }
+    var telegramAppIcons: Bool { get { storage.namelessBool(NamelessSettingsKey.telegramAppIcons, default: true) } set { storage.set(newValue, forKey: NamelessSettingsKey.telegramAppIcons) } }
+    var swipeChatOptions: Bool { get { storage.namelessBool(NamelessSettingsKey.swipeChatOptions) } set { storage.set(newValue, forKey: NamelessSettingsKey.swipeChatOptions) } }
+    var hideVoiceRecordButton: Bool { get { storage.namelessBool(NamelessSettingsKey.hideVoiceRecordButton) } set { storage.set(newValue, forKey: NamelessSettingsKey.hideVoiceRecordButton) } }
+    var foldersAtBottom: Bool { get { storage.namelessBool(NamelessSettingsKey.foldersAtBottom) } set { storage.set(newValue, forKey: NamelessSettingsKey.foldersAtBottom) } }
+    var ramUsageUnderClock: Bool { get { storage.namelessBool(NamelessSettingsKey.ramUsageUnderClock) } set { storage.set(newValue, forKey: NamelessSettingsKey.ramUsageUnderClock) } }
+    var chatListTitle: Bool { get { storage.namelessBool(NamelessSettingsKey.chatListTitle) } set { storage.set(newValue, forKey: NamelessSettingsKey.chatListTitle) } }
+    var premiumStatusInHeader: Bool { get { storage.namelessBool(NamelessSettingsKey.premiumStatusInHeader, default: true) } set { storage.set(newValue, forKey: NamelessSettingsKey.premiumStatusInHeader) } }
+    var searchButtonInChatList: Bool { get { storage.namelessBool(NamelessSettingsKey.searchButtonInChatList) } set { storage.set(newValue, forKey: NamelessSettingsKey.searchButtonInChatList) } }
+    var unlimitedPinnedChats: Bool { get { storage.namelessBool(NamelessSettingsKey.unlimitedPinnedChats, default: true) } set { storage.set(newValue, forKey: NamelessSettingsKey.unlimitedPinnedChats) } }
+    var newAccountSwitcher: Bool { get { storage.namelessBool(NamelessSettingsKey.newAccountSwitcher) } set { storage.set(newValue, forKey: NamelessSettingsKey.newAccountSwitcher) } }
+    var profileColorBackground: Bool { get { storage.namelessBool(NamelessSettingsKey.profileColorBackground, default: true) } set { storage.set(newValue, forKey: NamelessSettingsKey.profileColorBackground) } }
+    var profileAvatarBlur: Bool { get { storage.namelessBool(NamelessSettingsKey.profileAvatarBlur, default: true) } set { storage.set(newValue, forKey: NamelessSettingsKey.profileAvatarBlur) } }
+    var profileAvatarBlurMinimal: Bool { get { storage.namelessBool(NamelessSettingsKey.profileAvatarBlurMinimal, default: true) } set { storage.set(newValue, forKey: NamelessSettingsKey.profileAvatarBlurMinimal) } }
+    var profileAvatarBlurTinting: Bool { get { storage.namelessBool(NamelessSettingsKey.profileAvatarBlurTinting) } set { storage.set(newValue, forKey: NamelessSettingsKey.profileAvatarBlurTinting) } }
+    var musicAlbumBlur: Bool { get { storage.namelessBool(NamelessSettingsKey.musicAlbumBlur, default: true) } set { storage.set(newValue, forKey: NamelessSettingsKey.musicAlbumBlur) } }
+    var musicPlayerEffect: Bool { get { storage.namelessBool(NamelessSettingsKey.musicPlayerEffect, default: true) } set { storage.set(newValue, forKey: NamelessSettingsKey.musicPlayerEffect) } }
+    var messageOutline: Bool { get { storage.namelessBool(NamelessSettingsKey.messageOutline) } set { storage.set(newValue, forKey: NamelessSettingsKey.messageOutline) } }
+    var messageTransparent: Bool { get { storage.namelessBool(NamelessSettingsKey.messageTransparent) } set { storage.set(newValue, forKey: NamelessSettingsKey.messageTransparent) } }
+    var messageSemiTransparent: Bool { get { storage.namelessBool(NamelessSettingsKey.messageSemiTransparent) } set { storage.set(newValue, forKey: NamelessSettingsKey.messageSemiTransparent) } }
+    var messageBlurEffect: Bool { get { storage.namelessBool(NamelessSettingsKey.messageBlurEffect) } set { storage.set(newValue, forKey: NamelessSettingsKey.messageBlurEffect) } }
+    var wideChannelPosts: Bool { get { storage.namelessBool(NamelessSettingsKey.wideChannelPosts) } set { storage.set(newValue, forKey: NamelessSettingsKey.wideChannelPosts) } }
+    var particleEffectEnabled: Bool { get { storage.namelessBool(NamelessSettingsKey.particleEffectEnabled) } set { storage.set(newValue, forKey: NamelessSettingsKey.particleEffectEnabled) } }
+    var particleEffectSpeed: Double { get { storage.namelessDouble(NamelessSettingsKey.particleEffectSpeed, default: 0.5) } set { storage.set(newValue, forKey: NamelessSettingsKey.particleEffectSpeed) } }
+    var particleEffectDensity: Double { get { storage.namelessDouble(NamelessSettingsKey.particleEffectDensity, default: 0.5) } set { storage.set(newValue, forKey: NamelessSettingsKey.particleEffectDensity) } }
+    var stickerSize: Int32 { get { storage.namelessInt32(NamelessSettingsKey.stickerSize, default: 100) } set { storage.set(Int(newValue), forKey: NamelessSettingsKey.stickerSize) } }
+    var accountColorsSaturation: Int32 { get { storage.namelessInt32(NamelessSettingsKey.accountColorsSaturation, default: 100) } set { storage.set(Int(newValue), forKey: NamelessSettingsKey.accountColorsSaturation) } }
+    var outgoingPhotoQuality: Int32 { get { storage.namelessInt32(NamelessSettingsKey.outgoingPhotoQuality, default: 100) } set { storage.set(Int(newValue), forKey: NamelessSettingsKey.outgoingPhotoQuality) } }
+    // MARK: Messages
+    var deletedMessageOpacity: Int32 { get { storage.namelessInt32(NamelessSettingsKey.deletedMessageOpacity, default: 37) } set { storage.set(Int(newValue), forKey: NamelessSettingsKey.deletedMessageOpacity) } }
+    var showOriginalEdited: Bool { get { storage.namelessBool(NamelessSettingsKey.showOriginalEdited, default: true) } set { storage.set(newValue, forKey: NamelessSettingsKey.showOriginalEdited) } }
+    var truncateLongMessages: Bool { get { storage.namelessBool(NamelessSettingsKey.truncateLongMessages, default: true) } set { storage.set(newValue, forKey: NamelessSettingsKey.truncateLongMessages) } }
+    var saveChatHistory: Bool { get { storage.namelessBool(NamelessSettingsKey.saveChatHistory, default: true) } set { storage.set(newValue, forKey: NamelessSettingsKey.saveChatHistory) } }
+    var saveOnceMedia: Bool { get { storage.namelessBool(NamelessSettingsKey.saveOnceMedia, default: true) } set { storage.set(newValue, forKey: NamelessSettingsKey.saveOnceMedia) } }
+    var noAutoNextVoice: Bool { get { storage.namelessBool(NamelessSettingsKey.noAutoNextVoice, default: true) } set { storage.set(newValue, forKey: NamelessSettingsKey.noAutoNextVoice) } }
+    var semiTransparentWhenMentioned: Bool { get { storage.namelessBool(NamelessSettingsKey.semiTransparentWhenMentioned, default: true) } set { storage.set(newValue, forKey: NamelessSettingsKey.semiTransparentWhenMentioned) } }
+    var charCounterInput: Bool { get { storage.namelessBool(NamelessSettingsKey.charCounterInput, default: true) } set { storage.set(newValue, forKey: NamelessSettingsKey.charCounterInput) } }
+    var charCounterInChat: Bool { get { storage.namelessBool(NamelessSettingsKey.charCounterInChat, default: true) } set { storage.set(newValue, forKey: NamelessSettingsKey.charCounterInChat) } }
+    var hideMyDeleted: Bool { get { storage.namelessBool(NamelessSettingsKey.hideMyDeleted, default: true) } set { storage.set(newValue, forKey: NamelessSettingsKey.hideMyDeleted) } }
+    var hideMyEdited: Bool { get { storage.namelessBool(NamelessSettingsKey.hideMyEdited, default: true) } set { storage.set(newValue, forKey: NamelessSettingsKey.hideMyEdited) } }
+    var hideBotEdited: Bool { get { storage.namelessBool(NamelessSettingsKey.hideBotEdited, default: true) } set { storage.set(newValue, forKey: NamelessSettingsKey.hideBotEdited) } }
+    var hideBotDeleted: Bool { get { storage.namelessBool(NamelessSettingsKey.hideBotDeleted, default: true) } set { storage.set(newValue, forKey: NamelessSettingsKey.hideBotDeleted) } }
+    var doubleTapToEdit: Bool { get { storage.namelessBool(NamelessSettingsKey.doubleTapToEdit) } set { storage.set(newValue, forKey: NamelessSettingsKey.doubleTapToEdit) } }
+    // MARK: Camera
+    var cameraDefaultBack: Bool { get { storage.namelessBool(NamelessSettingsKey.defaultCameraBack) } set { storage.set(newValue, forKey: NamelessSettingsKey.defaultCameraBack) } }
+    var cameraUseDeviceMicrophone: Bool { get { storage.namelessBool(NamelessSettingsKey.useDeviceMicrophone) } set { storage.set(newValue, forKey: NamelessSettingsKey.useDeviceMicrophone) } }
+    var cameraSendHDPhoto: Bool { get { storage.namelessBool(NamelessSettingsKey.sendHDPhoto) } set { storage.set(newValue, forKey: NamelessSettingsKey.sendHDPhoto) } }
+    var cameraJpegQuality: Int32 { get { storage.namelessInt32(NamelessSettingsKey.jpegQuality, default: 70) } set { storage.set(Int(newValue), forKey: NamelessSettingsKey.jpegQuality) } }
+    var cameraRememberLast: Bool { get { storage.namelessBool(NamelessSettingsKey.rememberLastCamera) } set { storage.set(newValue, forKey: NamelessSettingsKey.rememberLastCamera) } }
+    var cameraStaticZoom: Bool { get { storage.namelessBool(NamelessSettingsKey.staticZoomRecording) } set { storage.set(newValue, forKey: NamelessSettingsKey.staticZoomRecording) } }
+    var cameraAlwaysSendHD: Bool { get { storage.namelessBool(NamelessSettingsKey.alwaysSendHD, default: true) } set { storage.set(newValue, forKey: NamelessSettingsKey.alwaysSendHD) } }
+    // MARK: Info
+    var showIdAndDC: Bool { get { storage.namelessBool(NamelessSettingsKey.showIdAndDC, default: true) } set { storage.set(newValue, forKey: NamelessSettingsKey.showIdAndDC) } }
+    var showSeconds: Bool { get { storage.namelessBool(NamelessSettingsKey.showSeconds, default: true) } set { storage.set(newValue, forKey: NamelessSettingsKey.showSeconds) } }
+    var showFullViews: Bool { get { storage.namelessBool(NamelessSettingsKey.showFullViews, default: true) } set { storage.set(newValue, forKey: NamelessSettingsKey.showFullViews) } }
+    var hidePhoneNumber: Bool { get { storage.namelessBool(NamelessSettingsKey.hidePhoneNumber) } set { storage.set(newValue, forKey: NamelessSettingsKey.hidePhoneNumber) } }
+    var showCreationDate: Bool { get { storage.namelessBool(NamelessSettingsKey.showCreationDate, default: true) } set { storage.set(newValue, forKey: NamelessSettingsKey.showCreationDate) } }
+    var visualUsername: Bool { get { storage.namelessBool(NamelessSettingsKey.visualUsername) } set { storage.set(newValue, forKey: NamelessSettingsKey.visualUsername) } }
+    var showIfMutualContacts: Bool { get { storage.namelessBool(NamelessSettingsKey.showIfMutualContacts, default: true) } set { storage.set(newValue, forKey: NamelessSettingsKey.showIfMutualContacts) } }
+    var showRegistrationDate: Bool { get { storage.namelessBool(NamelessSettingsKey.showRegistrationDate, default: true) } set { storage.set(newValue, forKey: NamelessSettingsKey.showRegistrationDate) } }
+    // MARK: Additional
+    var vibrationEnabled: Bool { get { storage.namelessBool(NamelessSettingsKey.vibrationEnabled, default: true) } set { storage.set(newValue, forKey: NamelessSettingsKey.vibrationEnabled) } }
+    var speedBoostEnabled: Bool { get { storage.namelessBool(NamelessSettingsKey.speedBoostEnabled) } set { storage.set(newValue, forKey: NamelessSettingsKey.speedBoostEnabled) } }
+    // MARK: Privacy/Confidentiality
+    var bypassProtectedContent: Bool { get { storage.namelessBool(NamelessSettingsKey.bypassProtectedContent, default: true) } set { storage.set(newValue, forKey: NamelessSettingsKey.bypassProtectedContent) } }
+    var removeSpoilersEverywhere: Bool { get { storage.namelessBool(NamelessSettingsKey.removeSpoilersEverywhere, default: true) } set { storage.set(newValue, forKey: NamelessSettingsKey.removeSpoilersEverywhere) } }
+    var antiScamEnabled: Bool { get { storage.namelessBool(NamelessSettingsKey.antiScamEnabled) } set { storage.set(newValue, forKey: NamelessSettingsKey.antiScamEnabled) } }
+    var warnBeforeCall: Bool { get { storage.namelessBool(NamelessSettingsKey.warnBeforeCall, default: true) } set { storage.set(newValue, forKey: NamelessSettingsKey.warnBeforeCall) } }
+    // MARK: Notifications
+    var localNotificationsEnabled: Bool { get { storage.namelessBool(NamelessSettingsKey.localNotificationsEnabled, default: true) } set { storage.set(newValue, forKey: NamelessSettingsKey.localNotificationsEnabled) } }
 
     func updateGatedFeatures(_ features: [(key: String, deeplinkPath: String)]) {
         storage.set(features.map(\.key), forKey: NamelessSettingsKey.gatedFeatureKeys)

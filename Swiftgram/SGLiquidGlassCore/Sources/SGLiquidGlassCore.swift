@@ -5,42 +5,61 @@ import SGSimpleSettings
 // MARK: - Zones
 
 /// All distinct Liquid Glass surfaces in nameless.
-/// Each one is gated by a corresponding toggle in SGSimpleSettings.
 public enum SGLiquidGlassZone: Int, CaseIterable {
-    case messages
-    case settings
-    case profile
-    case profileGifts
-    case inlineButtons
-    case tabBar
-    case navigationBar
-    case inputPanel
-    case search
-    case buttons
+    case messages           // входящие пузыри
+    case outgoingMessages   // исходящие пузыри
+    case settings           // экраны настроек
+    case profile            // профиль
+    case profileGifts       // подарки в профиле
+    case inlineButtons      // инлайн-кнопки ботов
+    case tabBar             // нижний таббар
+    case navigationBar      // верхний навбар
+    case inputPanel         // поле ввода текста
+    case search             // поиск
+    case buttons            // обычные кнопки
+    case popup              // попапы / листы
+    case contextMenu        // контекстное меню
+    case reactions          // реакции на сообщения
+    case stickers           // панель стикеров / эмодзи
+    case calls              // экран звонков
+    case media              // медиа-просмотрщик
+    case chatList           // список чатов
 
-    /// Master switch (`nameless.liquidGlassEnabled`) gates every zone.
-    /// Per-zone toggles only apply if the master is on.
     public var isEnabled: Bool {
         let s = SGSimpleSettings.shared
         guard s.liquidGlassEnabled else { return false }
         switch self {
-        case .messages:        return s.namelessLiquidGlassMessages
-        case .settings:        return s.namelessLiquidGlassSettings
-        case .profile:         return s.namelessLiquidGlassProfile
-        case .profileGifts:    return s.namelessLiquidGlassProfileGifts
-        case .inlineButtons:   return s.namelessLiquidGlassInlineButtons
+        case .messages:          return s.namelessLiquidGlassMessages
+        case .outgoingMessages:  return s.namelessLiquidGlassOutgoingMessages
+        case .settings:          return s.namelessLiquidGlassSettings
+        case .profile:           return s.namelessLiquidGlassProfile
+        case .profileGifts:      return s.namelessLiquidGlassProfileGifts
+        case .inlineButtons:     return s.namelessLiquidGlassInlineButtons
+        case .popup:             return s.namelessLiquidGlassPopup
+        case .contextMenu:       return s.namelessLiquidGlassContextMenu
+        case .search:            return s.namelessLiquidGlassSearch
+        case .reactions:         return s.namelessLiquidGlassReactions
+        case .stickers:          return s.namelessLiquidGlassStickers
+        case .calls:             return s.namelessLiquidGlassCalls
+        case .media:             return s.namelessLiquidGlassMedia
+        case .chatList:          return s.namelessLiquidGlassChatList
         case .tabBar,
              .navigationBar,
              .inputPanel,
-             .search,
-             .buttons:         return true // gated only by master
+             .buttons:           return true
         }
     }
 
-    /// Whether the tint color of the glass should be applied.
-    /// When `false`, the glass is purely a blur (no tint).
     public var isTinted: Bool {
         SGSimpleSettings.shared.namelessLiquidGlassTinting
+    }
+
+    public var intensity: CGFloat {
+        CGFloat(SGSimpleSettings.shared.namelessLiquidGlassIntensity)
+    }
+
+    public var fadeAnimationEnabled: Bool {
+        SGSimpleSettings.shared.namelessLiquidGlassFadeAnimation
     }
 }
 
@@ -53,17 +72,13 @@ public struct GlassRadii: Equatable {
     public let bottomRight: CGFloat
 
     public init(radius: CGFloat) {
-        self.topLeft = radius
-        self.topRight = radius
-        self.bottomLeft = radius
-        self.bottomRight = radius
+        self.topLeft = radius; self.topRight = radius
+        self.bottomLeft = radius; self.bottomRight = radius
     }
 
     public init(topLeft: CGFloat, topRight: CGFloat, bottomLeft: CGFloat, bottomRight: CGFloat) {
-        self.topLeft = topLeft
-        self.topRight = topRight
-        self.bottomLeft = bottomLeft
-        self.bottomRight = bottomRight
+        self.topLeft = topLeft; self.topRight = topRight
+        self.bottomLeft = bottomLeft; self.bottomRight = bottomRight
     }
 
     public var roundedCorners: UIRectCorner {
@@ -78,23 +93,14 @@ public struct GlassRadii: Equatable {
 
 // MARK: - Container protocols
 
-/// Adopted by ASDisplayNode subclasses that own a glass surface.
-/// (Kept here so low-level Display module can adopt it without pulling in
-/// the heavy glass implementation module.)
 public protocol SGLiquidGlassContainer: AnyObject {
     func refreshGlass(zone: SGLiquidGlassZone)
 }
 
-/// Adopted by UIView subclasses that own a glass surface.
 public protocol SGLiquidGlassViewContainer: AnyObject {
     func refreshGlass(zone: SGLiquidGlassZone)
 }
 
-// MARK: - Glass view protocol (factory-registered)
-
-/// Protocol that concrete glass views conform to. Lives in Core so low-level
-/// modules (Display) can hold one without depending on the heavy
-/// implementation module.
 public protocol SGLiquidGlassViewProtocol: AnyObject {
     var tintColorGlass: UIColor { get set }
     var cornerRadii: GlassRadii { get set }
@@ -103,25 +109,17 @@ public protocol SGLiquidGlassViewProtocol: AnyObject {
 }
 
 public extension SGLiquidGlassViewProtocol where Self: UIView {
-    /// Helper to set the frame from outside.
     func setFrame(_ frame: CGRect) { self.frame = frame }
 }
 
-/// Factory hook so high-level code can register the concrete glass view class
-/// while low-level code (Display) can instantiate one without a hard dep.
 public final class SGLiquidGlassFactory {
     public static let shared = SGLiquidGlassFactory()
     private init() {}
-
     public var create: (() -> SGLiquidGlassViewProtocol?)?
 }
 
 // MARK: - Coordinator
 
-/// Singleton that:
-/// 1) Listens for `.luxgramLiquidGlassDidChange` notifications.
-/// 2) Holds weak references to all live glass-bearing nodes/views.
-/// 3) Forces every glass surface to refresh whenever a toggle changes.
 public final class SGLiquidGlassCoordinator {
     public static let shared = SGLiquidGlassCoordinator()
 
@@ -135,47 +133,30 @@ public final class SGLiquidGlassCoordinator {
     private let queue = DispatchQueue(label: "nameless.liquidglass.coordinator")
 
     private init() {
-        let center = NotificationCenter.default
-        self.notificationObserver = center.addObserver(
+        self.notificationObserver = NotificationCenter.default.addObserver(
             forName: .luxgramLiquidGlassDidChange,
             object: nil,
             queue: .main
-        ) { [weak self] _ in
-            self?.refreshAll()
-        }
+        ) { [weak self] _ in self?.refreshAll() }
     }
 
     deinit {
-        if let o = self.notificationObserver {
-            NotificationCenter.default.removeObserver(o)
-        }
+        if let o = notificationObserver { NotificationCenter.default.removeObserver(o) }
     }
-
-    // MARK: Registration
 
     public func register(node: AnyObject, zone: SGLiquidGlassZone) {
         let id = ObjectIdentifier(node)
-        queue.sync {
-            self.observers[id] = Observer(node: node, zone: zone)
-        }
+        queue.sync { self.observers[id] = Observer(node: node, zone: zone) }
     }
 
     public func unregister(node: AnyObject) {
         let id = ObjectIdentifier(node)
-        queue.sync {
-            _ = self.observers.removeValue(forKey: id)
-        }
+        queue.sync { _ = self.observers.removeValue(forKey: id) }
     }
 
-    // MARK: Refresh
-
-    /// Re-evaluate every registered glass surface. Called on the main thread
-    /// whenever any Liquid Glass toggle changes.
     public func refreshAll() {
         var snapshot: [Observer] = []
-        queue.sync {
-            snapshot = Array(self.observers.values)
-        }
+        queue.sync { snapshot = Array(self.observers.values) }
         for obs in snapshot {
             if let n = obs.node as? SGLiquidGlassContainer {
                 n.refreshGlass(zone: obs.zone)
@@ -185,4 +166,3 @@ public final class SGLiquidGlassCoordinator {
         }
     }
 }
-

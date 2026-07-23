@@ -63,7 +63,7 @@ public struct PluginInfo: Codable, Equatable {
     }
 }
 
-/// Parses metadata from Python-style `.plugin` files and JS-style Whitegram plugins.
+/// Parses metadata from Python-style `.plugin` files and JS-style nameless plugins.
 public enum PluginMetadataParser {
     private static let namePattern = #"__name__\s*=\s*["']([^"']+)["']"#
     private static let descriptionPattern = #"__description__\s*=\s*["']([^"']+)["']"#

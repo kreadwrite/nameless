@@ -577,9 +577,7 @@ public final class ChatMessageBubbleBackdrop: ASDisplayNode, SGLiquidGlassContai
         let tint = zone.isTinted ? self.currentBubbleColor.withAlphaComponent(0.55) : .clear
         self.glassNode.glassTintColor = tint
         self.glassNode.glassVisible = enabled
-        if enabled {
-            self.glassNode.refreshGlass(zone: zone)
-        }
+        self.glassNode.refreshGlass(zone: zone)
     }
     
     public func setMaskMode(_ maskMode: Bool) {
@@ -591,11 +589,16 @@ public final class ChatMessageBubbleBackdrop: ASDisplayNode, SGLiquidGlassContai
     public func setType(type: ChatMessageBackgroundType, theme: ChatPresentationThemeData, essentialGraphics: PrincipalThemeEssentialGraphics, maskMode inputMaskMode: Bool, backgroundNode: WallpaperBackgroundNode?) {
         let maskMode = self.fixedMaskMode ?? inputMaskMode
 
-        // nameless: register with coordinator once
+        // nameless: register with coordinator — separate zones for in/out
+        let glassZone: SGLiquidGlassZone
+        switch type {
+        case .outgoing: glassZone = .outgoingMessages
+        default:        glassZone = .messages
+        }
         if !self.glassRegistered {
             self.glassRegistered = true
-            SGLiquidGlassCoordinator.shared.register(node: self, zone: .messages)
-            SGLiquidGlassCoordinator.shared.register(node: self.glassNode, zone: .messages)
+            SGLiquidGlassCoordinator.shared.register(node: self, zone: glassZone)
+            SGLiquidGlassCoordinator.shared.register(node: self.glassNode, zone: glassZone)
         }
 
         // nameless: pick a bubble color for tinting
@@ -610,10 +613,10 @@ public final class ChatMessageBubbleBackdrop: ASDisplayNode, SGLiquidGlassContai
         }
         if self.currentBubbleColor != bubbleColor {
             self.currentBubbleColor = bubbleColor
-            let tint = SGLiquidGlassZone.messages.isTinted ? bubbleColor.withAlphaComponent(0.55) : .clear
+            let tint = glassZone.isTinted ? bubbleColor.withAlphaComponent(0.55) : .clear
             self.glassNode.glassTintColor = tint
         }
-        self.glassNode.glassVisible = SGLiquidGlassZone.messages.isEnabled
+        self.glassNode.glassVisible = glassZone.isEnabled
         self.glassNode.frame = self.bounds
 
         if self.currentType != type || self.theme != theme || self.currentMaskMode != maskMode || self.essentialGraphics !== essentialGraphics || self.backgroundNode !== backgroundNode {

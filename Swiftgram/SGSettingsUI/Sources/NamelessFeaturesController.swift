@@ -103,19 +103,97 @@ private enum NLBoolSetting: String {
     case enableOnlineStatusRecording
     case fakeLocationEnabled
     case ghostModeMessageSendDelay
+    case ghostModeEnabled
+    case ghostModeFakeTyping
+    case ghostModeAntiSpam
+    case ghostModeHideVideoWatch
+    case ghostModeAutoCleanHistory
+    case ghostModeAlwaysOnline
     case liquidGlassEnabled
     case namelessLiquidGlassMessages
+    case namelessLiquidGlassOutgoingMessages
     case namelessLiquidGlassSettings
     case namelessLiquidGlassProfile
     case namelessLiquidGlassProfileGifts
     case namelessLiquidGlassInlineButtons
     case namelessLiquidGlassTinting
+    case namelessLiquidGlassPopup
+    case namelessLiquidGlassContextMenu
+    case namelessLiquidGlassSearch
+    case namelessLiquidGlassFadeAnimation
     case enableTelescope
     case emojiDownloaderEnabled
     case enableVideoToCircleOrVoice
     case namelessVideoBackgroundEnabled
     case namelessMusicCardStyle
     case namelessRoundProfileButtons
+    // Appearance
+    case squareAvatars
+    case newChatList
+    case newChatHeader
+    case blurInsteadGlass
+    case oledMode
+    case customSettingsIcons
+    case telegramAppIcons
+    case swipeChatOptions
+    case hideVoiceRecordButton
+    case foldersAtBottom
+    case ramUsageUnderClock
+    case chatListTitle
+    case premiumStatusInHeader
+    case searchButtonInChatList
+    case unlimitedPinnedChats
+    case newAccountSwitcher
+    case profileColorBackground
+    case profileAvatarBlur
+    case profileAvatarBlurMinimal
+    case profileAvatarBlurTinting
+    case musicAlbumBlur
+    case musicPlayerEffect
+    case messageOutline
+    case messageTransparent
+    case messageSemiTransparent
+    case messageBlurEffect
+    case particleEffectEnabled
+    // Messages
+    case showOriginalEdited
+    case truncateLongMessages
+    case saveChatHistory
+    case saveOnceMedia
+    case noAutoNextVoice
+    case semiTransparentWhenMentioned
+    case charCounterInput
+    case charCounterInChat
+    case hideMyDeleted
+    case hideMyEdited
+    case hideBotEdited
+    case hideBotDeleted
+    case doubleTapToEdit
+    // Camera
+    case cameraDefaultBack
+    case cameraUseDeviceMicrophone
+    case cameraSendHDPhoto
+    case cameraRememberLast
+    case cameraStaticZoom
+    case cameraAlwaysSendHD
+    // Info
+    case showIdAndDC
+    case showSeconds
+    case showFullViews
+    case hidePhoneNumber
+    case visualUsername
+    case showIfMutualContacts
+    case showRegistrationDate
+    // Additional
+    case vibrationEnabled
+    case speedBoostEnabled
+    // Privacy
+    case bypassProtectedContent
+    case removeSpoilersEverywhere
+    case antiScamEnabled
+    case warnBeforeCall
+    // Notifications
+    case localNotificationsEnabled
     case disableCompactNumbers
     case contextShowSaveToCloud
     case contextShowHideForwardName
@@ -134,6 +212,11 @@ private enum NLSliderSetting: String {
     case outgoingPhotoQuality
     case stickerSize
     case accountColorsSaturation
+    case liquidGlassIntensity
+    case deletedMessageOpacity
+    case cameraJpegQuality
+    case particleEffectSpeed
+    case particleEffectDensity
 }
 
 private enum NLOneFromManySetting: String {
@@ -173,106 +256,204 @@ private func nlBuildEntries(presentationData: PresentationData, state: NLControl
     let sec: NLSectionId = .items
 
     // ВНЕШНИЙ ВИД
-    entries.append(.header(id: id.count, section: sec, text: "ВНЕШНИЙ ВИД", badge: nil))
-    entries.append(.toggle(id: id.count, section: sec, settingName: .hidePhoneInSettings, value: s.hidePhoneInSettings, text: "Скрыть номер телефона", enabled: true))
-    entries.append(.toggle(id: id.count, section: sec, settingName: .showTabNames, value: s.showTabNames, text: "Подписи вкладок", enabled: !s.hideTabBar))
-    entries.append(.toggle(id: id.count, section: sec, settingName: .wideTabBar, value: s.wideTabBar, text: "Широкая панель вкладок", enabled: !s.hideTabBar))
-    entries.append(.toggle(id: id.count, section: sec, settingName: .hideTabBar, value: s.hideTabBar, text: "Скрыть нижний таббар", enabled: true))
-    entries.append(.toggle(id: id.count, section: sec, settingName: .tabBarSearchEnabled, value: s.tabBarSearchEnabled, text: "Кнопка поиска в списке чатов", enabled: !s.hideTabBar))
-    entries.append(.toggle(id: id.count, section: sec, settingName: .allChatsHidden, value: s.allChatsHidden, text: "Скрыть «Все чаты»", enabled: true))
-    entries.append(.toggle(id: id.count, section: sec, settingName: .compactFolderNames, value: s.compactFolderNames, text: "Компактные имена папок", enabled: true))
-    entries.append(.toggle(id: id.count, section: sec, settingName: .rememberLastFolder, value: s.rememberLastFolder, text: "Запоминать последнюю папку", enabled: true))
-    entries.append(.toggle(id: id.count, section: sec, settingName: .hideStories, value: s.hideStories, text: "Скрыть истории", enabled: true))
+    entries.append(.header(id: id.count, section: sec, text: "✦ ВНЕШНИЙ ВИД", badge: nil))
+
+    // СПИСОК ЧАТОВ
+    entries.append(.header(id: id.count, section: sec, text: "СПИСОК ЧАТОВ", badge: nil))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .squareAvatars, value: s.squareAvatars, text: "Квадратные аватары", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .newChatList, value: s.newChatList, text: "Новый список чатов (карточки)", enabled: true))
     entries.append(.toggle(id: id.count, section: sec, settingName: .compactChatList, value: s.compactChatList, text: "Компактный список чатов", enabled: true))
-    entries.append(.toggle(id: id.count, section: sec, settingName: .compactMessagePreview, value: s.chatListLines != SGSimpleSettings.ChatListLines.three.rawValue, text: "Компактный превью сообщений", enabled: true))
-    entries.append(.toggle(id: id.count, section: sec, settingName: .disableChatSwipeOptions, value: !s.disableChatSwipeOptions, text: "Свайп-опции чатов", enabled: true))
-    entries.append(.toggle(id: id.count, section: sec, settingName: .disableDeleteChatSwipeOption, value: !s.disableDeleteChatSwipeOption, text: "Свайп для удаления чата", enabled: !s.disableChatSwipeOptions))
-    entries.append(.toggle(id: id.count, section: sec, settingName: .hideRecordingButton, value: !s.hideRecordingButton, text: "Кнопка записи голосовых", enabled: true))
-    entries.append(.toggle(id: id.count, section: sec, settingName: .sendWithReturnKey, value: s.sendWithReturnKey, text: "Отправка по клавише Return", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .unlimitedPinnedChats, value: s.unlimitedPinnedChats, text: "Закрепление чатов (без лимита)", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .chatListTitle, value: s.chatListTitle, text: "Надпись «Чаты» в списке", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .searchButtonInChatList, value: s.searchButtonInChatList, text: "Кнопка поиска (лупа)", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .premiumStatusInHeader, value: s.premiumStatusInHeader, text: "Премиум-статус в шапке", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .foldersAtBottom, value: s.foldersAtBottom, text: "Папки снизу", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .ramUsageUnderClock, value: s.ramUsageUnderClock, text: "ОЗУ под часами", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .hidePhoneInSettings, value: s.hidePhoneInSettings, text: "Скрыть номер в настройках", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .allChatsHidden, value: s.allChatsHidden, text: "Скрыть «Все чаты»", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .hideStories, value: s.hideStories, text: "Скрыть истории", enabled: true))
+
+    // ЧАТ И СООБЩЕНИЯ
+    entries.append(.header(id: id.count, section: sec, text: "ЧАТ И ИНТЕРФЕЙС", badge: nil))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .newChatHeader, value: s.newChatHeader, text: "Новый вид заголовка чата", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .newAccountSwitcher, value: s.newAccountSwitcher, text: "Новый вид переключения аккаунтов", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .blurInsteadGlass, value: s.blurInsteadGlass, text: "Блюр вместо Liquid Glass", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .oledMode, value: s.oledMode, text: "OLED-режим (чёрный фон)", enabled: true))
     entries.append(.toggle(id: id.count, section: sec, settingName: .wideChannelPosts, value: s.wideChannelPosts, text: "Широкие посты в каналах", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .messageOutline, value: s.messageOutline, text: "Обводка сообщений", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .messageTransparent, value: s.messageTransparent, text: "Прозрачные сообщения", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .messageSemiTransparent, value: s.messageSemiTransparent, text: "Полупрозрачные сообщения", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .messageBlurEffect, value: s.messageBlurEffect, text: "Размытие сообщений", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .compactMessagePreview, value: s.chatListLines != SGSimpleSettings.ChatListLines.three.rawValue, text: "Компактный превью", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .showTabNames, value: s.showTabNames, text: "Подписи вкладок", enabled: !s.hideTabBar))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .hideTabBar, value: s.hideTabBar, text: "Скрыть нижний таббар", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .disableChatSwipeOptions, value: !s.disableChatSwipeOptions, text: "Свайп-опции чатов", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .hideRecordingButton, value: !s.hideRecordingButton, text: "Кнопка записи голосовых", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .sendWithReturnKey, value: s.sendWithReturnKey, text: "Отправка по Return", enabled: true))
     entries.append(.toggle(id: id.count, section: sec, settingName: .secondsInMessages, value: s.secondsInMessages, text: "Секунды в метке времени", enabled: true))
     entries.append(.toggle(id: id.count, section: sec, settingName: .hideReactions, value: s.hideReactions, text: "Скрыть реакции", enabled: true))
-    entries.append(.toggle(id: id.count, section: sec, settingName: .hideChannelBottomButton, value: !s.hideChannelBottomButton, text: "Кнопка канала внизу", enabled: true))
     entries.append(.toggle(id: id.count, section: sec, settingName: .disableSnapDeletionEffect, value: !s.disableSnapDeletionEffect, text: "Эффект удаления", enabled: true))
-    entries.append(.toggle(id: id.count, section: sec, settingName: .disableSendAsButton, value: !s.disableSendAsButton, text: "Кнопка «Send As»", enabled: true))
-    entries.append(.toggle(id: id.count, section: sec, settingName: .disableGalleryCamera, value: !s.disableGalleryCamera, text: "Камера в галерее", enabled: true))
-    entries.append(.toggle(id: id.count, section: sec, settingName: .disableGalleryCameraPreview, value: !s.disableGalleryCameraPreview, text: "Превью камеры в галерее", enabled: !s.disableGalleryCamera))
-    entries.append(.toggle(id: id.count, section: sec, settingName: .messageDoubleTapActionOutgoingEdit, value: s.messageDoubleTapActionOutgoing == SGSimpleSettings.MessageDoubleTapAction.edit.rawValue, text: "Двойной тап = редактирование", enabled: true))
-    entries.append(.toggle(id: id.count, section: sec, settingName: .forceEmojiTab, value: s.forceEmojiTab, text: "Вкладка эмодзи по умолчанию", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .forceEmojiTab, value: s.forceEmojiTab, text: "Вкладка эмодзи первой", enabled: true))
     entries.append(.toggle(id: id.count, section: sec, settingName: .defaultEmojisFirst, value: s.defaultEmojisFirst, text: "Стандартные эмодзи первыми", enabled: true))
+
+    // ПРОФИЛЬ
+    entries.append(.header(id: id.count, section: sec, text: "ПРОФИЛЬ", badge: nil))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .namelessRoundProfileButtons, value: s.namelessRoundProfileButtons, text: "Круглые стеклянные кнопки", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .profileColorBackground, value: s.profileColorBackground, text: "Цвет на фоне в профиле", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .profileAvatarBlur, value: s.profileAvatarBlur, text: "Блюр аватара в профиле", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .profileAvatarBlurMinimal, value: s.profileAvatarBlurMinimal, text: "Минимальный блюр", enabled: s.profileAvatarBlur))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .profileAvatarBlurTinting, value: s.profileAvatarBlurTinting, text: "Тонирование блюра", enabled: s.profileAvatarBlur))
+
+    // МЕДИА И ПЛЕЕР
+    entries.append(.header(id: id.count, section: sec, text: "МЕДИА И ПЛЕЕР", badge: nil))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .namelessMusicCardStyle, value: s.namelessMusicCardStyle, text: "Стиль карточки музыки", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .musicAlbumBlur, value: s.musicAlbumBlur, text: "Блюр обложки трека", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .musicPlayerEffect, value: s.musicPlayerEffect, text: "Эффект в плеере", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .namelessVideoBackgroundEnabled, value: s.namelessVideoBackgroundEnabled, text: "Видео-обои чата", enabled: true))
+
+    // ИКОНКИ
+    entries.append(.header(id: id.count, section: sec, text: "ИКОНКИ", badge: nil))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .telegramAppIcons, value: s.telegramAppIcons, text: "Иконки приложения Telegram", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .customSettingsIcons, value: s.customSettingsIcons, text: "Кастомные иконки настроек", enabled: true))
+
+    // ЭФФЕКТ ЧАСТИЦ
+    entries.append(.header(id: id.count, section: sec, text: "ЭФФЕКТ ЧАСТИЦ", badge: nil))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .particleEffectEnabled, value: s.particleEffectEnabled, text: "Эффект частиц", enabled: true))
+    entries.append(.percentageSlider(id: id.count, section: sec, settingName: .particleEffectSpeed, value: Int32(s.particleEffectSpeed * 100)))
+    entries.append(.percentageSlider(id: id.count, section: sec, settingName: .particleEffectDensity, value: Int32(s.particleEffectDensity * 100)))
+
+    // НАСЫЩЕННОСТЬ И РАЗМЕРЫ
     entries.append(.header(id: id.count, section: sec, text: "НАСЫЩЕННОСТЬ ЦВЕТОВ", badge: nil))
     entries.append(.percentageSlider(id: id.count, section: sec, settingName: .accountColorsSaturation, value: s.accountColorsSaturation))
+    entries.append(.header(id: id.count, section: sec, text: "РАЗМЕР СТИКЕРОВ", badge: nil))
+    entries.append(.percentageSlider(id: id.count, section: sec, settingName: .stickerSize, value: s.stickerSize))
     entries.append(.toggle(id: id.count, section: sec, settingName: .namelessMusicCardStyle, value: s.namelessMusicCardStyle, text: "Стиль карточки музыки", enabled: true))
-    entries.append(.toggle(id: id.count, section: sec, settingName: .namelessRoundProfileButtons, value: s.namelessRoundProfileButtons, text: "Круглые кнопки в профиле", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .namelessRoundProfileButtons, value: s.namelessRoundProfileButtons, text: "Круглые стеклянные кнопки профиля", enabled: true))
 
     // УВЕДОМЛЕНИЯ
     entries.append(.header(id: id.count, section: sec, text: "УВЕДОМЛЕНИЯ", badge: nil))
     entries.append(.toggle(id: id.count, section: sec, settingName: .confirmCalls, value: s.confirmCalls, text: "Предупреждение при звонке", enabled: true))
 
     // LIQUID GLASS
-    entries.append(.header(id: id.count, section: sec, text: "LIQUID GLASS", badge: nil))
-    entries.append(.toggle(id: id.count, section: sec, settingName: .liquidGlassEnabled, value: s.liquidGlassEnabled, text: "Liquid Glass (общее)", enabled: true))
-    entries.append(.toggle(id: id.count, section: sec, settingName: .namelessLiquidGlassMessages, value: s.namelessLiquidGlassMessages, text: "Liquid Glass сообщения", enabled: true))
-    entries.append(.toggle(id: id.count, section: sec, settingName: .namelessLiquidGlassSettings, value: s.namelessLiquidGlassSettings, text: "Liquid Glass настройки", enabled: true))
-    entries.append(.toggle(id: id.count, section: sec, settingName: .namelessLiquidGlassProfile, value: s.namelessLiquidGlassProfile, text: "Liquid Glass профиль", enabled: true))
-    entries.append(.toggle(id: id.count, section: sec, settingName: .namelessLiquidGlassProfileGifts, value: s.namelessLiquidGlassProfileGifts, text: "Liquid Glass подарки", enabled: true))
-    entries.append(.toggle(id: id.count, section: sec, settingName: .namelessLiquidGlassInlineButtons, value: s.namelessLiquidGlassInlineButtons, text: "Liquid Glass инлайн-кнопки", enabled: true))
-    entries.append(.toggle(id: id.count, section: sec, settingName: .namelessLiquidGlassTinting, value: s.namelessLiquidGlassTinting, text: "Liquid Glass тонирование", enabled: true))
+    entries.append(.header(id: id.count, section: sec, text: "✦ LIQUID GLASS (iOS 26)", badge: nil))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .liquidGlassEnabled, value: s.liquidGlassEnabled, text: "Жидкое стекло — мастер", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .namelessLiquidGlassFadeAnimation, value: s.namelessLiquidGlassFadeAnimation, text: "Анимация фейда при включении", enabled: s.liquidGlassEnabled))
+    entries.append(.header(id: id.count, section: sec, text: "ЗОНЫ СТЕКЛА", badge: nil))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .namelessLiquidGlassMessages, value: s.namelessLiquidGlassMessages, text: "Входящие сообщения", enabled: s.liquidGlassEnabled))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .namelessLiquidGlassOutgoingMessages, value: s.namelessLiquidGlassOutgoingMessages, text: "Исходящие сообщения", enabled: s.liquidGlassEnabled))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .namelessLiquidGlassSettings, value: s.namelessLiquidGlassSettings, text: "Настройки", enabled: s.liquidGlassEnabled))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .namelessLiquidGlassProfile, value: s.namelessLiquidGlassProfile, text: "Профиль", enabled: s.liquidGlassEnabled))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .namelessLiquidGlassProfileGifts, value: s.namelessLiquidGlassProfileGifts, text: "Подарки в профиле", enabled: s.liquidGlassEnabled))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .namelessLiquidGlassInlineButtons, value: s.namelessLiquidGlassInlineButtons, text: "Инлайн-кнопки ботов", enabled: s.liquidGlassEnabled))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .namelessLiquidGlassPopup, value: s.namelessLiquidGlassPopup, text: "Всплывающие окна (попапы)", enabled: s.liquidGlassEnabled))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .namelessLiquidGlassContextMenu, value: s.namelessLiquidGlassContextMenu, text: "Контекстное меню", enabled: s.liquidGlassEnabled))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .namelessLiquidGlassSearch, value: s.namelessLiquidGlassSearch, text: "Панель поиска", enabled: s.liquidGlassEnabled))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .namelessLiquidGlassTinting, value: s.namelessLiquidGlassTinting, text: "Тонирование (цвет акцента)", enabled: s.liquidGlassEnabled))
+    entries.append(.percentageSlider(id: id.count, section: sec, settingName: .liquidGlassIntensity, value: Int32(s.namelessLiquidGlassIntensity * 100)))
 
     // СООБЩЕНИЯ
-    entries.append(.header(id: id.count, section: sec, text: "СООБЩЕНИЯ", badge: nil))
-    entries.append(.toggle(id: id.count, section: sec, settingName: .showDeletedMessages, value: s.showDeletedMessages, text: "Показывать удалённые сообщения", enabled: true))
-    entries.append(.toggle(id: id.count, section: sec, settingName: .saveDeletedMessagesMedia, value: s.saveDeletedMessagesMedia, text: "Сохранять медиа удалённых", enabled: true))
-    entries.append(.toggle(id: id.count, section: sec, settingName: .saveEditHistory, value: s.saveEditHistory, text: "Сохранять историю редактирований", enabled: true))
-    entries.append(.toggle(id: id.count, section: sec, settingName: .enableLocalMessageEditing, value: s.enableLocalMessageEditing, text: "Локальное редактирование сообщений", enabled: true))
+    entries.append(.header(id: id.count, section: sec, text: "✦ СООБЩЕНИЯ", badge: nil))
+
+    entries.append(.header(id: id.count, section: sec, text: "УДАЛЁННЫЕ", badge: nil))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .showDeletedMessages, value: s.showDeletedMessages, text: "Удалённые сообщения в базу", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .saveDeletedMessagesMedia, value: s.saveDeletedMessagesMedia, text: "Показывать удалённые", enabled: true))
+    entries.append(.header(id: id.count, section: sec, text: "ПРОЗРАЧНОСТЬ УДАЛЁННЫХ", badge: nil))
+    entries.append(.percentageSlider(id: id.count, section: sec, settingName: .deletedMessageOpacity, value: s.deletedMessageOpacity))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .showOriginalEdited, value: s.showOriginalEdited, text: "Оригинал изменений", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .hideMyDeleted, value: s.hideMyDeleted, text: "Не отображать мои удалённые", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .hideMyEdited, value: s.hideMyEdited, text: "Не отображать мои изменённые", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .hideBotEdited, value: s.hideBotEdited, text: "Скрыть изменения ботов", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .hideBotDeleted, value: s.hideBotDeleted, text: "Скрыть удалённые ботов", enabled: true))
+
+    entries.append(.header(id: id.count, section: sec, text: "ПОВЕДЕНИЕ", badge: nil))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .saveEditHistory, value: s.saveEditHistory, text: "Сохранять историю чатов", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .enableLocalMessageEditing, value: s.enableLocalMessageEditing, text: "Локальное редактирование", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .truncateLongMessages, value: s.truncateLongMessages, text: "Сокращать сообщения", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .saveChatHistory, value: s.saveChatHistory, text: "История чатов", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .saveOnceMedia, value: s.saveOnceMedia, text: "Одноразовые → галерея", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .noAutoNextVoice, value: s.noAutoNextVoice, text: "Не слушать след. голосовое", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .semiTransparentWhenMentioned, value: s.semiTransparentWhenMentioned, text: "Полупрозрачно когда отмечают", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .charCounterInput, value: s.charCounterInput, text: "Счётчик символов при вводе", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .charCounterInChat, value: s.charCounterInChat, text: "Счётчик символов в чате", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .doubleTapToEdit, value: s.doubleTapToEdit, text: "Двойной тап для редактирования", enabled: true))
     entries.append(.toggle(id: id.count, section: sec, settingName: .scrollToTopButtonEnabled, value: s.scrollToTopButtonEnabled, text: "Кнопка «Наверх»", enabled: true))
     entries.append(.toggle(id: id.count, section: sec, settingName: .disableScrollToNextChannel2, value: !s.disableScrollToNextChannel, text: "Скролл к следующему каналу", enabled: true))
-    entries.append(.toggle(id: id.count, section: sec, settingName: .disableScrollToNextTopic2, value: !s.disableScrollToNextTopic, text: "Скролл к следующему топику", enabled: true))
 
     // КАМЕРА
-    entries.append(.header(id: id.count, section: sec, text: "КАМЕРА", badge: nil))
+    entries.append(.header(id: id.count, section: sec, text: "✦ КАМЕРА", badge: nil))
     entries.append(.toggle(id: id.count, section: sec, settingName: .enableTelescope, value: s.enableTelescope, text: "Телескоп (зум камеры)", enabled: true))
-    entries.append(.toggle(id: id.count, section: sec, settingName: .startTelescopeWithRearCam, value: s.startTelescopeWithRearCam, text: "Начинать с задней камеры", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .cameraDefaultBack, value: s.cameraDefaultBack, text: "По умолчанию задняя камера", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .cameraUseDeviceMicrophone, value: s.cameraUseDeviceMicrophone, text: "Микрофон устройства", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .cameraSendHDPhoto, value: s.cameraSendHDPhoto, text: "Отправлять в HD фото", enabled: true))
+    entries.append(.header(id: id.count, section: sec, text: "КАЧЕСТВО JPEG ФОТО", badge: nil))
+    entries.append(.percentageSlider(id: id.count, section: sec, settingName: .cameraJpegQuality, value: s.cameraJpegQuality))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .cameraRememberLast, value: s.cameraRememberLast, text: "Запоминать последнюю камеру", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .cameraStaticZoom, value: s.cameraStaticZoom, text: "Статичный зум при записи", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .cameraAlwaysSendHD, value: s.cameraAlwaysSendHD, text: "Всегда в HD", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .enableVideoToCircleOrVoice, value: s.enableVideoToCircleOrVoice, text: "Видео → кружок или голосовое", enabled: true))
 
-    // РЕЖИМ ПРИЗРАКА
-    entries.append(.header(id: id.count, section: sec, text: "РЕЖИМ ПРИЗРАКА", badge: nil))
-    entries.append(.toggle(id: id.count, section: sec, settingName: .disableOnlineStatus, value: s.disableOnlineStatus, text: "Онлайн-статус", enabled: true))
-    entries.append(.toggle(id: id.count, section: sec, settingName: .disableTypingStatus, value: s.disableTypingStatus, text: "Набор текста", enabled: true))
-    entries.append(.toggle(id: id.count, section: sec, settingName: .disableVCMessageRecordingStatus, value: s.disableVCMessageRecordingStatus, text: "Запись голосового", enabled: true))
-    entries.append(.toggle(id: id.count, section: sec, settingName: .disableUploadingFileStatus, value: s.disableUploadingFileStatus, text: "Загрузка файлов", enabled: true))
-    entries.append(.toggle(id: id.count, section: sec, settingName: .disableUploadingPhotoStatus, value: s.disableUploadingPhotoStatus, text: "Отправка фото", enabled: true))
-    entries.append(.toggle(id: id.count, section: sec, settingName: .disableUploadingVideoStatus, value: s.disableUploadingVideoStatus, text: "Отправка видео", enabled: true))
-    entries.append(.toggle(id: id.count, section: sec, settingName: .disableRecordingVideoStatus, value: s.disableRecordingVideoStatus, text: "Запись видео", enabled: true))
-    entries.append(.toggle(id: id.count, section: sec, settingName: .disableChoosingLocationStatus, value: s.disableChoosingLocationStatus, text: "Выбор локации", enabled: true))
-    entries.append(.toggle(id: id.count, section: sec, settingName: .disableChoosingContactStatus, value: s.disableChoosingContactStatus, text: "Выбор контакта", enabled: true))
-    entries.append(.toggle(id: id.count, section: sec, settingName: .disablePlayingGameStatus, value: s.disablePlayingGameStatus, text: "Статус игры", enabled: true))
-    entries.append(.toggle(id: id.count, section: sec, settingName: .disableRecordingRoundVideoStatus, value: s.disableRecordingRoundVideoStatus, text: "Запись кружка", enabled: true))
-    entries.append(.toggle(id: id.count, section: sec, settingName: .disableUploadingRoundVideoStatus, value: s.disableUploadingRoundVideoStatus, text: "Отправка кружка", enabled: true))
-    entries.append(.toggle(id: id.count, section: sec, settingName: .disableSpeakingInGroupCallStatus, value: s.disableSpeakingInGroupCallStatus, text: "Говорение в групповом звонке", enabled: true))
-    entries.append(.toggle(id: id.count, section: sec, settingName: .disableChoosingStickerStatus, value: s.disableChoosingStickerStatus, text: "Выбор стикера", enabled: true))
-    entries.append(.toggle(id: id.count, section: sec, settingName: .disableEmojiInteractionStatus, value: s.disableEmojiInteractionStatus, text: "Эмодзи-взаимодействие", enabled: true))
-    entries.append(.toggle(id: id.count, section: sec, settingName: .disableEmojiAcknowledgementStatus, value: s.disableEmojiAcknowledgementStatus, text: "Эмодзи-подтверждение", enabled: true))
-    entries.append(.toggle(id: id.count, section: sec, settingName: .disableMessageReadReceipt, value: s.disableMessageReadReceipt, text: "Прочтение сообщений", enabled: true))
-    entries.append(.toggle(id: id.count, section: sec, settingName: .disableStoryReadReceipt, value: s.disableStoryReadReceipt, text: "Просмотр сторис", enabled: true))
-    entries.append(.toggle(id: id.count, section: sec, settingName: .enableOnlineStatusRecording, value: s.enableOnlineStatusRecording, text: "История онлайн", enabled: true))
+    // РЕЖИМ ПРИЗРАКА — полностью реализован
+    entries.append(.header(id: id.count, section: sec, text: "👻 РЕЖИМ ПРИЗРАКА", badge: nil))
+    // МАСТЕР-ТОГГЛ: включает всё сразу
+    entries.append(.toggle(id: id.count, section: sec, settingName: .ghostModeEnabled, value: s.ghostModeEnabled, text: "Режим призрака (мастер)", enabled: true))
+
+    entries.append(.header(id: id.count, section: sec, text: "СКРЫТИЕ СТАТУСОВ", badge: nil))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .ghostModeAlwaysOnline, value: s.ghostModeAlwaysOnline, text: "Всегда онлайн", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .disableOnlineStatus, value: s.disableOnlineStatus, text: "Скрыть онлайн-статус", enabled: !s.ghostModeAlwaysOnline))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .disableTypingStatus, value: s.disableTypingStatus, text: "Скрыть «печатает»", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .disableVCMessageRecordingStatus, value: s.disableVCMessageRecordingStatus, text: "Скрыть запись голосового", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .disableUploadingFileStatus, value: s.disableUploadingFileStatus, text: "Скрыть загрузку файлов", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .disableUploadingPhotoStatus, value: s.disableUploadingPhotoStatus, text: "Скрыть отправку фото", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .disableUploadingVideoStatus, value: s.disableUploadingVideoStatus, text: "Скрыть отправку видео", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .disableRecordingVideoStatus, value: s.disableRecordingVideoStatus, text: "Скрыть запись видео", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .disableChoosingLocationStatus, value: s.disableChoosingLocationStatus, text: "Скрыть выбор локации", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .disableChoosingContactStatus, value: s.disableChoosingContactStatus, text: "Скрыть выбор контакта", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .disablePlayingGameStatus, value: s.disablePlayingGameStatus, text: "Скрыть статус игры", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .disableRecordingRoundVideoStatus, value: s.disableRecordingRoundVideoStatus, text: "Скрыть запись кружка", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .disableUploadingRoundVideoStatus, value: s.disableUploadingRoundVideoStatus, text: "Скрыть отправку кружка", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .disableSpeakingInGroupCallStatus, value: s.disableSpeakingInGroupCallStatus, text: "Скрыть говорение в звонке", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .disableChoosingStickerStatus, value: s.disableChoosingStickerStatus, text: "Скрыть выбор стикера", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .disableEmojiInteractionStatus, value: s.disableEmojiInteractionStatus, text: "Скрыть эмодзи-взаимодействие", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .disableEmojiAcknowledgementStatus, value: s.disableEmojiAcknowledgementStatus, text: "Скрыть эмодзи-подтверждение", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .ghostModeHideVideoWatch, value: s.ghostModeHideVideoWatch, text: "Скрыть просмотр видео/кружка", enabled: true))
+
+    entries.append(.header(id: id.count, section: sec, text: "ПРОЧТЕНИЕ И ПРОСМОТР", badge: nil))
+    // disableMessageReadReceipt = не ставить двойную галочку собеседнику
+    entries.append(.toggle(id: id.count, section: sec, settingName: .disableMessageReadReceipt, value: s.disableMessageReadReceipt, text: "Скрыть прочтение (галочки)", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .disableStoryReadReceipt, value: s.disableStoryReadReceipt, text: "Скрыть просмотр сторис", enabled: true))
+
+    entries.append(.header(id: id.count, section: sec, text: "ДОПОЛНИТЕЛЬНО", badge: nil))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .ghostModeMessageSendDelay, value: s.ghostModeMessageSendDelaySeconds > 0, text: "Задержка отправки 12 сек", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .ghostModeFakeTyping, value: s.ghostModeFakeTyping, text: "Fake typing (показывать «печатает»)", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .ghostModeAntiSpam, value: s.ghostModeAntiSpam, text: "Анти-спам входящих", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .ghostModeAutoCleanHistory, value: s.ghostModeAutoCleanHistory, text: "Авто-очистка истории", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .enableOnlineStatusRecording, value: s.enableOnlineStatusRecording, text: "История онлайна собеседников", enabled: true))
     entries.append(.toggle(id: id.count, section: sec, settingName: .fakeLocationEnabled, value: s.fakeLocationEnabled, text: "Подмена геолокации", enabled: true))
-    entries.append(.toggle(id: id.count, section: sec, settingName: .ghostModeMessageSendDelay, value: s.ghostModeMessageSendDelaySeconds > 0, text: "Задержка отправки (призрак)", enabled: true))
 
     // КОНФИДЕНЦИАЛЬНОСТЬ
-    entries.append(.header(id: id.count, section: sec, text: "КОНФИДЕНЦИАЛЬНОСТЬ", badge: nil))
+    entries.append(.header(id: id.count, section: sec, text: "✦ КОНФИДЕНЦИАЛЬНОСТЬ", badge: nil))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .bypassProtectedContent, value: s.bypassProtectedContent, text: "Обход защищённого контента", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .removeSpoilersEverywhere, value: s.removeSpoilersEverywhere, text: "Убрать спойлеры везде", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .antiScamEnabled, value: s.antiScamEnabled, text: "Защита от мошенников", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .warnBeforeCall, value: s.warnBeforeCall, text: "Предупреждение перед звонком", enabled: true))
     entries.append(.toggle(id: id.count, section: sec, settingName: .disableAllAds, value: s.disableAllAds, text: "Отключить рекламу", enabled: true))
     entries.append(.toggle(id: id.count, section: sec, settingName: .enableSavingProtectedContent, value: s.enableSavingProtectedContent, text: "Сохранять защищённый контент", enabled: true))
     entries.append(.toggle(id: id.count, section: sec, settingName: .enableSavingSelfDestructingMessages, value: s.enableSavingSelfDestructingMessages, text: "Сохранять самоуничтожающиеся", enabled: true))
-    entries.append(.toggle(id: id.count, section: sec, settingName: .disableScreenshotDetection, value: s.disableScreenshotDetection, text: "Отключить определение скриншотов", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .disableScreenshotDetection, value: s.disableScreenshotDetection, text: "Без определения скриншотов", enabled: true))
     entries.append(.toggle(id: id.count, section: sec, settingName: .disableSecretChatBlurOnScreenshot, value: s.disableSecretChatBlurOnScreenshot, text: "Без размытия при скриншоте", enabled: true))
     entries.append(.toggle(id: id.count, section: sec, settingName: .hideProxySponsor, value: s.hideProxySponsor, text: "Скрыть спонсора прокси", enabled: true))
 
     // ИНФОРМАЦИЯ
-    entries.append(.header(id: id.count, section: sec, text: "ИНФОРМАЦИЯ", badge: nil))
+    entries.append(.header(id: id.count, section: sec, text: "✦ ИНФОРМАЦИЯ", badge: nil))
     entries.append(.toggle(id: id.count, section: sec, settingName: .showProfileId, value: s.showProfileId, text: "ID и DC в профиле", enabled: true))
-    entries.append(.toggle(id: id.count, section: sec, settingName: .showDC, value: s.showDC, text: "Показывать DC", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .showSeconds, value: s.showSeconds, text: "Секунды в метке времени", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .showFullViews, value: s.showFullViews, text: "Полные просмотры", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .hidePhoneNumber, value: s.hidePhoneNumber, text: "Скрыть номер телефона", enabled: true))
     entries.append(.toggle(id: id.count, section: sec, settingName: .showCreationDate, value: s.showCreationDate, text: "Дата создания чата/канала", enabled: true))
-    entries.append(.toggle(id: id.count, section: sec, settingName: .showRegDate, value: s.showRegDate, text: "Дата регистрации пользователя", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .visualUsername, value: s.visualUsername, text: "Визуальный юзернейм", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .showIfMutualContacts, value: s.showIfMutualContacts, text: "Если взаимно в контактах", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .showRegistrationDate, value: s.showRegistrationDate, text: "Дата регистрации аккаунта", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .showDC, value: s.showDC, text: "Показывать DC", enabled: true))
     entries.append(.toggle(id: id.count, section: sec, settingName: .disableCompactNumbers, value: !s.disableCompactNumbers, text: "Компактные числа", enabled: true))
 
     // КОНТЕКСТНОЕ МЕНЮ
@@ -437,19 +618,105 @@ public func namelessFeaturesController(context: AccountContext) -> ViewControlle
             case .enableOnlineStatusRecording: s.enableOnlineStatusRecording = value
             case .fakeLocationEnabled: s.fakeLocationEnabled = value
             case .ghostModeMessageSendDelay: s.ghostModeMessageSendDelaySeconds = value ? 12 : 0
+            case .ghostModeEnabled:
+                s.ghostModeEnabled = value
+                s.applyGhostModeAll(enabled: value)
+                NotificationCenter.default.post(name: NSNotification.Name("nameless.ghostModeDidChange"), object: nil)
+            case .ghostModeFakeTyping: s.ghostModeFakeTyping = value
+            case .ghostModeAntiSpam: s.ghostModeAntiSpam = value
+            case .ghostModeHideVideoWatch: s.ghostModeHideVideoWatch = value
+            case .ghostModeAutoCleanHistory: s.ghostModeAutoCleanHistory = value
+            case .ghostModeAlwaysOnline:
+                s.ghostModeAlwaysOnline = value
+                if value { s.disableOnlineStatus = false } // нельзя одновременно
             case .liquidGlassEnabled: s.liquidGlassEnabled = value; NotificationCenter.default.post(name: .luxgramLiquidGlassDidChange, object: nil)
             case .namelessLiquidGlassMessages: s.namelessLiquidGlassMessages = value; NotificationCenter.default.post(name: .luxgramLiquidGlassDidChange, object: nil)
+            case .namelessLiquidGlassOutgoingMessages: s.namelessLiquidGlassOutgoingMessages = value; NotificationCenter.default.post(name: .luxgramLiquidGlassDidChange, object: nil)
             case .namelessLiquidGlassSettings: s.namelessLiquidGlassSettings = value; NotificationCenter.default.post(name: .luxgramLiquidGlassDidChange, object: nil)
             case .namelessLiquidGlassProfile: s.namelessLiquidGlassProfile = value; NotificationCenter.default.post(name: .luxgramLiquidGlassDidChange, object: nil)
             case .namelessLiquidGlassProfileGifts: s.namelessLiquidGlassProfileGifts = value; NotificationCenter.default.post(name: .luxgramLiquidGlassDidChange, object: nil)
             case .namelessLiquidGlassInlineButtons: s.namelessLiquidGlassInlineButtons = value; NotificationCenter.default.post(name: .luxgramLiquidGlassDidChange, object: nil)
             case .namelessLiquidGlassTinting: s.namelessLiquidGlassTinting = value; NotificationCenter.default.post(name: .luxgramLiquidGlassDidChange, object: nil)
+            case .namelessLiquidGlassPopup: s.namelessLiquidGlassPopup = value; NotificationCenter.default.post(name: .luxgramLiquidGlassDidChange, object: nil)
+            case .namelessLiquidGlassContextMenu: s.namelessLiquidGlassContextMenu = value; NotificationCenter.default.post(name: .luxgramLiquidGlassDidChange, object: nil)
+            case .namelessLiquidGlassSearch: s.namelessLiquidGlassSearch = value; NotificationCenter.default.post(name: .luxgramLiquidGlassDidChange, object: nil)
+            case .namelessLiquidGlassFadeAnimation: s.namelessLiquidGlassFadeAnimation = value
             case .enableTelescope: s.enableTelescope = value
             case .emojiDownloaderEnabled: s.emojiDownloaderEnabled = value
             case .enableVideoToCircleOrVoice: s.enableVideoToCircleOrVoice = value
             case .namelessVideoBackgroundEnabled: s.namelessVideoBackgroundEnabled = value
             case .namelessMusicCardStyle: s.namelessMusicCardStyle = value
             case .namelessRoundProfileButtons: s.namelessRoundProfileButtons = value
+            // Appearance
+            case .squareAvatars: s.squareAvatars = value
+            case .compactChatList: s.compactChatList = value
+            case .newChatList: s.newChatList = value
+            case .newChatHeader: s.newChatHeader = value
+            case .blurInsteadGlass: s.blurInsteadGlass = value
+            case .oledMode: s.oledMode = value
+            case .customSettingsIcons: s.customSettingsIcons = value
+            case .telegramAppIcons: s.telegramAppIcons = value
+            case .swipeChatOptions: s.swipeChatOptions = value
+            case .hideVoiceRecordButton: s.hideVoiceRecordButton = value
+            case .foldersAtBottom: s.foldersAtBottom = value
+            case .ramUsageUnderClock: s.ramUsageUnderClock = value
+            case .chatListTitle: s.chatListTitle = value
+            case .premiumStatusInHeader: s.premiumStatusInHeader = value
+            case .searchButtonInChatList: s.searchButtonInChatList = value
+            case .unlimitedPinnedChats: s.unlimitedPinnedChats = value
+            case .newAccountSwitcher: s.newAccountSwitcher = value
+            case .profileColorBackground: s.profileColorBackground = value
+            case .profileAvatarBlur: s.profileAvatarBlur = value
+            case .profileAvatarBlurMinimal: s.profileAvatarBlurMinimal = value
+            case .profileAvatarBlurTinting: s.profileAvatarBlurTinting = value
+            case .musicAlbumBlur: s.musicAlbumBlur = value
+            case .musicPlayerEffect: s.musicPlayerEffect = value
+            case .messageOutline: s.messageOutline = value
+            case .messageTransparent: s.messageTransparent = value
+            case .messageSemiTransparent: s.messageSemiTransparent = value
+            case .messageBlurEffect: s.messageBlurEffect = value
+            case .wideChannelPosts: s.wideChannelPosts = value
+            case .particleEffectEnabled: s.particleEffectEnabled = value
+            // Messages
+            case .showOriginalEdited: s.showOriginalEdited = value
+            case .truncateLongMessages: s.truncateLongMessages = value
+            case .saveChatHistory: s.saveChatHistory = value
+            case .saveOnceMedia: s.saveOnceMedia = value
+            case .noAutoNextVoice: s.noAutoNextVoice = value
+            case .semiTransparentWhenMentioned: s.semiTransparentWhenMentioned = value
+            case .charCounterInput: s.charCounterInput = value
+            case .charCounterInChat: s.charCounterInChat = value
+            case .hideMyDeleted: s.hideMyDeleted = value
+            case .hideMyEdited: s.hideMyEdited = value
+            case .hideBotEdited: s.hideBotEdited = value
+            case .hideBotDeleted: s.hideBotDeleted = value
+            case .doubleTapToEdit: s.doubleTapToEdit = value
+            // Camera
+            case .cameraDefaultBack: s.cameraDefaultBack = value
+            case .cameraUseDeviceMicrophone: s.cameraUseDeviceMicrophone = value
+            case .cameraSendHDPhoto: s.cameraSendHDPhoto = value
+            case .cameraRememberLast: s.cameraRememberLast = value
+            case .cameraStaticZoom: s.cameraStaticZoom = value
+            case .cameraAlwaysSendHD: s.cameraAlwaysSendHD = value
+            // Info
+            case .showIdAndDC: s.showIdAndDC = value
+            case .showSeconds: s.showSeconds = value
+            case .showFullViews: s.showFullViews = value
+            case .hidePhoneNumber: s.hidePhoneNumber = value
+            case .showCreationDate: s.showCreationDate = value
+            case .visualUsername: s.visualUsername = value
+            case .showIfMutualContacts: s.showIfMutualContacts = value
+            case .showRegistrationDate: s.showRegistrationDate = value
+            // Additional
+            case .vibrationEnabled: s.vibrationEnabled = value
+            case .speedBoostEnabled: s.speedBoostEnabled = value
+            // Privacy
+            case .bypassProtectedContent: s.bypassProtectedContent = value
+            case .removeSpoilersEverywhere: s.removeSpoilersEverywhere = value
+            case .antiScamEnabled: s.antiScamEnabled = value
+            case .warnBeforeCall: s.warnBeforeCall = value
+            // Notifications
+            case .localNotificationsEnabled: s.localNotificationsEnabled = value
             case .disableCompactNumbers: s.disableCompactNumbers = !value
             case .contextShowSaveToCloud: s.contextShowSaveToCloud = value
             case .contextShowHideForwardName: s.contextShowHideForwardName = value
@@ -470,6 +737,23 @@ public func namelessFeaturesController(context: AccountContext) -> ViewControlle
             case .outgoingPhotoQuality: if s.outgoingPhotoQuality != value { s.outgoingPhotoQuality = value; simplePromise.set(true) }
             case .stickerSize: if s.stickerSize != value { s.stickerSize = value; simplePromise.set(true) }
             case .accountColorsSaturation: if s.accountColorsSaturation != value { s.accountColorsSaturation = value; simplePromise.set(true) }
+            case .liquidGlassIntensity:
+                let newIntensity = Double(value) / 100.0
+                if abs(s.namelessLiquidGlassIntensity - newIntensity) > 0.001 {
+                    s.namelessLiquidGlassIntensity = newIntensity
+                    NotificationCenter.default.post(name: .luxgramLiquidGlassDidChange, object: nil)
+                    simplePromise.set(true)
+                }
+            case .deletedMessageOpacity:
+                if s.deletedMessageOpacity != value { s.deletedMessageOpacity = value; simplePromise.set(true) }
+            case .cameraJpegQuality:
+                if s.cameraJpegQuality != value { s.cameraJpegQuality = value; simplePromise.set(true) }
+            case .particleEffectSpeed:
+                let v = Double(value) / 100.0
+                if abs(s.particleEffectSpeed - v) > 0.001 { s.particleEffectSpeed = v; simplePromise.set(true) }
+            case .particleEffectDensity:
+                let v = Double(value) / 100.0
+                if abs(s.particleEffectDensity - v) > 0.001 { s.particleEffectDensity = v; simplePromise.set(true) }
             }
         },
         setOneFromManyValue: { setting in
