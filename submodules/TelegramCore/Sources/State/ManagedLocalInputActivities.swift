@@ -3,6 +3,7 @@ import Postbox
 import SwiftSignalKit
 import TelegramApi
 import MtProtoKit
+import SGSimpleSettings
 
 
 public struct PeerActivitySpace: Hashable {
@@ -141,7 +142,40 @@ private func actionFromActivity(_ activity: PeerInputActivity?) -> Api.SendMessa
     }
 }
 
+private func shouldSuppressActivity(_ activity: PeerInputActivity) -> Bool {
+    let settings = SGSimpleSettings.shared
+    switch activity {
+    case .typingText:
+        return settings.disableTypingStatus
+    case .recordingVoice:
+        return settings.disableVCMessageRecordingStatus
+    case .playingGame:
+        return settings.disablePlayingGameStatus
+    case .uploadingFile:
+        return settings.disableUploadingFileStatus
+    case .uploadingPhoto:
+        return settings.disableUploadingPhotoStatus
+    case .uploadingVideo:
+        return settings.disableUploadingVideoStatus
+    case .recordingInstantVideo:
+        return settings.disableRecordingRoundVideoStatus
+    case .uploadingInstantVideo:
+        return settings.disableUploadingRoundVideoStatus
+    case .speakingInGroupCall:
+        return settings.disableSpeakingInGroupCallStatus
+    case .choosingSticker:
+        return settings.disableChoosingStickerStatus
+    case .interactingWithEmoji:
+        return settings.disableEmojiInteractionStatus
+    case .seeingEmojiInteraction:
+        return settings.disableEmojiAcknowledgementStatus
+    }
+}
+
 private func requestActivity(postbox: Postbox, network: Network, accountPeerId: PeerId, peerId: PeerId, threadId: Int64?, activity: PeerInputActivity?) -> Signal<Void, NoError> {
+    if let activity, shouldSuppressActivity(activity) {
+        return .complete()
+    }
     return postbox.transaction { transaction -> Signal<Void, NoError> in
         if let peer = transaction.getPeer(peerId) {
             if peerId == accountPeerId {

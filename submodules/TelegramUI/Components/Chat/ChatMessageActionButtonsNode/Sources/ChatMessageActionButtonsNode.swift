@@ -13,7 +13,7 @@ import ComponentFlow
 import ComponentDisplayAdapters
 import EmojiStatusComponent
 import SGLiquidGlassCore
-import SGLiquidGlass
+import GlassBackgroundComponent
 
 private let titleFont = Font.medium(16.0)
 
@@ -82,8 +82,7 @@ private final class ChatMessageActionButtonNode: ASDisplayNode {
     private var backgroundColorView: UIImageView?
 
     // nameless: Liquid Glass overlay for inline buttons
-    private var glassNode: SGLiquidGlassNode?
-    private var glassRegistered: Bool = false
+    private var glassView: GlassBackgroundView?
 
     private var maskPath: CGPath?
     private var loadingEffectView: TextLoadingEffectView?
@@ -116,9 +115,6 @@ private final class ChatMessageActionButtonNode: ASDisplayNode {
     
     deinit {
         self.progressDisposable?.dispose()
-        if let g = self.glassNode, self.glassRegistered {
-            SGLiquidGlassCoordinator.shared.unregister(node: g)
-        }
     }
     
     override func didLoad() {
@@ -482,35 +478,36 @@ private final class ChatMessageActionButtonNode: ASDisplayNode {
                             backgroundColorView.backgroundColor = theme.theme.list.freeTextSuccessColor.withMultipliedAlpha(0.7)
                         }
 
-                        // nameless: add Liquid Glass overlay for inline buttons
                         if SGLiquidGlassZone.inlineButtons.isEnabled {
-                            if node.glassNode == nil {
-                                let g = SGLiquidGlassNode()
-                                g.glassCornerRadii = GlassRadii(radius: 12.0)
-                                node.addSubnode(g)
-                                node.glassNode = g
-                                if !node.glassRegistered {
-                                    node.glassRegistered = true
-                                    SGLiquidGlassCoordinator.shared.register(node: g, zone: .inlineButtons)
-                                }
+                            let glassView: GlassBackgroundView
+                            if let current = node.glassView {
+                                glassView = current
+                            } else {
+                                glassView = GlassBackgroundView()
+                                glassView.isUserInteractionEnabled = false
+                                node.glassView = glassView
+                                node.view.insertSubview(glassView, belowSubview: backgroundColorView)
                             }
                             let glassColor: UIColor
                             switch color {
-                            case .primary:  glassColor = theme.theme.list.itemAccentColor
-                            case .danger:   glassColor = theme.theme.contextMenu.destructiveColor
-                            case .success:  glassColor = theme.theme.list.freeTextSuccessColor
+                            case .primary: glassColor = theme.theme.list.itemAccentColor
+                            case .danger: glassColor = theme.theme.contextMenu.destructiveColor
+                            case .success: glassColor = theme.theme.list.freeTextSuccessColor
                             }
-                            node.glassNode?.glassTintColor = SGLiquidGlassZone.inlineButtons.isTinted ? glassColor.withAlphaComponent(0.5) : .clear
-                            node.glassNode?.frame = CGRect(origin: .zero, size: CGSize(width: max(0.0, width), height: 42.0))
-                            node.glassNode?.glassVisible = true
+                            let tint = SGLiquidGlassZone.inlineButtons.isTinted
+                                ? GlassBackgroundView.TintColor(kind: .custom(style: .clear, color: glassColor.withAlphaComponent(0.16)))
+                                : GlassBackgroundView.TintColor(kind: .clear)
+                            let glassSize = CGSize(width: max(0.0, width), height: 42.0)
+                            glassView.frame = CGRect(origin: .zero, size: glassSize)
+                            glassView.update(size: glassSize, cornerRadius: 12.0, isDark: theme.theme.overallDarkAppearance, tintColor: tint, isInteractive: false, isVisible: true, transition: .immediate)
+                            glassView.isHidden = false
                         } else {
-                            node.glassNode?.glassVisible = false
+                            node.glassView?.isHidden = true
                         }
                     } else if let backgroundColorView = node.backgroundColorView {
                         node.backgroundColorView = nil
                         backgroundColorView.removeFromSuperview()
-                        // nameless: hide glass when not in extra-bubble background mode
-                        node.glassNode?.glassVisible = false
+                        node.glassView?.isHidden = true
                     }
                                         
                     if iconImage != nil {

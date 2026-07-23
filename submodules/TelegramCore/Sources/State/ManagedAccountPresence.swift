@@ -3,6 +3,7 @@ import TelegramApi
 import Postbox
 import SwiftSignalKit
 import MtProtoKit
+import SGSimpleSettings
 
 private typealias SignalKitTimer = SwiftSignalKit.Timer
 
@@ -15,12 +16,19 @@ private final class AccountPresenceManagerImpl {
     private var shouldKeepOnlinePresenceDisposable: Disposable?
     private let currentRequestDisposable = MetaDisposable()
     private var onlineTimer: SignalKitTimer?
+    private var notificationObserver: NSObjectProtocol?
     
     private var wasOnline: Bool = false
     
     init(queue: Queue, shouldKeepOnlinePresence: Signal<Bool, NoError>, network: Network) {
         self.queue = queue
         self.network = network
+        self.notificationObserver = NotificationCenter.default.addObserver(forName: NSNotification.Name("nameless.ghostModeDidChange"), object: nil, queue: nil) { [weak self] _ in
+            guard let self else { return }
+            self.queue.async {
+                self.updatePresence(self.wasOnline)
+            }
+        }
         
         self.shouldKeepOnlinePresenceDisposable = (shouldKeepOnlinePresence
         |> distinctUntilChanged
@@ -38,13 +46,18 @@ private final class AccountPresenceManagerImpl {
     deinit {
         assert(self.queue.isCurrent())
         self.shouldKeepOnlinePresenceDisposable?.dispose()
+        if let notificationObserver {
+            NotificationCenter.default.removeObserver(notificationObserver)
+        }
         self.currentRequestDisposable.dispose()
         self.onlineTimer?.invalidate()
     }
     
     private func updatePresence(_ isOnline: Bool) {
+        let blocked = SGSimpleSettings.shared.disableOnlineStatus && !SGSimpleSettings.shared.ghostModeAlwaysOnline
+        let effectiveIsOnline = isOnline && !blocked
         let request: Signal<Api.Bool, MTRpcError>
-        if isOnline {
+        if effectiveIsOnline {
             let timer = SignalKitTimer(timeout: 30.0, repeat: false, completion: { [weak self] in
                 guard let strongSelf = self else {
                     return

@@ -2,6 +2,7 @@ import Foundation
 import Postbox
 import TelegramApi
 import SwiftSignalKit
+import SGSimpleSettings
 
 
 private enum PeerReadStateMarker: Equatable {
@@ -225,6 +226,9 @@ private func validatePeerReadState(network: Network, postbox: Postbox, stateMana
 }
 
 private func pushPeerReadState(network: Network, postbox: Postbox, stateManager: AccountStateManager, peerId: PeerId, readState: PeerReadState) -> Signal<PeerReadState, PeerReadStateValidationError> {
+    if SGSimpleSettings.shared.disableMessageReadReceipt {
+        return .single(readState)
+    }
     if peerId.namespace == Namespaces.Peer.SecretChat {
         return inputSecretChat(postbox: postbox, peerId: peerId)
         |> mapToSignal { inputPeer -> Signal<PeerReadState, PeerReadStateValidationError> in
@@ -374,12 +378,19 @@ private func pushPeerReadState(network: Network, postbox: Postbox, stateManager:
 }
 
 func synchronizePeerReadState(network: Network, postbox: Postbox, stateManager: AccountStateManager, peerId: PeerId, push: Bool, validate: Bool) -> Signal<Never, PeerReadStateValidationError> {
+    if SGSimpleSettings.shared.disableMessageReadReceipt && !push {
+        return postbox.transaction { transaction -> Void in
+            transaction.confirmSynchronizedIncomingReadState(peerId)
+        }
+        |> castError(PeerReadStateValidationError.self)
+        |> ignoreValues
+    }
     var signal: Signal<Never, PeerReadStateValidationError> = .complete()
     if push {
         signal = signal
         |> then(pushPeerReadState(network: network, postbox: postbox, stateManager: stateManager, peerId: peerId))
     }
-    if validate {
+    if validate && !SGSimpleSettings.shared.disableMessageReadReceipt {
         signal = signal
         |> then(validatePeerReadState(network: network, postbox: postbox, stateManager: stateManager, peerId: peerId))
     }

@@ -11,6 +11,7 @@ swift_library(
     ],
     deps = [
         "//Swiftgram/SGLiquidGlass:SGLiquidGlass",
+        "//submodules/TelegramUI/Components/GlassBackgroundComponent:GlassBackgroundComponent",
         "//Swiftgram/SGLiquidGlassCore:SGLiquidGlassCore",
         "//submodules/SSignalKit/SwiftSignalKit",
         "//submodules/AsyncDisplayKit",
