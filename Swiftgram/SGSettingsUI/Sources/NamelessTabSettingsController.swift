@@ -125,20 +125,28 @@ public final class NamelessSettingsTabBar: UIView {
     private func makeTabButton(tab: NamelessSettingsTab) -> UIButton {
         let btn = UIButton(type: .custom)
         btn.tag = tab.rawValue
-
-        var config = UIButton.Configuration.plain()
-        config.title = tab.title
-        config.image = UIImage(systemName: tab.icon)?.withConfiguration(UIImage.SymbolConfiguration(pointSize: 12, weight: .medium))
-        config.imagePadding = 5
-        config.imagePlacement = .leading
-        config.baseForegroundColor = .white
-        config.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12)
-        config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { attrs in
-            var a = attrs
-            a.font = UIFont.systemFont(ofSize: 13, weight: .semibold)
-            return a
+        if #available(iOS 15.0, *) {
+            var config = UIButton.Configuration.plain()
+            config.title = tab.title
+            config.image = UIImage(systemName: tab.icon)?.withConfiguration(UIImage.SymbolConfiguration(pointSize: 12, weight: .medium))
+            config.imagePadding = 5
+            config.imagePlacement = .leading
+            config.baseForegroundColor = .white
+            config.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12)
+            config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { attrs in
+                var a = attrs
+                a.font = UIFont.systemFont(ofSize: 13, weight: .semibold)
+                return a
+            }
+            btn.configuration = config
+        } else {
+            btn.setTitle(tab.title, for: .normal)
+            btn.setImage(UIImage(systemName: tab.icon)?.withConfiguration(UIImage.SymbolConfiguration(pointSize: 12, weight: .medium)), for: .normal)
+            btn.tintColor = .white
+            btn.titleLabel?.font = UIFont.systemFont(ofSize: 13, weight: .semibold)
+            btn.contentEdgeInsets = UIEdgeInsets(top: 8, left: 12, bottom: 8, right: 12)
+            btn.imageEdgeInsets = UIEdgeInsets(top: 0, left: -3, bottom: 0, right: 3)
         }
-        btn.configuration = config
         btn.alpha = 0.55
         btn.addTarget(self, action: #selector(tabTapped(_:)), for: .touchUpInside)
         return btn

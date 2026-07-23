@@ -546,7 +546,6 @@ public func namelessFeaturesController(context: AccountContext) -> ViewControlle
             case .compactChatList: s.compactChatList = value; askForRestart?()
             case .hideRecordingButton: s.hideRecordingButton = !value
             case .sendWithReturnKey: s.sendWithReturnKey = value
-            case .wideChannelPosts: s.wideChannelPosts = value
             case .compactMessagePreview: s.chatListLines = value ? SGSimpleSettings.ChatListLines.two.rawValue : SGSimpleSettings.ChatListLines.three.rawValue; askForRestart?()
             case .disableChatSwipeOptions: s.disableChatSwipeOptions = !value; simplePromise.set(true); askForRestart?()
             case .disableDeleteChatSwipeOption: s.disableDeleteChatSwipeOption = !value; askForRestart?()
@@ -564,7 +563,6 @@ public func namelessFeaturesController(context: AccountContext) -> ViewControlle
             case .messageDoubleTapActionOutgoingEdit: s.messageDoubleTapActionOutgoing = value ? SGSimpleSettings.MessageDoubleTapAction.edit.rawValue : SGSimpleSettings.MessageDoubleTapAction.default.rawValue
             case .showProfileId: s.showProfileId = value
             case .showDC: s.showDC = value
-            case .showCreationDate: s.showCreationDate = value
             case .showRegDate: s.showRegDate = value
             case .confirmCalls: s.confirmCalls = value
             case .swipeForVideoPIP: s.videoPIPSwipeDirection = value ? SGSimpleSettings.VideoPIPSwipeDirection.up.rawValue : SGSimpleSettings.VideoPIPSwipeDirection.none.rawValue
@@ -649,7 +647,6 @@ public func namelessFeaturesController(context: AccountContext) -> ViewControlle
             case .namelessRoundProfileButtons: s.namelessRoundProfileButtons = value
             // Appearance
             case .squareAvatars: s.squareAvatars = value
-            case .compactChatList: s.compactChatList = value
             case .newChatList: s.newChatList = value
             case .newChatHeader: s.newChatHeader = value
             case .blurInsteadGlass: s.blurInsteadGlass = value
