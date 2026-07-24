@@ -1,4 +1,5 @@
 import Foundation
+import UIKit
 
 private enum NamelessSettingsKey {
     static let showDeletedMessages = "nameless.showDeletedMessages"

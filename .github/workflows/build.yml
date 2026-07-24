@@ -7,8 +7,8 @@ on:
 
 concurrency:
   group: build-${{ github.ref }}
-  # Keep previous builds running so two IPA builds can finish in parallel
-  cancel-in-progress: false
+  # Only one build on main; cancel older so the newest always runs
+  cancel-in-progress: true
 
 jobs:
   build:
@@ -89,6 +89,7 @@ jobs:
           export BUILD_NUMBER="$COMMIT_COUNT"
           echo "BUILD_NUMBER=$(echo $BUILD_NUMBER)" >> $GITHUB_ENV
           echo "APP_VERSION=$(echo $APP_VERSION)" >> $GITHUB_ENV
+          set +e
           python3 -u build-system/Make/Make.py \
             --bazelUserRoot="$BAZEL_USER_ROOT" \
             build \
@@ -98,7 +99,17 @@ jobs:
             --configuration=release_arm64 \
             --buildNumber="$BUILD_NUMBER" \
           2>&1 | tee /tmp/build.log
-          echo "=== LAST 50 LINES ===" && tail -50 /tmp/build.log
+          BUILD_EXIT=${PIPESTATUS[0]}
+          set -e
+          echo "=== BUILD EXIT: $BUILD_EXIT ==="
+          echo "=== ERRORS (if any) ==="
+          grep -E "error:|ERROR:|cannot find|Build did NOT|FAILED|fatal error" /tmp/build.log | tail -80 || true
+          echo "=== LAST 80 LINES ==="
+          tail -80 /tmp/build.log
+          if [ "$BUILD_EXIT" -ne 0 ]; then
+            echo "Bazel/Make build failed with exit $BUILD_EXIT"
+            exit "$BUILD_EXIT"
+          fi
           OUTPUT_PATH="build/artifacts"
           rm -rf "$OUTPUT_PATH"
           mkdir -p "$OUTPUT_PATH"
@@ -121,6 +132,10 @@ jobs:
               cp "$FOUND" "$OUTPUT_PATH/nameless.ipa"
               echo "Found IPA via find: $FOUND"
             fi
+          fi
+          if [ ! -f "$OUTPUT_PATH/nameless.ipa" ]; then
+            echo "No IPA produced — failing job"
+            exit 1
           fi
           ls -lah "$OUTPUT_PATH/"
 
