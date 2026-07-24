@@ -1262,7 +1262,18 @@ public class Window1 {
                 
                 if let image = self.badgeView.image {
                     self.updateBadgeVisibility()
-                    self.badgeView.frame = CGRect(origin: CGPoint(x: floorToScreenPixels((self.windowLayout.size.width - image.size.width) / 2.0), y: self.deviceMetrics.sgAppBadgeOffset()), size: image.size)
+                    // Cap badge to a notch-sized pill so a marketing asset never covers the UI.
+                    let maxWidth: CGFloat = min(140.0, self.windowLayout.size.width * 0.42)
+                    let aspect = image.size.height > 0.0 ? (image.size.width / image.size.height) : 3.0
+                    let badgeSize = CGSize(width: maxWidth, height: maxWidth / max(aspect, 0.01))
+                    self.badgeView.frame = CGRect(
+                        origin: CGPoint(
+                            x: floorToScreenPixels((self.windowLayout.size.width - badgeSize.width) / 2.0),
+                            y: self.deviceMetrics.sgAppBadgeOffset()
+                        ),
+                        size: badgeSize
+                    )
+                    self.badgeView.contentMode = .scaleAspectFit
                 }
             }
         }

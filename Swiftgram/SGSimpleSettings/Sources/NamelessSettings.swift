@@ -431,7 +431,7 @@ public extension SGSimpleSettings {
     var namelessLiquidGlassChatList: Bool { get { storage.namelessBool(NamelessSettingsKey.liquidGlassChatList, default: true) } set { storage.set(newValue, forKey: NamelessSettingsKey.liquidGlassChatList) } }
     var namelessVideoBackgroundEnabled: Bool { get { storage.namelessBool(NamelessSettingsKey.videoBackgroundEnabled) } set { storage.set(newValue, forKey: NamelessSettingsKey.videoBackgroundEnabled) } }
     var namelessVideoBackgroundPath: String { get { storage.namelessString(NamelessSettingsKey.videoBackgroundPath) } set { storage.set(newValue, forKey: NamelessSettingsKey.videoBackgroundPath) } }
-    var namelessMusicCardStyle: Bool { get { storage.namelessBool(NamelessSettingsKey.musicCardStyle) } set { storage.set(newValue, forKey: NamelessSettingsKey.musicCardStyle) } }
+    var namelessMusicCardStyle: Bool { get { storage.namelessBool(NamelessSettingsKey.musicCardStyle, default: true) } set { storage.set(newValue, forKey: NamelessSettingsKey.musicCardStyle) } }
     /// Round icon buttons (profile + global chrome). Default ON for nameless redesign.
     var namelessRoundProfileButtons: Bool { get { storage.namelessBool(NamelessSettingsKey.roundProfileButtons, default: true) } set { storage.set(newValue, forKey: NamelessSettingsKey.roundProfileButtons) } }
 

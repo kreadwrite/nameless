@@ -225,6 +225,15 @@ private enum NLOneFromManySetting: String {
 
 private enum NLDisclosureLink: String {
     case none
+    case hubAppearance
+    case hubLiquidGlass
+    case hubGhost
+    case hubMessages
+    case hubCamera
+    case hubPrivacy
+    case hubInfo
+    case hubMedia
+    case hubExtra
 }
 
 private enum NLAction: Int, CaseIterable {
@@ -234,10 +243,82 @@ private enum NLAction: Int, CaseIterable {
     case resetAll
 }
 
+/// Hub shelves (Whitegram-style). Root shows only these; toggles live inside.
+private enum NLHubCategory: String, CaseIterable {
+    case appearance
+    case liquidGlass
+    case ghost
+    case messages
+    case camera
+    case privacy
+    case info
+    case media
+    case extra
+
+    var titleRu: String {
+        switch self {
+        case .appearance: return "Внешний вид"
+        case .liquidGlass: return "Liquid Glass"
+        case .ghost: return "Призрак"
+        case .messages: return "Сообщения"
+        case .camera: return "Камера"
+        case .privacy: return "Конфиденциальность"
+        case .info: return "Информация"
+        case .media: return "Медиа и плеер"
+        case .extra: return "Дополнительно"
+        }
+    }
+
+    var subtitleRu: String {
+        switch self {
+        case .appearance: return "Список чатов, профиль, OLED, кнопки"
+        case .liquidGlass: return "Стекло на каждом элементе"
+        case .ghost: return "Typing / online / read / stories"
+        case .messages: return "Удалённые, счётчики, поведение"
+        case .camera: return "HD, JPEG, телескоп"
+        case .privacy: return "Анти-скам, ads, protected"
+        case .info: return "ID, DC, дата регистрации"
+        case .media: return "Карточка музыки, видео-обои"
+        case .extra: return "Экспорт, сброс, ключ"
+        }
+    }
+
+    var disclosure: NLDisclosureLink {
+        switch self {
+        case .appearance: return .hubAppearance
+        case .liquidGlass: return .hubLiquidGlass
+        case .ghost: return .hubGhost
+        case .messages: return .hubMessages
+        case .camera: return .hubCamera
+        case .privacy: return .hubPrivacy
+        case .info: return .hubInfo
+        case .media: return .hubMedia
+        case .extra: return .hubExtra
+        }
+    }
+
+    static func from(link: NLDisclosureLink) -> NLHubCategory? {
+        switch link {
+        case .hubAppearance: return .appearance
+        case .hubLiquidGlass: return .liquidGlass
+        case .hubGhost: return .ghost
+        case .hubMessages: return .messages
+        case .hubCamera: return .camera
+        case .hubPrivacy: return .privacy
+        case .hubInfo: return .info
+        case .hubMedia: return .media
+        case .hubExtra: return .extra
+        case .none: return nil
+        }
+    }
+}
+
 // MARK: - State
 
 private struct NLControllerState: Equatable {
     var searchQuery: String?
+    /// nil = hub root shelves; non-nil = category toggles screen
+    var hubCategory: NLHubCategory? = nil
 }
 
 // MARK: - Entry type
@@ -250,12 +331,31 @@ private func nlBuildEntries(presentationData: PresentationData, state: NLControl
     let s = SGSimpleSettings.shared
     var entries: [NLEntry] = []
     let id = SGItemListCounter()
+    let query = (state.searchQuery ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+    let searching = !query.isEmpty
+
+    // Hub root: only category shelves (unless searching or inside a category)
+    if !searching, state.hubCategory == nil {
+        entries.append(.searchInput(id: id.count, section: .search, title: NSAttributedString(string: "🔍"), text: state.searchQuery ?? "", placeholder: "Поиск настроек"))
+        entries.append(.header(id: id.count, section: .items, text: "NAMELESS", badge: nil))
+        for cat in NLHubCategory.allCases {
+            entries.append(.disclosure(id: id.count, section: .items, link: cat.disclosure, text: cat.titleRu))
+            entries.append(.notice(id: id.count, section: .items, text: cat.subtitleRu))
+        }
+        entries.append(.header(id: id.count, section: .actions, text: "БЫСТРЫЕ ДЕЙСТВИЯ", badge: nil))
+        entries.append(.action(id: id.count, section: .actions, actionType: .exportSettings, text: "Экспорт настроек", kind: .generic))
+        entries.append(.action(id: id.count, section: .actions, actionType: .importSettings, text: "Импорт настроек", kind: .generic))
+        entries.append(.action(id: id.count, section: .actions, actionType: .resetAll, text: "Сбросить nameless", kind: .destructive))
+        return filterSGItemListUIEntrires(entries: entries, by: state.searchQuery)
+    }
 
     entries.append(.searchInput(id: id.count, section: .search, title: NSAttributedString(string: "🔍"), text: state.searchQuery ?? "", placeholder: "Поиск настроек"))
 
     let sec: NLSectionId = .items
+    let cat = state.hubCategory
 
     // ВНЕШНИЙ ВИД
+    if cat == nil || cat == .appearance {
     entries.append(.header(id: id.count, section: sec, text: "✦ ВНЕШНИЙ ВИД", badge: nil))
 
     // СПИСОК ЧАТОВ
@@ -304,13 +404,18 @@ private func nlBuildEntries(presentationData: PresentationData, state: NLControl
     entries.append(.toggle(id: id.count, section: sec, settingName: .profileAvatarBlurMinimal, value: s.profileAvatarBlurMinimal, text: "Минимальный блюр", enabled: s.profileAvatarBlur))
     entries.append(.toggle(id: id.count, section: sec, settingName: .profileAvatarBlurTinting, value: s.profileAvatarBlurTinting, text: "Тонирование блюра", enabled: s.profileAvatarBlur))
 
+    } // end appearance
+
     // МЕДИА И ПЛЕЕР
+    if cat == nil || cat == .media {
     entries.append(.header(id: id.count, section: sec, text: "МЕДИА И ПЛЕЕР", badge: nil))
-    entries.append(.toggle(id: id.count, section: sec, settingName: .namelessMusicCardStyle, value: s.namelessMusicCardStyle, text: "Стиль карточки музыки", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .namelessMusicCardStyle, value: s.namelessMusicCardStyle, text: "Стиль карточки музыки (cover на всю карточку)", enabled: true))
     entries.append(.toggle(id: id.count, section: sec, settingName: .musicAlbumBlur, value: s.musicAlbumBlur, text: "Блюр обложки трека", enabled: true))
     entries.append(.toggle(id: id.count, section: sec, settingName: .musicPlayerEffect, value: s.musicPlayerEffect, text: "Эффект в плеере", enabled: true))
     entries.append(.toggle(id: id.count, section: sec, settingName: .namelessVideoBackgroundEnabled, value: s.namelessVideoBackgroundEnabled, text: "Видео-обои чата", enabled: true))
+    }
 
+    if cat == nil || cat == .appearance {
     // ИКОНКИ
     entries.append(.header(id: id.count, section: sec, text: "ИКОНКИ", badge: nil))
     entries.append(.toggle(id: id.count, section: sec, settingName: .telegramAppIcons, value: s.telegramAppIcons, text: "Иконки приложения Telegram", enabled: true))
@@ -327,14 +432,14 @@ private func nlBuildEntries(presentationData: PresentationData, state: NLControl
     entries.append(.percentageSlider(id: id.count, section: sec, settingName: .accountColorsSaturation, value: s.accountColorsSaturation))
     entries.append(.header(id: id.count, section: sec, text: "РАЗМЕР СТИКЕРОВ", badge: nil))
     entries.append(.percentageSlider(id: id.count, section: sec, settingName: .stickerSize, value: s.stickerSize))
-    entries.append(.toggle(id: id.count, section: sec, settingName: .namelessMusicCardStyle, value: s.namelessMusicCardStyle, text: "Стиль карточки музыки", enabled: true))
-    entries.append(.toggle(id: id.count, section: sec, settingName: .namelessRoundProfileButtons, value: s.namelessRoundProfileButtons, text: "Круглые стеклянные кнопки профиля", enabled: true))
 
     // УВЕДОМЛЕНИЯ
     entries.append(.header(id: id.count, section: sec, text: "УВЕДОМЛЕНИЯ", badge: nil))
     entries.append(.toggle(id: id.count, section: sec, settingName: .confirmCalls, value: s.confirmCalls, text: "Предупреждение при звонке", enabled: true))
+    }
 
     // LIQUID GLASS
+    if cat == nil || cat == .liquidGlass {
     entries.append(.header(id: id.count, section: sec, text: "✦ LIQUID GLASS (iOS 26)", badge: nil))
     entries.append(.toggle(id: id.count, section: sec, settingName: .liquidGlassEnabled, value: s.liquidGlassEnabled, text: "Жидкое стекло — мастер", enabled: true))
     entries.append(.toggle(id: id.count, section: sec, settingName: .namelessLiquidGlassFadeAnimation, value: s.namelessLiquidGlassFadeAnimation, text: "Анимация фейда при включении", enabled: s.liquidGlassEnabled))
@@ -350,8 +455,10 @@ private func nlBuildEntries(presentationData: PresentationData, state: NLControl
     entries.append(.toggle(id: id.count, section: sec, settingName: .namelessLiquidGlassSearch, value: s.namelessLiquidGlassSearch, text: "Панель поиска", enabled: s.liquidGlassEnabled))
     entries.append(.toggle(id: id.count, section: sec, settingName: .namelessLiquidGlassTinting, value: s.namelessLiquidGlassTinting, text: "Тонирование (цвет акцента)", enabled: s.liquidGlassEnabled))
     entries.append(.percentageSlider(id: id.count, section: sec, settingName: .liquidGlassIntensity, value: Int32(s.namelessLiquidGlassIntensity * 100)))
+    }
 
     // СООБЩЕНИЯ
+    if cat == nil || cat == .messages {
     entries.append(.header(id: id.count, section: sec, text: "✦ СООБЩЕНИЯ", badge: nil))
 
     entries.append(.header(id: id.count, section: sec, text: "УДАЛЁННЫЕ", badge: nil))
@@ -379,7 +486,10 @@ private func nlBuildEntries(presentationData: PresentationData, state: NLControl
     entries.append(.toggle(id: id.count, section: sec, settingName: .scrollToTopButtonEnabled, value: s.scrollToTopButtonEnabled, text: "Кнопка «Наверх»", enabled: true))
     entries.append(.toggle(id: id.count, section: sec, settingName: .disableScrollToNextChannel2, value: !s.disableScrollToNextChannel, text: "Скролл к следующему каналу", enabled: true))
 
+    } // end messages
+
     // КАМЕРА
+    if cat == nil || cat == .camera {
     entries.append(.header(id: id.count, section: sec, text: "✦ КАМЕРА", badge: nil))
     entries.append(.toggle(id: id.count, section: sec, settingName: .enableTelescope, value: s.enableTelescope, text: "Телескоп (зум камеры)", enabled: true))
     entries.append(.toggle(id: id.count, section: sec, settingName: .cameraDefaultBack, value: s.cameraDefaultBack, text: "По умолчанию задняя камера", enabled: true))
@@ -392,7 +502,10 @@ private func nlBuildEntries(presentationData: PresentationData, state: NLControl
     entries.append(.toggle(id: id.count, section: sec, settingName: .cameraAlwaysSendHD, value: s.cameraAlwaysSendHD, text: "Всегда в HD", enabled: true))
     entries.append(.toggle(id: id.count, section: sec, settingName: .enableVideoToCircleOrVoice, value: s.enableVideoToCircleOrVoice, text: "Видео → кружок или голосовое", enabled: true))
 
+    } // end camera
+
     // РЕЖИМ ПРИЗРАКА — полностью реализован
+    if cat == nil || cat == .ghost {
     entries.append(.header(id: id.count, section: sec, text: "👻 РЕЖИМ ПРИЗРАКА", badge: nil))
     // МАСТЕР-ТОГГЛ: включает всё сразу
     entries.append(.toggle(id: id.count, section: sec, settingName: .ghostModeEnabled, value: s.ghostModeEnabled, text: "Режим призрака (мастер)", enabled: true))
@@ -430,7 +543,10 @@ private func nlBuildEntries(presentationData: PresentationData, state: NLControl
     entries.append(.toggle(id: id.count, section: sec, settingName: .enableOnlineStatusRecording, value: s.enableOnlineStatusRecording, text: "История онлайна собеседников", enabled: true))
     entries.append(.toggle(id: id.count, section: sec, settingName: .fakeLocationEnabled, value: s.fakeLocationEnabled, text: "Подмена геолокации", enabled: true))
 
+    } // end ghost
+
     // КОНФИДЕНЦИАЛЬНОСТЬ
+    if cat == nil || cat == .privacy {
     entries.append(.header(id: id.count, section: sec, text: "✦ КОНФИДЕНЦИАЛЬНОСТЬ", badge: nil))
     entries.append(.toggle(id: id.count, section: sec, settingName: .bypassProtectedContent, value: s.bypassProtectedContent, text: "Обход защищённого контента", enabled: true))
     entries.append(.toggle(id: id.count, section: sec, settingName: .removeSpoilersEverywhere, value: s.removeSpoilersEverywhere, text: "Убрать спойлеры везде", enabled: true))
@@ -443,7 +559,10 @@ private func nlBuildEntries(presentationData: PresentationData, state: NLControl
     entries.append(.toggle(id: id.count, section: sec, settingName: .disableSecretChatBlurOnScreenshot, value: s.disableSecretChatBlurOnScreenshot, text: "Без размытия при скриншоте", enabled: true))
     entries.append(.toggle(id: id.count, section: sec, settingName: .hideProxySponsor, value: s.hideProxySponsor, text: "Скрыть спонсора прокси", enabled: true))
 
+    } // end privacy
+
     // ИНФОРМАЦИЯ
+    if cat == nil || cat == .info {
     entries.append(.header(id: id.count, section: sec, text: "✦ ИНФОРМАЦИЯ", badge: nil))
     entries.append(.toggle(id: id.count, section: sec, settingName: .showProfileId, value: s.showProfileId, text: "ID и DC в профиле", enabled: true))
     entries.append(.toggle(id: id.count, section: sec, settingName: .showSeconds, value: s.showSeconds, text: "Секунды в метке времени", enabled: true))
@@ -455,7 +574,9 @@ private func nlBuildEntries(presentationData: PresentationData, state: NLControl
     entries.append(.toggle(id: id.count, section: sec, settingName: .showRegistrationDate, value: s.showRegistrationDate, text: "Дата регистрации аккаунта", enabled: true))
     entries.append(.toggle(id: id.count, section: sec, settingName: .showDC, value: s.showDC, text: "Показывать DC", enabled: true))
     entries.append(.toggle(id: id.count, section: sec, settingName: .disableCompactNumbers, value: !s.disableCompactNumbers, text: "Компактные числа", enabled: true))
+    } // end info
 
+    if cat == nil || cat == .extra {
     // КОНТЕКСТНОЕ МЕНЮ
     entries.append(.header(id: id.count, section: sec, text: "КОНТЕКСТНОЕ МЕНЮ", badge: nil))
     entries.append(.toggle(id: id.count, section: sec, settingName: .contextShowSaveToCloud, value: s.contextShowSaveToCloud, text: "Сохранить в облако", enabled: true))
@@ -515,17 +636,24 @@ private func nlBuildEntries(presentationData: PresentationData, state: NLControl
     entries.append(.action(id: id.count, section: actSec, actionType: .importSettings, text: "Импорт настроек из JSON", kind: .generic))
     entries.append(.action(id: id.count, section: actSec, actionType: .saveKeychain, text: "Сохранить настройки в Keychain", kind: .generic))
     entries.append(.action(id: id.count, section: actSec, actionType: .resetAll, text: "Сбросить все настройки nameless", kind: .destructive))
+    } // end extra
 
     return filterSGItemListUIEntrires(entries: entries, by: state.searchQuery)
 }
 
 // MARK: - Public API
 
-public func namelessFeaturesController(context: AccountContext) -> ViewController {
+/// Category shelf screen — same toggles, pre-filtered by hub category.
+private func namelessFeaturesCategoryController(context: AccountContext, category: NLHubCategory) -> ViewController {
+    return namelessFeaturesController(context: context, initialCategory: category)
+}
+
+public func namelessFeaturesController(context: AccountContext, initialCategory: NLHubCategory? = nil) -> ViewController {
     var presentControllerImpl: ((ViewController, ViewControllerPresentationArguments?) -> Void)?
+    var pushControllerImpl: ((ViewController) -> Void)?
     var askForRestart: (() -> Void)?
 
-    let initialState = NLControllerState()
+    let initialState = NLControllerState(hubCategory: initialCategory)
     let statePromise = ValuePromise(initialState, ignoreRepeated: true)
     let stateValue = Atomic(value: initialState)
     let updateState: ((NLControllerState) -> NLControllerState) -> Void = { f in
@@ -595,8 +723,14 @@ public func namelessFeaturesController(context: AccountContext) -> ViewControlle
             case .startTelescopeWithRearCam: s.startTelescopeWithRearCam = value
             case .disableGalleryCamera: s.disableGalleryCamera = !value; simplePromise.set(true)
             case .disableGalleryCameraPreview: s.disableGalleryCameraPreview = !value
-            case .disableOnlineStatus: s.disableOnlineStatus = value
-            case .disableTypingStatus: s.disableTypingStatus = value
+            case .disableOnlineStatus:
+                s.disableOnlineStatus = value
+                NotificationCenter.default.post(name: NSNotification.Name("nameless.ghostModeDidChange"), object: nil)
+                simplePromise.set(true)
+            case .disableTypingStatus:
+                s.disableTypingStatus = value
+                NotificationCenter.default.post(name: NSNotification.Name("nameless.ghostModeDidChange"), object: nil)
+                simplePromise.set(true)
             case .disableVCMessageRecordingStatus: s.disableVCMessageRecordingStatus = value
             case .disableUploadingFileStatus: s.disableUploadingFileStatus = value
             case .disableUploadingPhotoStatus: s.disableUploadingPhotoStatus = value
@@ -611,22 +745,30 @@ public func namelessFeaturesController(context: AccountContext) -> ViewControlle
             case .disableChoosingStickerStatus: s.disableChoosingStickerStatus = value
             case .disableEmojiInteractionStatus: s.disableEmojiInteractionStatus = value
             case .disableEmojiAcknowledgementStatus: s.disableEmojiAcknowledgementStatus = value
-            case .disableMessageReadReceipt: s.disableMessageReadReceipt = value
-            case .disableStoryReadReceipt: s.disableStoryReadReceipt = value
+            case .disableMessageReadReceipt:
+                s.disableMessageReadReceipt = value
+                NotificationCenter.default.post(name: NSNotification.Name("nameless.ghostModeDidChange"), object: nil)
+                simplePromise.set(true)
+            case .disableStoryReadReceipt:
+                s.disableStoryReadReceipt = value
+                NotificationCenter.default.post(name: NSNotification.Name("nameless.ghostModeDidChange"), object: nil)
+                simplePromise.set(true)
             case .enableOnlineStatusRecording: s.enableOnlineStatusRecording = value
             case .fakeLocationEnabled: s.fakeLocationEnabled = value
             case .ghostModeMessageSendDelay: s.ghostModeMessageSendDelaySeconds = value ? 12 : 0
             case .ghostModeEnabled:
-                s.ghostModeEnabled = value
+                // applyGhostModeAll already posts nameless.ghostModeDidChange
                 s.applyGhostModeAll(enabled: value)
-                NotificationCenter.default.post(name: NSNotification.Name("nameless.ghostModeDidChange"), object: nil)
-            case .ghostModeFakeTyping: s.ghostModeFakeTyping = value
+                simplePromise.set(true)
+            case .ghostModeFakeTyping: s.ghostModeFakeTyping = value; simplePromise.set(true)
             case .ghostModeAntiSpam: s.ghostModeAntiSpam = value
             case .ghostModeHideVideoWatch: s.ghostModeHideVideoWatch = value
             case .ghostModeAutoCleanHistory: s.ghostModeAutoCleanHistory = value
             case .ghostModeAlwaysOnline:
                 s.ghostModeAlwaysOnline = value
                 if value { s.disableOnlineStatus = false } // нельзя одновременно
+                NotificationCenter.default.post(name: NSNotification.Name("nameless.ghostModeDidChange"), object: nil)
+                simplePromise.set(true)
             case .liquidGlassEnabled: s.liquidGlassEnabled = value; NotificationCenter.default.post(name: .luxgramLiquidGlassDidChange, object: nil)
             case .namelessLiquidGlassMessages: s.namelessLiquidGlassMessages = value; NotificationCenter.default.post(name: .luxgramLiquidGlassDidChange, object: nil)
             case .namelessLiquidGlassOutgoingMessages: s.namelessLiquidGlassOutgoingMessages = value; NotificationCenter.default.post(name: .luxgramLiquidGlassDidChange, object: nil)
@@ -791,7 +933,10 @@ public func namelessFeaturesController(context: AccountContext) -> ViewControlle
             ])])
             presentControllerImpl?(actionSheet, ViewControllerPresentationArguments(presentationAnimation: .modalSheet))
         },
-        openDisclosureLink: { _ in },
+        openDisclosureLink: { link in
+            guard let category = NLHubCategory.from(link: link) else { return }
+            pushControllerImpl?(namelessFeaturesCategoryController(context: context, category: category))
+        },
         action: { actionType in
             switch actionType {
             case .exportSettings:
@@ -823,12 +968,16 @@ public func namelessFeaturesController(context: AccountContext) -> ViewControlle
     let signal = combineLatest(simplePromise.get(), statePromise.get(), context.sharedContext.presentationData)
     |> map { _, state, presentationData -> (ItemListControllerState, (ItemListNodeState, Any)) in
         let entries = nlBuildEntries(presentationData: presentationData, state: state, simpleUpdated: true)
-        let cs = ItemListControllerState(presentationData: ItemListPresentationData(presentationData), title: .text("Функции nameless"), leftNavigationButton: nil, rightNavigationButton: nil, backNavigationButton: ItemListBackButton(title: presentationData.strings.Common_Back))
+        let title = state.hubCategory?.titleRu ?? "nameless"
+        let cs = ItemListControllerState(presentationData: ItemListPresentationData(presentationData), title: .text(title), leftNavigationButton: nil, rightNavigationButton: nil, backNavigationButton: ItemListBackButton(title: presentationData.strings.Common_Back))
         let ls = ItemListNodeState(presentationData: ItemListPresentationData(presentationData), entries: entries, style: .blocks)
         return (cs, (ls, arguments))
     }
 
     let controller = ItemListController(context: context, state: signal)
+    pushControllerImpl = { [weak controller] c in
+        controller?.push(c)
+    }
     presentControllerImpl = { [weak controller] c, a in
         controller?.present(c, in: .window(.root), with: a)
     }

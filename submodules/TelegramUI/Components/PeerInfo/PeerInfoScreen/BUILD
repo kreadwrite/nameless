@@ -5,6 +5,7 @@ sgdeps = [
     "//Swiftgram/SGStrings:SGStrings",
     "//Swiftgram/SGSimpleSettings:SGSimpleSettings",
     "//Swiftgram/SGLiquidGlassCore:SGLiquidGlassCore",
+    "//Swiftgram/SGLiquidGlass:SGLiquidGlass",
 
     "//Swiftgram/SGRegDate:SGRegDate",
     "//Swiftgram/SGRegDateScheme:SGRegDateScheme",

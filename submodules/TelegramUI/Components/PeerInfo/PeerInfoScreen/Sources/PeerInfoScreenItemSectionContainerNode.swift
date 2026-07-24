@@ -4,6 +4,8 @@ import Display
 import AsyncDisplayKit
 import AccountContext
 import TelegramPresentationData
+import SGLiquidGlassCore
+import SGLiquidGlass
 
 final class PeerInfoScreenItemSectionContainerNode: ASDisplayNode {
     private let backgroundNode: ASDisplayNode
@@ -16,7 +18,7 @@ final class PeerInfoScreenItemSectionContainerNode: ASDisplayNode {
     
     override init() {
         self.backgroundNode = ASDisplayNode()
-        self.backgroundNode.isLayerBacked = true
+        self.backgroundNode.isLayerBacked = false
         
         self.topSeparatorNode = ASDisplayNode()
         self.topSeparatorNode.isLayerBacked = true
@@ -36,12 +38,43 @@ final class PeerInfoScreenItemSectionContainerNode: ASDisplayNode {
     }
     
     func update(context: AccountContext, width: CGFloat, safeInsets: UIEdgeInsets, hasCorners: Bool, presentationData: PresentationData, items: [PeerInfoScreenItem], transition: ContainedViewLayoutTransition) -> CGFloat {
-        self.backgroundNode.backgroundColor = presentationData.theme.list.itemBlocksBackgroundColor
-        self.topSeparatorNode.backgroundColor = presentationData.theme.list.itemBlocksSeparatorColor
-        self.bottomSeparatorNode.backgroundColor = presentationData.theme.list.itemBlocksSeparatorColor
-        
-        self.topSeparatorNode.isHidden = hasCorners
-        self.bottomSeparatorNode.isHidden = hasCorners
+        let glassOn = SGLiquidGlassZone.settings.isEnabled || SGLiquidGlassZone.profile.isEnabled
+        let isDark = presentationData.theme.overallDarkAppearance
+
+        if glassOn {
+            // Clear solid fill so real UIGlassEffect can show; kill thick gray section stripes.
+            self.backgroundNode.backgroundColor = .clear
+            self.topSeparatorNode.isHidden = true
+            self.bottomSeparatorNode.isHidden = true
+            self.itemContainerNode.clipsToBounds = true
+            if hasCorners {
+                self.itemContainerNode.cornerRadius = NamelessItemListGlass.sectionCornerRadius
+                self.backgroundNode.cornerRadius = NamelessItemListGlass.sectionCornerRadius
+            } else {
+                self.itemContainerNode.cornerRadius = 0
+                self.backgroundNode.cornerRadius = 0
+            }
+            if let glass = self.backgroundNode.sgGlassOverlay {
+                glass.tint = presentationData.theme.list.itemBlocksBackgroundColor
+                // size applied after height known below
+                glass.updateLayout(
+                    size: CGSize(width: width, height: max(self.backgroundNode.bounds.height, 1)),
+                    topLeft: hasCorners ? NamelessItemListGlass.sectionCornerRadius : 0,
+                    topRight: hasCorners ? NamelessItemListGlass.sectionCornerRadius : 0,
+                    bottomLeft: hasCorners ? NamelessItemListGlass.sectionCornerRadius : 0,
+                    bottomRight: hasCorners ? NamelessItemListGlass.sectionCornerRadius : 0,
+                    isDark: isDark
+                )
+            }
+        } else {
+            self.backgroundNode.backgroundColor = presentationData.theme.list.itemBlocksBackgroundColor
+            self.topSeparatorNode.backgroundColor = presentationData.theme.list.itemBlocksSeparatorColor
+            self.bottomSeparatorNode.backgroundColor = presentationData.theme.list.itemBlocksSeparatorColor
+            self.topSeparatorNode.isHidden = hasCorners
+            self.bottomSeparatorNode.isHidden = hasCorners
+            self.itemContainerNode.cornerRadius = 0
+            self.backgroundNode.cornerRadius = 0
+        }
         
         var contentHeight: CGFloat = 0.0
         var contentWithBackgroundHeight: CGFloat = 0.0
@@ -122,12 +155,24 @@ final class PeerInfoScreenItemSectionContainerNode: ASDisplayNode {
             }
         }
         
+        let bgHeight = max(0.0, contentWithBackgroundHeight - contentWithBackgroundOffset)
+        let bgFrame = CGRect(origin: CGPoint(x: 0.0, y: contentWithBackgroundOffset), size: CGSize(width: width, height: bgHeight))
         transition.updateFrame(node: self.itemContainerNode, frame: CGRect(origin: CGPoint(), size: CGSize(width: width, height: contentHeight)))
-        transition.updateFrame(node: self.backgroundNode, frame: CGRect(origin: CGPoint(x: 0.0, y: contentWithBackgroundOffset), size: CGSize(width: width, height: max(0.0, contentWithBackgroundHeight - contentWithBackgroundOffset))))
+        transition.updateFrame(node: self.backgroundNode, frame: bgFrame)
         transition.updateFrame(node: self.topSeparatorNode, frame: CGRect(origin: CGPoint(x: 0.0, y: contentWithBackgroundOffset - UIScreenPixel), size: CGSize(width: width, height: UIScreenPixel)))
         transition.updateFrame(node: self.bottomSeparatorNode, frame: CGRect(origin: CGPoint(x: 0.0, y: contentWithBackgroundHeight), size: CGSize(width: width, height: UIScreenPixel)))
+
+        if glassOn, bgHeight > 0.5, let glass = self.backgroundNode.sgGlassOverlay {
+            let r = hasCorners ? NamelessItemListGlass.sectionCornerRadius : 0.0
+            glass.updateLayout(
+                size: bgFrame.size,
+                topLeft: r, topRight: r,
+                bottomLeft: r, bottomRight: r,
+                isDark: isDark
+            )
+        }
         
-        if contentHeight.isZero {
+        if contentHeight.isZero || glassOn {
             transition.updateAlpha(node: self.topSeparatorNode, alpha: 0.0)
             transition.updateAlpha(node: self.bottomSeparatorNode, alpha: 0.0)
         } else {

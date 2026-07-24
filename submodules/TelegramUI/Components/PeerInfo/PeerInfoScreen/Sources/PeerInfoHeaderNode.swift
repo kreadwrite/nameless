@@ -616,17 +616,17 @@ final class PeerInfoHeaderNode: ASDisplayNode {
                 currentSavedMusic = cachedUserData.savedMusic
             }
         }
-        // nameless: card style music is taller (cover + title/artist + lyric line)
+        // nameless: full-bleed cover music card (edge-to-edge album art + text overlay)
         let useMusicCard = SGSimpleSettings.shared.namelessMusicCardStyle
         let musicHeight: CGFloat
         if currentSavedMusic != nil && useMusicCard {
-            musicHeight = 72.0
+            musicHeight = 112.0
         } else if hasBackground || self.isAvatarExpanded {
             musicHeight = 24.0
         } else {
             musicHeight = 16.0
         }
-        let bottomInset: CGFloat = currentSavedMusic != nil ? musicHeight + (useMusicCard ? 8.0 : 0.0) : 0.0
+        let bottomInset: CGFloat = currentSavedMusic != nil ? musicHeight + (useMusicCard ? 10.0 : 0.0) : 0.0
         
         let isLandscape = containerInset > 16.0
         
@@ -2699,7 +2699,8 @@ final class PeerInfoHeaderNode: ASDisplayNode {
                 }
                 let musicBackground = self.musicBackground ?? {
                     let musicBackground = UIView()
-                    musicBackground.backgroundColor = .white
+                    // Never solid white — mask cutout only (transparent)
+                    musicBackground.backgroundColor = .clear
                     self.buttonsMaskView.addSubview(musicBackground)
                     self.musicBackground = musicBackground
                     if transition.isAnimated {
@@ -2707,7 +2708,8 @@ final class PeerInfoHeaderNode: ASDisplayNode {
                     }
                     return musicBackground
                 }()
-                musicTransition.updateFrame(view: musicBackground, frame: CGRect(origin: CGPoint(x: 0.0, y: backgroundHeight - 24.0 - buttonRightOrigin.y), size: CGSize(width: backgroundFrame.width, height: 24.0)))
+                let maskMusicH: CGFloat = SGSimpleSettings.shared.namelessMusicCardStyle ? 112.0 : 24.0
+                musicTransition.updateFrame(view: musicBackground, frame: CGRect(origin: CGPoint(x: 0.0, y: backgroundHeight - maskMusicH - buttonRightOrigin.y), size: CGSize(width: backgroundFrame.width, height: maskMusicH)))
                 
                 if let _ = self.navigationTransition {
                     transition.updateAlpha(layer: musicBackground.layer, alpha: 1.0 - transitionFraction)
@@ -2739,60 +2741,64 @@ final class PeerInfoHeaderNode: ASDisplayNode {
 
             let musicContent: AnyComponent<Empty>
             if useMusicCard {
-                // Card: [cover] title / artist / lyric — matches reference UI
-                let titleColor: UIColor = isOverlay ? .white : presentationData.theme.list.itemPrimaryTextColor
-                let artistColor: UIColor = isOverlay ? UIColor.white.withAlphaComponent(0.72) : presentationData.theme.list.itemSecondaryTextColor
-                let lyricColor: UIColor = isOverlay ? UIColor.white.withAlphaComponent(0.55) : presentationData.theme.list.itemSecondaryTextColor.withAlphaComponent(0.9)
-                let coverColor = UIColor(white: isOverlay ? 0.22 : 0.14, alpha: 1.0)
-                let cardBgColor = isOverlay ? UIColor(white: 0.0, alpha: 0.48) : presentationData.theme.list.itemBlocksBackgroundColor
+                // Full-bleed album-style card: cover fills entire card (with corner radius),
+                // title/artist sit on a bottom gradient scrim (blur-text overlay look).
+                let titleColor: UIColor = .white
+                let artistColor: UIColor = UIColor.white.withAlphaComponent(0.82)
+                let coverColor = UIColor(white: 0.14, alpha: 1.0)
+                let scrimColor = UIColor(white: 0.0, alpha: 0.52)
+                let cardRadius: CGFloat = 18.0
 
                 musicContent = AnyComponent(
                     PlainButtonComponent(
                         content: AnyComponent(
                             ZStack([
+                                // Full-area cover background
                                 AnyComponentWithIdentity(
-                                    id: "cardBg",
-                                    component: AnyComponent(RoundedRectangle(color: cardBgColor, cornerRadius: 16.0, size: CGSize(width: cardWidth, height: musicHeight)))
+                                    id: "coverFill",
+                                    component: AnyComponent(RoundedRectangle(color: coverColor, cornerRadius: cardRadius, size: CGSize(width: cardWidth, height: musicHeight)))
                                 ),
+                                // Center note icon (placeholder until real album art binding)
                                 AnyComponentWithIdentity(
-                                    id: "row",
+                                    id: "coverIcon",
+                                    component: AnyComponent(BundleIconComponent(name: "Media Editor/SmallAudio", tintColor: UIColor.white.withAlphaComponent(0.85)))
+                                ),
+                                // Bottom text scrim overlay
+                                AnyComponentWithIdentity(
+                                    id: "scrim",
                                     component: AnyComponent(
-                                        HStack([
+                                        VStack([
                                             AnyComponentWithIdentity(
-                                                id: "cover",
+                                                id: "scrimPad",
+                                                component: AnyComponent(Rectangle(color: .clear, height: max(0.0, musicHeight - 48.0)))
+                                            ),
+                                            AnyComponentWithIdentity(
+                                                id: "scrimBar",
                                                 component: AnyComponent(
                                                     ZStack([
                                                         AnyComponentWithIdentity(
-                                                            id: "coverBg",
-                                                            component: AnyComponent(RoundedRectangle(color: coverColor, cornerRadius: 10.0, size: CGSize(width: 52.0, height: 52.0)))
+                                                            id: "scrimBg",
+                                                            component: AnyComponent(RoundedRectangle(color: scrimColor, cornerRadius: cardRadius, size: CGSize(width: cardWidth, height: 48.0)))
                                                         ),
                                                         AnyComponentWithIdentity(
-                                                            id: "coverIcon",
-                                                            component: AnyComponent(BundleIconComponent(name: "Media Editor/SmallAudio", tintColor: isOverlay ? .white : presentationData.theme.list.itemAccentColor))
+                                                            id: "texts",
+                                                            component: AnyComponent(
+                                                                VStack([
+                                                                    AnyComponentWithIdentity(
+                                                                        id: "title",
+                                                                        component: AnyComponent(MultilineTextComponent(text: .plain(NSAttributedString(string: trackTitle, font: Font.semibold(15.0), textColor: titleColor)), maximumNumberOfLines: 1))
+                                                                    ),
+                                                                    AnyComponentWithIdentity(
+                                                                        id: "artist",
+                                                                        component: AnyComponent(MultilineTextComponent(text: .plain(NSAttributedString(string: artist, font: Font.regular(13.0), textColor: artistColor)), maximumNumberOfLines: 1))
+                                                                    )
+                                                                ], alignment: .left, spacing: 2.0)
+                                                            )
                                                         )
                                                     ])
                                                 )
-                                            ),
-                                            AnyComponentWithIdentity(
-                                                id: "texts",
-                                                component: AnyComponent(
-                                                    VStack([
-                                                        AnyComponentWithIdentity(
-                                                            id: "title",
-                                                            component: AnyComponent(MultilineTextComponent(text: .plain(NSAttributedString(string: trackTitle, font: Font.semibold(15.0), textColor: titleColor)), maximumNumberOfLines: 1))
-                                                        ),
-                                                        AnyComponentWithIdentity(
-                                                            id: "artist",
-                                                            component: AnyComponent(MultilineTextComponent(text: .plain(NSAttributedString(string: artist, font: Font.regular(13.0), textColor: artistColor)), maximumNumberOfLines: 1))
-                                                        ),
-                                                        AnyComponentWithIdentity(
-                                                            id: "lyric",
-                                                            component: AnyComponent(MultilineTextComponent(text: .plain(NSAttributedString(string: trackTitle, font: Font.regular(12.0), textColor: lyricColor)), maximumNumberOfLines: 1))
-                                                        )
-                                                    ], alignment: .left, spacing: 2.0)
-                                                )
                                             )
-                                        ], spacing: 12.0)
+                                        ], alignment: .left, spacing: 0.0)
                                     )
                                 )
                             ])

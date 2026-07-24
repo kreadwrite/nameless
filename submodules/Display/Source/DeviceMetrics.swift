@@ -410,6 +410,9 @@ public enum DeviceMetrics: CaseIterable, Equatable {
     }
     
     public var showAppBadge: Bool {
-        return self.sgShowAppBadge
+        // nameless: never show the full-screen NAMELESS watermark badge.
+        // The marketing asset (1536×1024 white pill) was laid out at full image.size
+        // and covered settings with white bars + "AMEL" fragment of "NAMELESS".
+        return false
     }
 }

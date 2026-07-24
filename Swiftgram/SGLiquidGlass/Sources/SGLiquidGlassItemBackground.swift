@@ -113,9 +113,9 @@ public final class SGLiquidGlassItemBackground {
             isVisible: true,
             transition: .immediate
         )
-        // Intensity
+        // Max clear glass by default — floor raised so glass is always clearly visible
         let intensity = CGFloat(SGSimpleSettings.shared.namelessLiquidGlassIntensity)
-        self.glassView.alpha = max(0.55, min(1.0, intensity))
+        self.glassView.alpha = max(0.88, min(1.0, intensity <= 0.01 ? 1.0 : intensity))
     }
 }
 

@@ -6,6 +6,7 @@ import SwiftSignalKit
 import TelegramPresentationData
 import TextNodeWithEntities
 import AccountContext
+import SGSimpleSettings
 
 final class PeerInfoScreenDisclosureItem: PeerInfoScreenItem {
     enum Label {
@@ -174,7 +175,15 @@ private final class PeerInfoScreenDisclosureItemNode: PeerInfoScreenItemNode {
         let separatorInset = item.icon == nil && item.iconSignal == nil ? sideInset : leftInset - 1.0
         let titleFont = Font.regular(presentationData.listsFontSize.itemListBaseFontSize)
         
-        self.bottomSeparatorNode.backgroundColor = presentationData.theme.list.itemBlocksSeparatorColor
+        // Soft separators under Liquid Glass — kill thick gray bars between rows
+        if SGSimpleSettings.shared.liquidGlassEnabled && SGSimpleSettings.shared.namelessLiquidGlassSettings {
+            let isDark = presentationData.theme.overallDarkAppearance
+            self.bottomSeparatorNode.backgroundColor = isDark
+                ? UIColor(white: 1.0, alpha: 0.08)
+                : UIColor(white: 0.0, alpha: 0.08)
+        } else {
+            self.bottomSeparatorNode.backgroundColor = presentationData.theme.list.itemBlocksSeparatorColor
+        }
         
         let textColorValue: UIColor = presentationData.theme.list.itemPrimaryTextColor
         let labelColorValue: UIColor

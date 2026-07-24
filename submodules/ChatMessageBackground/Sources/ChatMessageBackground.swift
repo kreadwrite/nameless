@@ -570,10 +570,10 @@ public final class ChatMessageBubbleBackdrop: ASDisplayNode, SGLiquidGlassContai
         if zone.isTinted && self.currentBubbleColor != .clear {
             tint = .init(kind: .custom(style: .clear, color: self.currentBubbleColor.withAlphaComponent(0.18)))
         } else if isDark {
-            // Subtle dark glass so white text stays readable over busy wallpapers
-            tint = .init(kind: .custom(style: .clear, color: UIColor(white: 0.0, alpha: 0.22)))
+            // Deep liquid glass — slightly stronger so glass is clearly visible
+            tint = .init(kind: .custom(style: .clear, color: UIColor(white: 0.0, alpha: 0.28)))
         } else {
-            tint = .init(kind: .clear)
+            tint = .init(kind: .custom(style: .clear, color: UIColor(white: 1.0, alpha: 0.12)))
         }
         if enabled {
             if self.glassView.superview !== self.view {
@@ -583,7 +583,8 @@ public final class ChatMessageBubbleBackdrop: ASDisplayNode, SGLiquidGlassContai
             // Keep glass as the only visible surface of the bubble backdrop
             self.glassView.update(size: size, cornerRadii: self.currentGlassRadii, isDark: isDark, tintColor: tint, isInteractive: false, isVisible: true, transition: transition)
             self.glassView.isHidden = false
-            self.glassView.alpha = 1.0
+            let intensity = CGFloat(SGSimpleSettings.shared.namelessLiquidGlassIntensity)
+            self.glassView.alpha = max(0.9, min(1.0, intensity <= 0.01 ? 1.0 : intensity))
             // Hide opaque wallpaper-sampled fill — this was covering glass and made it look "not liquid"
             self.backgroundContent?.isHidden = true
             self.backgroundContent?.alpha = 0.0

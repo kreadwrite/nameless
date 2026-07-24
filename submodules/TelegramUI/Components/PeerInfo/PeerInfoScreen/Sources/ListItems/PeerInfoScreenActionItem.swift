@@ -6,6 +6,7 @@ import SwiftSignalKit
 import TelegramPresentationData
 import AvatarNode
 import AccountContext
+import SGSimpleSettings
 
 enum PeerInfoScreenActionColor {
     case accent
@@ -112,7 +113,14 @@ private final class PeerInfoScreenActionItemNode: PeerInfoScreenItemNode {
         let separatorInset = item.icon == nil ? sideInset : leftInset - 1.0
         let titleFont = Font.regular(presentationData.listsFontSize.itemListBaseFontSize)
         
-        self.bottomSeparatorNode.backgroundColor = presentationData.theme.list.itemBlocksSeparatorColor
+        if SGSimpleSettings.shared.liquidGlassEnabled && SGSimpleSettings.shared.namelessLiquidGlassSettings {
+            let isDark = presentationData.theme.overallDarkAppearance
+            self.bottomSeparatorNode.backgroundColor = isDark
+                ? UIColor(white: 1.0, alpha: 0.08)
+                : UIColor(white: 0.0, alpha: 0.08)
+        } else {
+            self.bottomSeparatorNode.backgroundColor = presentationData.theme.list.itemBlocksSeparatorColor
+        }
         
         let textColorValue: UIColor
         switch item.color {
