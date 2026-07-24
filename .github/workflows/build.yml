@@ -77,18 +77,23 @@ jobs:
           python3 build-system/patch-rules-apple.py
 
       - name: Build the App
+        shell: bash
         run: |
           set -euo pipefail
           SOURCE_DIR=/Users/Shared/telegram-ios
           BAZEL_USER_ROOT="/private/var/tmp/_bazel_containerhost"
-          cd $SOURCE_DIR
+          cd "$SOURCE_DIR"
           BUILD_NUMBER_OFFSET="$(cat build_number_offset)"
-          export APP_VERSION=$(cat versions.json | python3 -c 'import json,sys;obj=json.load(sys.stdin);print(obj["app"]);')
-          export COMMIT_COUNT=$(git rev-list --count HEAD)
-          export COMMIT_COUNT="$(($COMMIT_COUNT+$BUILD_NUMBER_OFFSET))"
+          export APP_VERSION
+          APP_VERSION=$(python3 -c 'import json;print(json.load(open("versions.json"))["app"])')
+          export COMMIT_COUNT
+          COMMIT_COUNT=$(git rev-list --count HEAD)
+          COMMIT_COUNT=$((COMMIT_COUNT + BUILD_NUMBER_OFFSET))
           export BUILD_NUMBER="$COMMIT_COUNT"
-          echo "BUILD_NUMBER=$(echo $BUILD_NUMBER)" >> $GITHUB_ENV
-          echo "APP_VERSION=$(echo $APP_VERSION)" >> $GITHUB_ENV
+          echo "BUILD_NUMBER=$BUILD_NUMBER" >> "$GITHUB_ENV"
+          echo "APP_VERSION=$APP_VERSION" >> "$GITHUB_ENV"
+          echo "Starting Make.py buildNumber=$BUILD_NUMBER app=$APP_VERSION"
+          # Avoid fragile PIPESTATUS: write log then check exit code file
           set +e
           python3 -u build-system/Make/Make.py \
             --bazelUserRoot="$BAZEL_USER_ROOT" \
@@ -98,45 +103,36 @@ jobs:
             --disableProvisioningProfiles --disableExtensions \
             --configuration=release_arm64 \
             --buildNumber="$BUILD_NUMBER" \
-          2>&1 | tee /tmp/build.log
-          BUILD_EXIT=${PIPESTATUS[0]}
+            > /tmp/build.log 2>&1
+          BUILD_EXIT=$?
           set -e
+          cp /tmp/build.log "$GITHUB_WORKSPACE/build.log" || true
           echo "=== BUILD EXIT: $BUILD_EXIT ==="
-          echo "=== ERRORS (if any) ==="
-          grep -E "error:|ERROR:|cannot find|Build did NOT|FAILED|fatal error" /tmp/build.log | tail -80 || true
-          echo "=== LAST 80 LINES ==="
-          tail -80 /tmp/build.log
+          echo "=== ERRORS ==="
+          (grep -nE "error:|ERROR:|cannot find|Build did NOT|FAILED|fatal error|undefined" /tmp/build.log || true) | tail -100
+          echo "=== LAST 100 LINES ==="
+          tail -100 /tmp/build.log
           if [ "$BUILD_EXIT" -ne 0 ]; then
-            echo "Bazel/Make build failed with exit $BUILD_EXIT"
+            echo "Make/Bazel failed with exit code $BUILD_EXIT"
             exit "$BUILD_EXIT"
           fi
           OUTPUT_PATH="build/artifacts"
           rm -rf "$OUTPUT_PATH"
           mkdir -p "$OUTPUT_PATH"
           shopt -s nullglob
-          for f in bazel-bin/Telegram/Swiftgram.ipa; do
-            cp "$f" "$OUTPUT_PATH/nameless.ipa"
-            echo "Found IPA: $f"
-            break
+          IPA=""
+          for f in bazel-bin/Telegram/Swiftgram.ipa bazel-out/applebin_ios-ios_arm*-opt-ST-*/bin/Telegram/Swiftgram.ipa; do
+            if [ -f "$f" ]; then IPA="$f"; break; fi
           done
-          if [ ! -f "$OUTPUT_PATH/nameless.ipa" ]; then
-            for f in bazel-out/applebin_ios-ios_arm*-opt-ST-*/bin/Telegram/Swiftgram.ipa; do
-              cp "$f" "$OUTPUT_PATH/nameless.ipa"
-              echo "Found IPA: $f"
-              break
-            done
+          if [ -z "$IPA" ]; then
+            IPA=$(find bazel-out bazel-bin -name '*.ipa' -type f 2>/dev/null | head -1 || true)
           fi
-          if [ ! -f "$OUTPUT_PATH/nameless.ipa" ]; then
-            FOUND=$(find bazel-out bazel-bin -name '*.ipa' -type f 2>/dev/null | head -1)
-            if [ -n "$FOUND" ]; then
-              cp "$FOUND" "$OUTPUT_PATH/nameless.ipa"
-              echo "Found IPA via find: $FOUND"
-            fi
-          fi
-          if [ ! -f "$OUTPUT_PATH/nameless.ipa" ]; then
+          if [ -z "$IPA" ] || [ ! -f "$IPA" ]; then
             echo "No IPA produced — failing job"
             exit 1
           fi
+          cp "$IPA" "$OUTPUT_PATH/nameless.ipa"
+          echo "Found IPA: $IPA"
           ls -lah "$OUTPUT_PATH/"
 
       - name: Upload build log
@@ -144,7 +140,10 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: build-log
-          path: /tmp/build.log
+          path: |
+            /tmp/build.log
+            ${{ github.workspace }}/build.log
+          if-no-files-found: warn
           retention-days: 3
 
       - name: Upload unsigned build artifact

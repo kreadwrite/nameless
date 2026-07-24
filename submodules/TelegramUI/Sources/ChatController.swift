@@ -8849,24 +8849,24 @@ public final class ChatControllerImpl: TelegramBaseController, ChatController, G
 
                 // nameless: auto-format outgoing text entities (bold/italic/…)
                 if case let .message(text, _, _, _, _, _, _, _, _, _) = message, !text.isEmpty {
-                    let mode = SGSimpleSettings.AutoFormatMode(rawValue: SGSimpleSettings.shared.autoFormatMode) ?? .none
-                    if mode != .none {
-                        let entityType: MessageTextEntityType?
-                        switch mode {
-                        case .none: entityType = nil
-                        case .bold: entityType = .Bold
-                        case .italic: entityType = .Italic
-                        case .underline: entityType = .Underline
-                        case .strikethrough: entityType = .Strikethrough
-                        case .code: entityType = .Code
-                        case .pre: entityType = .Pre(language: nil)
-                        case .blockquote: entityType = .BlockQuote(isCollapsed: false)
-                        case .spoiler: entityType = .Spoiler
-                        }
-                        if let entityType {
-                            // Replace existing text-entity attributes of the same coverage with auto style
-                            attributes.removeAll { $0 is TextEntitiesMessageAttribute }
-                            let entity = MessageTextEntity(range: 0 ..< (text as NSString).length, type: entityType)
+                    let mode = NamelessAutoFormatMode(rawValue: SGSimpleSettings.shared.autoFormatMode) ?? .none
+                    let entityType: MessageTextEntityType?
+                    switch mode {
+                    case .none: entityType = nil
+                    case .bold: entityType = .Bold
+                    case .italic: entityType = .Italic
+                    case .underline: entityType = .Underline
+                    case .strikethrough: entityType = .Strikethrough
+                    case .code: entityType = .Code
+                    case .pre: entityType = .Pre(language: nil)
+                    case .blockquote: entityType = .BlockQuote(isCollapsed: false)
+                    case .spoiler: entityType = .Spoiler
+                    }
+                    if let entityType {
+                        attributes.removeAll { $0 is TextEntitiesMessageAttribute }
+                        let end = (text as NSString).length
+                        if end > 0 {
+                            let entity = MessageTextEntity(range: 0 ..< end, type: entityType)
                             attributes.append(TextEntitiesMessageAttribute(entities: [entity]))
                         }
                     }

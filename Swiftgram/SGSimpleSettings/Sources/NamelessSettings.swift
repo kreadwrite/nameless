@@ -1,6 +1,55 @@
 import Foundation
 import UIKit
 
+// MARK: - Auto-format (file-level type — not nested in extension)
+
+public enum NamelessAutoFormatMode: String, CaseIterable {
+    case none
+    case bold
+    case italic
+    case underline
+    case strikethrough
+    case code
+    case pre
+    case blockquote
+    case spoiler
+
+    public var titleRu: String {
+        switch self {
+        case .none: return "Обычный"
+        case .bold: return "Жирный"
+        case .italic: return "Курсив"
+        case .underline: return "Подчёркнутый"
+        case .strikethrough: return "Зачёркнутый"
+        case .code: return "Моноширинный"
+        case .pre: return "Блок кода"
+        case .blockquote: return "Цитата"
+        case .spoiler: return "Спойлер"
+        }
+    }
+}
+
+public enum NamelessColorParse {
+    public static func color(fromHex hex: String) -> UIColor? {
+        var s = hex.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+        if s.hasPrefix("#") { s.removeFirst() }
+        guard s.count == 6 || s.count == 8, let value = UInt64(s, radix: 16) else { return nil }
+        let r, g, b, a: CGFloat
+        if s.count == 8 {
+            r = CGFloat((value & 0xFF000000) >> 24) / 255
+            g = CGFloat((value & 0x00FF0000) >> 16) / 255
+            b = CGFloat((value & 0x0000FF00) >> 8) / 255
+            a = CGFloat(value & 0x000000FF) / 255
+        } else {
+            r = CGFloat((value & 0xFF0000) >> 16) / 255
+            g = CGFloat((value & 0x00FF00) >> 8) / 255
+            b = CGFloat(value & 0x0000FF) / 255
+            a = 1
+        }
+        return UIColor(red: r, green: g, blue: b, alpha: a)
+    }
+}
+
 private enum NamelessSettingsKey {
     static let showDeletedMessages = "nameless.showDeletedMessages"
     static let saveDeletedMessagesMedia = "nameless.saveDeletedMessagesMedia"
@@ -496,54 +545,15 @@ public extension SGSimpleSettings {
         set { storage.set(newValue, forKey: NamelessSettingsKey.autoFormatMode) }
     }
 
-    public enum AutoFormatMode: String, CaseIterable {
-        case none
-        case bold
-        case italic
-        case underline
-        case strikethrough
-        case code
-        case pre
-        case blockquote
-        case spoiler
-
-        public var titleRu: String {
-            switch self {
-            case .none: return "Обычный"
-            case .bold: return "Жирный"
-            case .italic: return "Курсив"
-            case .underline: return "Подчёркнутый"
-            case .strikethrough: return "Зачёркнутый"
-            case .code: return "Моноширинный"
-            case .pre: return "Блок кода"
-            case .blockquote: return "Цитата"
-            case .spoiler: return "Спойлер"
-            }
-        }
-    }
-
     /// Parsed UIColor from deletedTrashColorHex
     public func deletedTrashUIColor() -> UIColor {
-        return Self.color(fromHex: deletedTrashColorHex) ?? UIColor(red: 1, green: 0.23, blue: 0.19, alpha: 1)
+        return NamelessColorParse.color(fromHex: deletedTrashColorHex) ?? UIColor(red: 1, green: 0.23, blue: 0.19, alpha: 1)
     }
 
+    /// Compatibility alias
+    public typealias AutoFormatMode = NamelessAutoFormatMode
     public static func color(fromHex hex: String) -> UIColor? {
-        var s = hex.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
-        if s.hasPrefix("#") { s.removeFirst() }
-        guard s.count == 6 || s.count == 8, let value = UInt64(s, radix: 16) else { return nil }
-        let r, g, b, a: CGFloat
-        if s.count == 8 {
-            r = CGFloat((value & 0xFF000000) >> 24) / 255
-            g = CGFloat((value & 0x00FF0000) >> 16) / 255
-            b = CGFloat((value & 0x0000FF00) >> 8) / 255
-            a = CGFloat(value & 0x000000FF) / 255
-        } else {
-            r = CGFloat((value & 0xFF0000) >> 16) / 255
-            g = CGFloat((value & 0x00FF00) >> 8) / 255
-            b = CGFloat(value & 0x0000FF) / 255
-            a = 1
-        }
-        return UIColor(red: r, green: g, blue: b, alpha: a)
+        NamelessColorParse.color(fromHex: hex)
     }
     var showOriginalEdited: Bool { get { storage.namelessBool(NamelessSettingsKey.showOriginalEdited, default: true) } set { storage.set(newValue, forKey: NamelessSettingsKey.showOriginalEdited) } }
     var truncateLongMessages: Bool { get { storage.namelessBool(NamelessSettingsKey.truncateLongMessages, default: true) } set { storage.set(newValue, forKey: NamelessSettingsKey.truncateLongMessages) } }

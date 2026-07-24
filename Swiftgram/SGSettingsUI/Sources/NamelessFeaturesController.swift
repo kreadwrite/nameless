@@ -473,7 +473,7 @@ private func nlBuildEntries(presentationData: PresentationData, state: NLControl
     entries.append(.notice(id: id.count, section: sec, text: "Корзина (HEX): \(s.deletedTrashColorHex) — смените в буфере: скопируйте #RRGGBB и нажмите «Применить HEX корзины»"))
     entries.append(.action(id: id.count, section: sec, actionType: .applyTrashHex, text: "Применить HEX корзины из буфера", kind: .generic))
     entries.append(.header(id: id.count, section: sec, text: "АВТОФОРМАТИРОВАНИЕ ИСХОДЯЩИХ", badge: nil))
-    entries.append(.oneFromManySelector(id: id.count, section: sec, settingName: .autoFormatMode, text: "Стиль при отправке", value: SGSimpleSettings.AutoFormatMode(rawValue: s.autoFormatMode)?.titleRu ?? "Обычный", enabled: true))
+    entries.append(.oneFromManySelector(id: id.count, section: sec, settingName: .autoFormatMode, text: "Стиль при отправке", value: NamelessAutoFormatMode(rawValue: s.autoFormatMode)?.titleRu ?? "Обычный", enabled: true))
     entries.append(.toggle(id: id.count, section: sec, settingName: .showOriginalEdited, value: s.showOriginalEdited, text: "Оригинал изменений", enabled: true))
     entries.append(.toggle(id: id.count, section: sec, settingName: .hideMyDeleted, value: s.hideMyDeleted, text: "Не отображать мои удалённые", enabled: true))
     entries.append(.toggle(id: id.count, section: sec, settingName: .hideMyEdited, value: s.hideMyEdited, text: "Не отображать мои изменённые", enabled: true))
@@ -939,7 +939,7 @@ public func namelessFeaturesController(context: AccountContext, initialCategory:
                     }))
                 }
             case .autoFormatMode:
-                for mode in SGSimpleSettings.AutoFormatMode.allCases {
+                for mode in NamelessAutoFormatMode.allCases {
                     items.append(ActionSheetButtonItem(title: mode.titleRu, color: .accent, action: { [weak actionSheet] in
                         actionSheet?.dismissAnimated()
                         SGSimpleSettings.shared.autoFormatMode = mode.rawValue
@@ -982,7 +982,7 @@ public func namelessFeaturesController(context: AccountContext, initialCategory:
             case .applyTrashHex:
                 if let s = UIPasteboard.general.string?.trimmingCharacters(in: .whitespacesAndNewlines), !s.isEmpty {
                     let hex = s.hasPrefix("#") ? s : "#\(s)"
-                    if SGSimpleSettings.color(fromHex: hex) != nil {
+                    if NamelessColorParse.color(fromHex: hex) != nil {
                         SGSimpleSettings.shared.deletedTrashColorHex = hex
                         simplePromise.set(true)
                     }
