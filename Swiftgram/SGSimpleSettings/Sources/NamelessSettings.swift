@@ -432,7 +432,14 @@ public extension SGSimpleSettings {
     var namelessVideoBackgroundEnabled: Bool { get { storage.namelessBool(NamelessSettingsKey.videoBackgroundEnabled) } set { storage.set(newValue, forKey: NamelessSettingsKey.videoBackgroundEnabled) } }
     var namelessVideoBackgroundPath: String { get { storage.namelessString(NamelessSettingsKey.videoBackgroundPath) } set { storage.set(newValue, forKey: NamelessSettingsKey.videoBackgroundPath) } }
     var namelessMusicCardStyle: Bool { get { storage.namelessBool(NamelessSettingsKey.musicCardStyle) } set { storage.set(newValue, forKey: NamelessSettingsKey.musicCardStyle) } }
-    var namelessRoundProfileButtons: Bool { get { storage.namelessBool(NamelessSettingsKey.roundProfileButtons) } set { storage.set(newValue, forKey: NamelessSettingsKey.roundProfileButtons) } }
+    /// Round icon buttons (profile + global chrome). Default ON for nameless redesign.
+    var namelessRoundProfileButtons: Bool { get { storage.namelessBool(NamelessSettingsKey.roundProfileButtons, default: true) } set { storage.set(newValue, forKey: NamelessSettingsKey.roundProfileButtons) } }
+
+    /// Global "round controls" — same key as profile; kept for readability at call sites.
+    var namelessRoundButtonsEverywhere: Bool {
+        get { namelessRoundProfileButtons }
+        set { namelessRoundProfileButtons = newValue }
+    }
     // MARK: Appearance
     var squareAvatars: Bool { get { storage.namelessBool(NamelessSettingsKey.squareAvatars) } set { storage.set(newValue, forKey: NamelessSettingsKey.squareAvatars) } }
     var newChatList: Bool { get { storage.namelessBool(NamelessSettingsKey.newChatList) } set { storage.set(newValue, forKey: NamelessSettingsKey.newChatList) } }

@@ -684,7 +684,8 @@ public class ChatTextInputPanelNode: ChatInputPanelNode, ASEditableTextNodeDeleg
 
         self.menuButton = HighlightTrackingButtonNode()
         self.menuButton.clipsToBounds = true
-        self.menuButton.cornerRadius = 16.0
+        // nameless: circular controls like profile action buttons
+        self.menuButton.cornerRadius = SGSimpleSettings.shared.namelessRoundButtonsEverywhere ? 20.0 : 16.0
         self.menuButton.accessibilityLabel = presentationInterfaceState.strings.Conversation_InputMenu
         self.menuButtonBackgroundView = GlassBackgroundView()
         self.menuButtonBackgroundView.isUserInteractionEnabled = false
@@ -2429,7 +2430,16 @@ public class ChatTextInputPanelNode: ChatInputPanelNode, ASEditableTextNodeDeleg
             }
         }
         
-        let menuButtonFrame = CGRect(x: leftInset + 8.0, y: menuButtonOriginY, width: menuButtonExpanded ? menuButtonWidth : menuCollapsedButtonWidth, height: menuButtonHeight)
+        var menuW = menuButtonExpanded ? menuButtonWidth : menuCollapsedButtonWidth
+        var menuH = menuButtonHeight
+        if SGSimpleSettings.shared.namelessRoundButtonsEverywhere && !menuButtonExpanded {
+            // Collapsed menu = perfect circle (profile-style)
+            let d = max(menuH, 40.0)
+            menuW = d
+            menuH = d
+        }
+        let menuButtonFrame = CGRect(x: leftInset + 8.0, y: menuButtonOriginY, width: menuW, height: menuH)
+        self.menuButton.cornerRadius = menuButtonFrame.height * 0.5
         transition.updateFrameAsPositionAndBounds(node: self.menuButton, frame: menuButtonFrame)
         transition.updateFrame(view: self.menuButtonBackgroundView, frame: CGRect(origin: CGPoint(), size: menuButtonFrame.size))
         self.menuButtonBackgroundView.update(size: menuButtonFrame.size, cornerRadius: menuButtonFrame.height * 0.5, isDark: interfaceState.theme.overallDarkAppearance, tintColor: defaultGlassTintWithInnerColor, transition: ComponentTransition(transition))
@@ -3346,9 +3356,11 @@ public class ChatTextInputPanelNode: ChatInputPanelNode, ASEditableTextNodeDeleg
             transition.updateFrame(layer: self.searchLayoutClearButtonIcon.layer, frame: clearIconFrame.offsetBy(dx: clearButtonFrame.minX, dy: clearButtonFrame.minY))
         }
         
-        let attachmentButtonFrame = CGRect(origin: CGPoint(x: attachmentButtonX, y: textInputFrame.maxY - 40.0), size: CGSize(width: 40.0, height: 40.0))
-        attachmentButtonX += 40.0 + 6.0
-        self.attachmentButtonBackground.update(size: attachmentButtonFrame.size, cornerRadius: attachmentButtonFrame.height * 0.5, isDark: interfaceState.theme.overallDarkAppearance, tintColor: defaultGlassTintColor, isInteractive: true, transition: ComponentTransition(transition))
+        // nameless: attach is always a perfect circle (profile-style caps)
+        let attachD: CGFloat = SGSimpleSettings.shared.namelessRoundButtonsEverywhere ? 40.0 : 40.0
+        let attachmentButtonFrame = CGRect(origin: CGPoint(x: attachmentButtonX, y: textInputFrame.maxY - attachD), size: CGSize(width: attachD, height: attachD))
+        attachmentButtonX += attachD + 6.0
+        self.attachmentButtonBackground.update(size: attachmentButtonFrame.size, cornerRadius: attachD * 0.5, isDark: interfaceState.theme.overallDarkAppearance, tintColor: defaultGlassTintColor, isInteractive: true, transition: ComponentTransition(transition))
         
         transition.updateFrame(layer: self.attachmentButtonBackground.layer, frame: attachmentButtonFrame)
         transition.updateFrame(layer: self.attachmentButton.layer, frame: CGRect(origin: CGPoint(), size: attachmentButtonFrame.size))

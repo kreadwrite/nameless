@@ -259,7 +259,8 @@ final class PeerInfoHeaderButtonNode: HighlightableButtonNode {
             alphaTransition.updateAlpha(node: self.textNode, alpha: isActive ? 1.0 : 0.3)
         }
         
-        let useRoundButtons = SGSimpleSettings.shared.namelessRoundProfileButtons
+        // nameless redesign: profile action buttons always circular icon-caps
+        let useRoundButtons = SGSimpleSettings.shared.namelessRoundButtonsEverywhere
         self.textNode.attributedText = NSAttributedString(string: useRoundButtons ? "" : text.lowercased(), font: Font.regular(11.0), textColor: .white)
         self.accessibilityLabel = text
         let titleSize = self.textNode.updateLayout(CGSize(width: 120.0, height: .greatestFiniteMagnitude))

@@ -7,6 +7,7 @@ import AsyncDisplayKit
 import EdgeEffect
 import ComponentDisplayAdapters
 import SGLiquidGlassCore
+import SGSimpleSettings
 
 public final class NavigationBarImpl: ASDisplayNode, NavigationBar {
     public static var defaultSecondaryContentHeight: CGFloat {
@@ -1001,7 +1002,22 @@ public final class NavigationBarImpl: ASDisplayNode, NavigationBar {
                 transition.updateFrame(node: self.backButtonNodeImpl, frame: CGRect(origin: CGPoint(x: 0.0, y: 0.0), size: CGSize(width: leftButtonsWidth, height: 44.0)))
             }
             
-            let leftButtonsBackgroundFrame = CGRect(origin: CGPoint(x: leftInset + 16.0, y: contentVerticalOrigin + floor((nominalHeight - 44.0) * 0.5)), size: CGSize(width: max(44.0, leftButtonsWidth), height: 44.0))
+            // nameless: prefer perfect circle (profile-style) when button is icon-sized
+            let useRoundNav = SGSimpleSettings.shared.namelessRoundButtonsEverywhere
+            var leftW = max(44.0, leftButtonsWidth)
+            var leftH: CGFloat = 44.0
+            if useRoundNav {
+                // Collapse wide back-title chips into circle when width is near icon size
+                if leftW <= 56.0 {
+                    leftW = 44.0
+                    leftH = 44.0
+                } else {
+                    // Keep capsule for "Back" text, but fully rounded ends
+                    leftH = 40.0
+                    leftW = max(leftW, leftH)
+                }
+            }
+            let leftButtonsBackgroundFrame = CGRect(origin: CGPoint(x: leftInset + 16.0, y: contentVerticalOrigin + floor((nominalHeight - leftH) * 0.5)), size: CGSize(width: leftW, height: leftH))
             var leftButtonsBackgroundTransition = ComponentTransition(transition)
             if leftButtonsBackgroundView.background.alpha == 0.0 {
                 leftButtonsBackgroundTransition = .immediate
@@ -1012,29 +1028,48 @@ public final class NavigationBarImpl: ASDisplayNode, NavigationBar {
             leftButtonsBackgroundTransition.setFrame(view: leftButtonsBackgroundView.container, frame: CGRect(origin: CGPoint(), size: leftButtonsBackgroundFrame.size))
             ComponentTransition(transition).setAlpha(view: leftButtonsBackgroundView.background, alpha: leftButtonsWidth == 0.0 ? 0.0 : 1.0)
             
-            var leftButtonsColor: GlassBackgroundView.TintColor = .init(kind: self.presentationData.theme.glassStyle == .clear ? .clear : .panel)
+            var leftButtonsColor: GlassBackgroundView.TintColor = .init(kind: .clear)
             switch self.leftButtonNodeImpl.commonContentType {
             case .accent:
-                leftButtonsColor = .init(kind: .custom(style: self.presentationData.theme.glassStyle == .clear ? .clear : .default, color: self.presentationData.theme.accentButtonColor))
+                leftButtonsColor = .init(kind: .custom(style: .clear, color: self.presentationData.theme.accentButtonColor.withAlphaComponent(0.35)))
             case .accentDisabled:
-                leftButtonsColor = .init(kind: .custom(style: self.presentationData.theme.glassStyle == .clear ? .clear : .default, color: self.presentationData.theme.accentDisabledButtonColor))
+                leftButtonsColor = .init(kind: .custom(style: .clear, color: self.presentationData.theme.accentDisabledButtonColor.withAlphaComponent(0.35)))
             case .generic:
-                break
+                if self.presentationData.theme.overallDarkAppearance {
+                    leftButtonsColor = .init(kind: .custom(style: .clear, color: UIColor(white: 0.0, alpha: 0.22)))
+                } else {
+                    leftButtonsColor = .init(kind: .clear)
+                }
             }
             
-            leftButtonsBackgroundView.background.update(size: leftButtonsBackgroundFrame.size, cornerRadius: leftButtonsBackgroundFrame.height * 0.5, isDark: self.presentationData.theme.overallDarkAppearance, tintColor: leftButtonsColor, isInteractive: true, isVisible: leftButtonsWidth != 0.0, transition: leftButtonsBackgroundTransition)
+            let leftRadius = useRoundNav ? min(leftButtonsBackgroundFrame.width, leftButtonsBackgroundFrame.height) * 0.5 : leftButtonsBackgroundFrame.height * 0.5
+            leftButtonsBackgroundView.background.update(size: leftButtonsBackgroundFrame.size, cornerRadius: leftRadius, isDark: self.presentationData.theme.overallDarkAppearance, tintColor: leftButtonsColor, isInteractive: true, isVisible: leftButtonsWidth != 0.0, transition: leftButtonsBackgroundTransition)
         }
         
         if let rightButtonsBackgroundView = self.rightButtonsBackgroundView {
             if rightButtonsWidth != 0.0 {
                 rightTitleInset = rightInset + 16.0 + rightButtonsWidth + 10.0
                 
-                let rightButtonsBackgroundFrame = CGRect(origin: CGPoint(x: size.width - rightInset - 16.0 - rightButtonsWidth, y: contentVerticalOrigin + floor((nominalHeight - 44.0) * 0.5)), size: CGSize(width: rightButtonsWidth, height: 44.0))
+                let useRoundNav = SGSimpleSettings.shared.namelessRoundButtonsEverywhere
+                var rightW = rightButtonsWidth
+                var rightH: CGFloat = 44.0
+                if useRoundNav {
+                    if rightW <= 56.0 {
+                        // Single icon → perfect circle
+                        rightW = 44.0
+                        rightH = 44.0
+                    } else {
+                        // Multi-icon group: keep row height circular ends (pill of circles)
+                        rightH = 40.0
+                        rightW = max(rightW, rightH)
+                    }
+                }
+                let rightButtonsBackgroundFrame = CGRect(origin: CGPoint(x: size.width - rightInset - 16.0 - rightW, y: contentVerticalOrigin + floor((nominalHeight - rightH) * 0.5)), size: CGSize(width: rightW, height: rightH))
                 var rightButtonsBackgroundTransition = ComponentTransition(transition)
                 if rightButtonsBackgroundView.background.isHidden {
                     rightButtonsBackgroundTransition = .immediate
                 }
-                rightButtonsBackgroundView.container.layer.cornerRadius = 44.0 * 0.5
+                rightButtonsBackgroundView.container.layer.cornerRadius = rightH * 0.5
                 
                 rightButtonsBackgroundTransition.setFrame(view: rightButtonsBackgroundView.background, frame: rightButtonsBackgroundFrame)
                 
@@ -1048,18 +1083,23 @@ public final class NavigationBarImpl: ASDisplayNode, NavigationBar {
                     })
                 }
                 
-                var rightButtonsColor: GlassBackgroundView.TintColor = .init(kind: self.presentationData.theme.glassStyle == .clear ? .clear : .panel)
+                var rightButtonsColor: GlassBackgroundView.TintColor = .init(kind: .clear)
                 switch self.rightButtonNodeImpl.commonContentType {
                 case .accent:
-                    rightButtonsColor = .init(kind: .custom(style: self.presentationData.theme.glassStyle == .clear ? .clear : .default, color: self.presentationData.theme.accentButtonColor))
+                    rightButtonsColor = .init(kind: .custom(style: .clear, color: self.presentationData.theme.accentButtonColor.withAlphaComponent(0.35)))
                 case .accentDisabled:
-                    rightButtonsColor = .init(kind: .custom(style: self.presentationData.theme.glassStyle == .clear ? .clear : .default, color: self.presentationData.theme.accentDisabledButtonColor))
+                    rightButtonsColor = .init(kind: .custom(style: .clear, color: self.presentationData.theme.accentDisabledButtonColor.withAlphaComponent(0.35)))
                 case .generic:
-                    break
+                    if self.presentationData.theme.overallDarkAppearance {
+                        rightButtonsColor = .init(kind: .custom(style: .clear, color: UIColor(white: 0.0, alpha: 0.22)))
+                    } else {
+                        rightButtonsColor = .init(kind: .clear)
+                    }
                 }
                 
                 rightButtonsBackgroundView.background.isHidden = false
-                rightButtonsBackgroundView.background.update(size: rightButtonsBackgroundFrame.size, cornerRadius: rightButtonsBackgroundFrame.height * 0.5, isDark: self.presentationData.theme.overallDarkAppearance, tintColor: rightButtonsColor, isInteractive: true, transition: rightButtonsBackgroundTransition)
+                let rightRadius = useRoundNav ? min(rightButtonsBackgroundFrame.width, rightButtonsBackgroundFrame.height) * 0.5 : rightButtonsBackgroundFrame.height * 0.5
+                rightButtonsBackgroundView.background.update(size: rightButtonsBackgroundFrame.size, cornerRadius: rightRadius, isDark: self.presentationData.theme.overallDarkAppearance, tintColor: rightButtonsColor, isInteractive: true, transition: rightButtonsBackgroundTransition)
             } else {
                 rightButtonsBackgroundView.background.isHidden = true
             }

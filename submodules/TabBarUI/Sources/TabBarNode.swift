@@ -687,7 +687,11 @@ class TabBarNode: ASDisplayNode, ASGestureRecognizerDelegate {
         // nameless: sync Liquid Glass frame with tab bar background
         if let g = self.glassNode {
             transition.updateFrame(node: g, frame: CGRect(origin: CGPoint(), size: size))
-            g.glassVisible = SGLiquidGlassZone.tabBar.isEnabled
+            let glassOn = SGLiquidGlassZone.tabBar.isEnabled
+            g.glassVisible = glassOn
+            // Hide solid tab bar fill so liquid glass reads clearly
+            self.backgroundNode.alpha = glassOn ? 0.0 : 1.0
+            g.glassCornerRadii = GlassRadii(radius: SGSimpleSettings.shared.namelessRoundButtonsEverywhere ? 22.0 : 0.0)
         }
         
         let horizontal = !leftInset.isZero

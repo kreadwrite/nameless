@@ -88,9 +88,11 @@ public final class SGGlassCircleButton: UIView, SGLiquidGlassViewContainer {
     }
 
     private func updateGlassState() {
-        let enabled = SGSimpleSettings.shared.namelessRoundProfileButtons && SGLiquidGlassZone.profile.isEnabled
-        glassView.isHidden = !enabled
-        layer.cornerRadius = enabled ? (bounds.width / 2) : 14
+        let round = SGSimpleSettings.shared.namelessRoundButtonsEverywhere
+        let glassOn = SGLiquidGlassZone.profile.isEnabled || SGSimpleSettings.shared.liquidGlassEnabled
+        glassView.isHidden = !(round && glassOn)
+        // Always circular when round mode is on (profile style everywhere)
+        layer.cornerRadius = round ? max(bounds.width, bounds.height) * 0.5 : 14
         layer.cornerCurve = .continuous
         clipsToBounds = true
     }
