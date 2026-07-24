@@ -573,6 +573,42 @@ public final class ChatMessageBubbleBackdrop: ASDisplayNode, SGLiquidGlassContai
         self.glassView.isHidden = !zone.isEnabled
     }
 
+    private func glassCorners() -> (topLeftRadius: CGFloat, topRightRadius: CGFloat, bottomLeftRadius: CGFloat, bottomRightRadius: CGFloat)? {
+        guard let type = self.currentType else {
+            return nil
+        }
+        let maxRadius = CGFloat(18.0)
+        let minRadius = CGFloat(6.0)
+        let incoming: Bool
+        let mergeType: ChatMessageBackgroundMergeType
+        switch type {
+        case .none:
+            return nil
+        case let .incoming(value):
+            incoming = true
+            mergeType = value
+        case let .outgoing(value):
+            incoming = false
+            mergeType = value
+        }
+        let arguments: MessageBubbleArguments
+        switch mergeType {
+        case .None:
+            arguments = messageBubbleArguments(maxCornerRadius: maxRadius, minCornerRadius: minRadius, incoming: incoming, neighbors: .none)
+        case let .Top(side):
+            arguments = messageBubbleArguments(maxCornerRadius: maxRadius, minCornerRadius: minRadius, incoming: incoming, neighbors: .top(side: side))
+        case .Bottom:
+            arguments = messageBubbleArguments(maxCornerRadius: maxRadius, minCornerRadius: minRadius, incoming: incoming, neighbors: .bottom)
+        case .Both:
+            arguments = messageBubbleArguments(maxCornerRadius: maxRadius, minCornerRadius: minRadius, incoming: incoming, neighbors: .both)
+        case .Side:
+            arguments = messageBubbleArguments(maxCornerRadius: maxRadius, minCornerRadius: minRadius, incoming: incoming, neighbors: .side)
+        case .Extracted:
+            arguments = messageBubbleArguments(maxCornerRadius: maxRadius, minCornerRadius: minRadius, incoming: incoming, neighbors: .extracted)
+        }
+        return (arguments.topLeftRadius, arguments.topRightRadius, arguments.bottomLeftRadius, arguments.bottomRightRadius)
+    }
+
     private func updateGlassRadii(_ corners: (topLeftRadius: CGFloat, topRightRadius: CGFloat, bottomLeftRadius: CGFloat, bottomRightRadius: CGFloat)?) {
         if let corners {
             self.currentGlassRadii = .init(topLeft: corners.topLeftRadius, topRight: corners.topRightRadius, bottomLeft: corners.bottomLeftRadius, bottomRight: corners.bottomRightRadius)
@@ -616,7 +652,7 @@ public final class ChatMessageBubbleBackdrop: ASDisplayNode, SGLiquidGlassContai
         self.theme = theme
         self.essentialGraphics = essentialGraphics
         self.backgroundNode = backgroundNode
-        self.updateGlassRadii(self.currentCorners(bubbleCorners: PresentationChatBubbleCorners(mainRadius: 18.0, auxiliaryRadius: 6.0, mergeBubbleCorners: true)))
+        self.updateGlassRadii(self.glassCorners())
         self.updateGlass(size: self.bounds.size, isDark: theme.theme.overallDarkAppearance, zone: glassZone)
 
         if typeUpdated || self.essentialGraphics !== essentialGraphics {
