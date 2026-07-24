@@ -543,18 +543,33 @@ public class ChatMessageDateAndStatusNode: ASDisplayNode {
             }
             
             var updatedDateText = arguments.dateText
+            var dateAttributed: NSAttributedString
+            let dateFont = Font.regular(floor(arguments.presentationData.fontSize.baseDisplaySize * 11.0 / 17.0))
             if arguments.deleted {
-                // nameless: red-trash mark for kept deleted messages
-                updatedDateText = "🗑 \(updatedDateText)"
-            } else if arguments.edited {
-                updatedDateText = "\(arguments.presentationData.strings.Conversation_MessageEditedLabel) \(updatedDateText)"
-            }
-            if let impressionCount = arguments.impressionCount {
-                updatedDateText = compactNumericCountString(impressionCount, decimalSeparator: arguments.presentationData.dateTimeFormat.decimalSeparator) + " " + updatedDateText
+                // nameless: trash mark with HEX color + rest of date in normal color
+                let trashColor = SGSimpleSettings.shared.deletedTrashUIColor()
+                let full = NSMutableAttributedString()
+                full.append(NSAttributedString(string: "🗑 ", font: dateFont, textColor: trashColor))
+                full.append(NSAttributedString(string: updatedDateText, font: dateFont, textColor: dateColor.withAlphaComponent(0.85)))
+                if let impressionCount = arguments.impressionCount {
+                    let prefix = compactNumericCountString(impressionCount, decimalSeparator: arguments.presentationData.dateTimeFormat.decimalSeparator) + " "
+                    let withPrefix = NSMutableAttributedString(string: prefix, font: dateFont, textColor: dateColor.withAlphaComponent(0.85))
+                    withPrefix.append(full)
+                    dateAttributed = withPrefix
+                } else {
+                    dateAttributed = full
+                }
+            } else {
+                if arguments.edited {
+                    updatedDateText = "\(arguments.presentationData.strings.Conversation_MessageEditedLabel) \(updatedDateText)"
+                }
+                if let impressionCount = arguments.impressionCount {
+                    updatedDateText = compactNumericCountString(impressionCount, decimalSeparator: arguments.presentationData.dateTimeFormat.decimalSeparator) + " " + updatedDateText
+                }
+                dateAttributed = NSAttributedString(string: updatedDateText, font: dateFont, textColor: dateColor)
             }
             
-            let dateFont = Font.regular(floor(arguments.presentationData.fontSize.baseDisplaySize * 11.0 / 17.0))
-            let (date, dateApply) = dateLayout(TextNodeLayoutArguments(attributedString: NSAttributedString(string: updatedDateText, font: dateFont, textColor: dateColor), backgroundColor: nil, maximumNumberOfLines: 1, truncationType: .middle, constrainedSize: arguments.constrainedSize, alignment: .natural, cutout: nil, insets: UIEdgeInsets()))
+            let (date, dateApply) = dateLayout(TextNodeLayoutArguments(attributedString: dateAttributed, backgroundColor: nil, maximumNumberOfLines: 1, truncationType: .middle, constrainedSize: arguments.constrainedSize, alignment: .natural, cutout: nil, insets: UIEdgeInsets()))
             
             let checkOffset = floor(arguments.presentationData.fontSize.baseDisplaySize * 6.0 / 17.0)
             

@@ -5611,6 +5611,16 @@ public class ChatMessageBubbleItemNode: ChatMessageItemView, ChatMessagePreviewI
         for contentContainer in strongSelf.contentContainers {
             contentContainer.containerNode.isGestureEnabled = hasMenuGesture
         }
+
+        // nameless: deleted bubbles become semi-transparent (slider deletedMessageOpacity)
+        if item.message.sgDeletedAttribute.isDeleted {
+            let pct = CGFloat(SGSimpleSettings.shared.deletedMessageOpacity)
+            let alpha = max(0.12, min(1.0, pct / 100.0))
+            strongSelf.mainContainerNode.alpha = alpha
+            strongSelf.mainContextSourceNode.contentNode.alpha = 1.0
+        } else {
+            strongSelf.mainContainerNode.alpha = 1.0
+        }
         
         strongSelf.updateSearchTextHighlightState()
         

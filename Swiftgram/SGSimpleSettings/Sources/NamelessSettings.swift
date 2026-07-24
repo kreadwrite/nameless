@@ -148,6 +148,8 @@ private enum NamelessSettingsKey {
     static let accountColorsSaturation = "nameless.accountColorsSaturation"
     // MARK: - Messages (Сообщения)
     static let deletedMessageOpacity = "nameless.deletedMessageOpacity"
+    static let deletedTrashColorHex = "nameless.deletedTrashColorHex"
+    static let autoFormatMode = "nameless.autoFormatMode"
     static let showOriginalEdited = "nameless.showOriginalEdited"
     static let truncateLongMessages = "nameless.truncateLongMessages"
     static let saveChatHistory = "nameless.saveChatHistory"
@@ -477,7 +479,71 @@ public extension SGSimpleSettings {
     var particleEffectEnabled: Bool { get { storage.namelessBool(NamelessSettingsKey.particleEffectEnabled) } set { storage.set(newValue, forKey: NamelessSettingsKey.particleEffectEnabled) } }
     var particleEffectSpeed: Double { get { storage.namelessDouble(NamelessSettingsKey.particleEffectSpeed, default: 0.5) } set { storage.set(newValue, forKey: NamelessSettingsKey.particleEffectSpeed) } }
     var particleEffectDensity: Double { get { storage.namelessDouble(NamelessSettingsKey.particleEffectDensity, default: 0.5) } set { storage.set(newValue, forKey: NamelessSettingsKey.particleEffectDensity) } }
+    /// Opacity 0…100 of deleted bubbles (default 37 ≈ photo look)
     var deletedMessageOpacity: Int32 { get { storage.namelessInt32(NamelessSettingsKey.deletedMessageOpacity, default: 37) } set { storage.set(Int(newValue), forKey: NamelessSettingsKey.deletedMessageOpacity) } }
+    /// HEX color for trash mark on deleted messages (default red #FF3B30)
+    var deletedTrashColorHex: String {
+        get {
+            let v = storage.namelessString(NamelessSettingsKey.deletedTrashColorHex, default: "#FF3B30")
+            return v.isEmpty ? "#FF3B30" : v
+        }
+        set { storage.set(newValue, forKey: NamelessSettingsKey.deletedTrashColorHex) }
+    }
+    /// Auto-format outgoing text. Values: none, bold, italic, underline, strikethrough, code, pre, blockquote, spoiler
+    var autoFormatMode: String {
+        get { storage.namelessString(NamelessSettingsKey.autoFormatMode, default: "none") }
+        set { storage.set(newValue, forKey: NamelessSettingsKey.autoFormatMode) }
+    }
+
+    public enum AutoFormatMode: String, CaseIterable {
+        case none
+        case bold
+        case italic
+        case underline
+        case strikethrough
+        case code
+        case pre
+        case blockquote
+        case spoiler
+
+        public var titleRu: String {
+            switch self {
+            case .none: return "Обычный"
+            case .bold: return "Жирный"
+            case .italic: return "Курсив"
+            case .underline: return "Подчёркнутый"
+            case .strikethrough: return "Зачёркнутый"
+            case .code: return "Моноширинный"
+            case .pre: return "Блок кода"
+            case .blockquote: return "Цитата"
+            case .spoiler: return "Спойлер"
+            }
+        }
+    }
+
+    /// Parsed UIColor from deletedTrashColorHex
+    public func deletedTrashUIColor() -> UIColor {
+        return Self.color(fromHex: deletedTrashColorHex) ?? UIColor(red: 1, green: 0.23, blue: 0.19, alpha: 1)
+    }
+
+    public static func color(fromHex hex: String) -> UIColor? {
+        var s = hex.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+        if s.hasPrefix("#") { s.removeFirst() }
+        guard s.count == 6 || s.count == 8, let value = UInt64(s, radix: 16) else { return nil }
+        let r, g, b, a: CGFloat
+        if s.count == 8 {
+            r = CGFloat((value & 0xFF000000) >> 24) / 255
+            g = CGFloat((value & 0x00FF0000) >> 16) / 255
+            b = CGFloat((value & 0x0000FF00) >> 8) / 255
+            a = CGFloat(value & 0x000000FF) / 255
+        } else {
+            r = CGFloat((value & 0xFF0000) >> 16) / 255
+            g = CGFloat((value & 0x00FF00) >> 8) / 255
+            b = CGFloat(value & 0x0000FF) / 255
+            a = 1
+        }
+        return UIColor(red: r, green: g, blue: b, alpha: a)
+    }
     var showOriginalEdited: Bool { get { storage.namelessBool(NamelessSettingsKey.showOriginalEdited, default: true) } set { storage.set(newValue, forKey: NamelessSettingsKey.showOriginalEdited) } }
     var truncateLongMessages: Bool { get { storage.namelessBool(NamelessSettingsKey.truncateLongMessages, default: true) } set { storage.set(newValue, forKey: NamelessSettingsKey.truncateLongMessages) } }
     var saveChatHistory: Bool { get { storage.namelessBool(NamelessSettingsKey.saveChatHistory, default: true) } set { storage.set(newValue, forKey: NamelessSettingsKey.saveChatHistory) } }

@@ -2121,6 +2121,10 @@ public final class ChatHistoryListNodeImpl: ListViewImpl, ChatHistoryNode, ChatH
                 if case let .user(user) = accountPeer, user.isPremium {
                     isPremium = true
                 }
+                // nameless: local premium → show custom emoji / premium features client-side
+                if SGSimpleSettings.shared.enableLocalPremium {
+                    isPremium = true
+                }
                 
                 var audioTranscriptionProvidedByBoost = false
                 var autoTranslate = false

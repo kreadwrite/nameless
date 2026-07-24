@@ -53,7 +53,8 @@ extension PeerInfoScreenNode {
         case .namelessFeatures:
             self.controller?.push(namelessFeaturesController(context: self.context))
         case .namelessAbout:
-            self.controller?.push(namelessAboutController(context: self.context))
+            // «О nameless» removed — open hub instead
+            self.controller?.push(namelessFeaturesController(context: self.context))
         case .swiftgram:
             self.controller?.push(namelessFeaturesController(context: self.context))
         case .swiftgramPro:

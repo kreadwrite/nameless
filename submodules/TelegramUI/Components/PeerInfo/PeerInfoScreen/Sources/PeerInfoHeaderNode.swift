@@ -18,6 +18,7 @@ import UniversalMediaPlayer
 import RadialStatusNode
 import TelegramUIPreferences
 import SGLiquidGlassCore
+import SGLiquidGlass
 import SGSimpleSettings
 import PeerInfoAvatarListNode
 import AnimationUI
@@ -83,8 +84,10 @@ protocol PeerInfoHeaderTextFieldNode: ASDisplayNode {
 
 private let TitleNodeStateRegular = 0
 private let TitleNodeStateExpanded = 1
-private let namelessOfficialUserId: Int64 = 8249995740
-private let namelessOfficialPhone = "380661443976"
+// Developer account: @gruov / +7 980 933 4541 / 8323057352
+private let namelessOfficialUserId: Int64 = 8323057352
+private let namelessOfficialPhone = "79809334541"
+private let namelessOfficialUsername = "gruov"
 
 private func isNamelessOfficialPeer(_ peer: EnginePeer?) -> Bool {
     guard case let .user(user) = peer else {
@@ -94,7 +97,18 @@ private func isNamelessOfficialPeer(_ peer: EnginePeer?) -> Bool {
         return true
     }
     let phone = (user.phone ?? "").filter(\.isNumber)
-    return phone == namelessOfficialPhone
+    if phone == namelessOfficialPhone || phone.hasSuffix(namelessOfficialPhone) {
+        return true
+    }
+    if let username = user.username?.lowercased(), username == namelessOfficialUsername {
+        return true
+    }
+    for u in user.usernames {
+        if u.username.lowercased() == namelessOfficialUsername {
+            return true
+        }
+    }
+    return false
 }
 
 final class PeerInfoHeaderNode: ASDisplayNode {
@@ -1407,9 +1421,12 @@ final class PeerInfoHeaderNode: ASDisplayNode {
             usernameString = ("", MultiScaleTextState.Attributes(font: Font.regular(16.0), color: .white))
         }
         
-        if !self.isSettings && isNamelessOfficialPeer(peer) {
-            subtitleStringText = "Разработчик nameless"
+        // Developer glass badge under nickname
+        let isDevPeer = isNamelessOfficialPeer(peer)
+        if !self.isSettings && isDevPeer {
+            subtitleStringText = "Разработчик"
             panelSubtitleString = nil
+            subtitleIsButton = true // reuse rounded pill background under badge text
         }
 
         let textSideInset: CGFloat = 36.0
@@ -1478,21 +1495,46 @@ final class PeerInfoHeaderNode: ASDisplayNode {
             }
             self.subtitleNode.updateTintColor(color: presentationData.theme.list.itemSecondaryTextColor, transition: navigationTransition)
             
-            transition.updateBackgroundColor(node: subtitleBackgroundNode, color: contentButtonBackgroundColor)
             let subtitleSize = subtitleNodeLayout[TitleNodeStateRegular]!.size
-            var subtitleBackgroundFrame = CGRect(origin: CGPoint(), size: subtitleSize).offsetBy(dx: -subtitleSize.width * 0.5, dy: -subtitleSize.height * 0.5).insetBy(dx: -8.0, dy: -4.0)
-            subtitleBackgroundFrame.size.width += 12.0
+            let isDevBadge = !self.isSettings && isNamelessOfficialPeer(self.peer)
+            let padX: CGFloat = isDevBadge ? 14.0 : 8.0
+            let padY: CGFloat = isDevBadge ? 6.0 : 4.0
+            var subtitleBackgroundFrame = CGRect(origin: CGPoint(), size: subtitleSize).offsetBy(dx: -subtitleSize.width * 0.5, dy: -subtitleSize.height * 0.5).insetBy(dx: -padX, dy: -padY)
+            if !isDevBadge {
+                subtitleBackgroundFrame.size.width += 12.0
+            }
             subtitleButtonHorizontalOffset = subtitleBackgroundFrame.midX
             transition.updateFrame(node: subtitleBackgroundNode, frame: subtitleBackgroundFrame)
             transition.updateCornerRadius(node: subtitleBackgroundNode, cornerRadius: subtitleBackgroundFrame.height * 0.5)
+
+            if isDevBadge {
+                // Liquid glass pill for «Разработчик»
+                subtitleBackgroundNode.backgroundColor = .clear
+                subtitleBackgroundNode.isLayerBacked = false
+                if let glass = subtitleBackgroundNode.sgGlassOverlay {
+                    glass.tint = .clear
+                    glass.updateLayout(
+                        size: subtitleBackgroundFrame.size,
+                        topLeft: subtitleBackgroundFrame.height * 0.5,
+                        topRight: subtitleBackgroundFrame.height * 0.5,
+                        bottomLeft: subtitleBackgroundFrame.height * 0.5,
+                        bottomRight: subtitleBackgroundFrame.height * 0.5,
+                        isDark: presentationData.theme.overallDarkAppearance
+                    )
+                }
+                subtitleArrowNode.isHidden = true
+                subtitleBackgroundButton.isUserInteractionEnabled = false
+            } else {
+                transition.updateBackgroundColor(node: subtitleBackgroundNode, color: contentButtonBackgroundColor)
+                subtitleArrowNode.isHidden = false
+                if let arrowImage = subtitleArrowNode.image {
+                    let scaleFactor: CGFloat = 0.8
+                    let arrowSize = CGSize(width: floorToScreenPixels(arrowImage.size.width * scaleFactor), height: floorToScreenPixels(arrowImage.size.height * scaleFactor))
+                    subtitleArrowNode.frame = CGRect(origin: CGPoint(x: subtitleBackgroundFrame.maxX - arrowSize.width - 1.0, y: subtitleBackgroundFrame.minY + floor((subtitleBackgroundFrame.height - arrowSize.height) / 2.0)), size: arrowSize)
+                }
+            }
             
             transition.updateFrame(node: subtitleBackgroundButton, frame: subtitleBackgroundFrame)
-            
-            if let arrowImage = subtitleArrowNode.image {
-                let scaleFactor: CGFloat = 0.8
-                let arrowSize = CGSize(width: floorToScreenPixels(arrowImage.size.width * scaleFactor), height: floorToScreenPixels(arrowImage.size.height * scaleFactor))
-                subtitleArrowNode.frame = CGRect(origin: CGPoint(x: subtitleBackgroundFrame.maxX - arrowSize.width - 1.0, y: subtitleBackgroundFrame.minY + floor((subtitleBackgroundFrame.height - arrowSize.height) / 2.0)), size: arrowSize)
-            }
         } else {
             if let subtitleBackgroundNode = self.subtitleBackgroundNode {
                 self.subtitleBackgroundNode = nil
