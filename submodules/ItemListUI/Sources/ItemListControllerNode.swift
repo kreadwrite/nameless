@@ -8,6 +8,7 @@ import TelegramPresentationData
 import MergeLists
 import ComponentFlow
 import GlassControls
+import SGSimpleSettings
 
 public protocol ItemListHeaderItemNode: AnyObject {
     func updateTheme(theme: PresentationTheme)
@@ -901,17 +902,21 @@ open class ItemListControllerNode: ASDisplayNode, ASGestureRecognizerDelegate {
                 self.theme = transition.theme
                 
                 if let listStyle = self.listStyle {
+                    // nameless OLED: pure black list backgrounds
+                    let oled = SGSimpleSettings.shared.oledMode
+                    let plainBg = oled ? UIColor.black : transition.theme.list.plainBackgroundColor
+                    let blocksBg = oled ? UIColor.black : transition.theme.list.blocksBackgroundColor
                     switch listStyle {
                         case .plain:
-                            self.backgroundColor = transition.theme.list.plainBackgroundColor
-                            self.listNode.backgroundColor = transition.theme.list.plainBackgroundColor
-                            self.leftOverlayNode.backgroundColor = transition.theme.list.plainBackgroundColor
-                            self.rightOverlayNode.backgroundColor = transition.theme.list.plainBackgroundColor
+                            self.backgroundColor = plainBg
+                            self.listNode.backgroundColor = plainBg
+                            self.leftOverlayNode.backgroundColor = plainBg
+                            self.rightOverlayNode.backgroundColor = plainBg
                         case .blocks:
-                            self.backgroundColor = transition.theme.list.blocksBackgroundColor
-                            self.listNode.backgroundColor = transition.theme.list.blocksBackgroundColor
-                            self.leftOverlayNode.backgroundColor = transition.theme.list.blocksBackgroundColor
-                            self.rightOverlayNode.backgroundColor = transition.theme.list.blocksBackgroundColor
+                            self.backgroundColor = blocksBg
+                            self.listNode.backgroundColor = blocksBg
+                            self.leftOverlayNode.backgroundColor = blocksBg
+                            self.rightOverlayNode.backgroundColor = blocksBg
                     }
                 }
                 

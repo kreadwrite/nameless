@@ -79,3 +79,41 @@ Coverage at the end:
 
 #### Settings keys
 `ghostMode.fakeTyping`, `ghostMode.antiSpam`, `ghostMode.hideVideoWatch`, `ghostMode.autoCleanHistory`, `ghostMode.autoCleanDays`, `ghostMode.alwaysOnline`
+
+---
+
+## v4 — 2026-07-24 (Liquid Glass real + features wiring)
+
+### Root cause: «стекла не видно»
+Glass overlay was drawn **on top of opaque** `itemBlocksBackgroundColor` / bubble wallpaper fill. Visually solid dark, not iOS 26 Liquid Glass.
+
+### Fixes
+1. **SGLiquidGlassItemBackground** rewritten to use **`GlassBackgroundView` + `UIGlassEffect`** (not fake blur-only). Clears host `backgroundColor` while glass is on.
+2. **NamelessItemListGlass.apply** — section corners radius **26**, soft separators (kills gray bars), top stripe hidden.
+3. **ItemList** Disclosure / Switch / Action use new applicator.
+4. **ChatMessageBubbleBackdrop** — hides solid bubble fill when glass on; clear glass tint; transparent/semi/outline message styles.
+5. **Context menu** long-press white blob — clear glass container + `UIGlassEffect(style: .clear)` + tint.
+6. **Music card** — cover + title/artist/lyric card when `namelessMusicCardStyle`.
+7. **Ghost TGExtra-style** — send delay wired in `sendMessages`; `applyGhostModeAll` posts notification + 12s default.
+8. **Feature logic wired**: disable ads, copy-protect bypass, local premium, unlimited pins, square avatars, double-tap edit → real action, ghost delay.
+
+### Status doc
+`docs/nameless-feature-status.md`
+
+### Still open (next pass)
+char counters, particle effect, folders at bottom, oled mode, camera flags, fake typing proactive, anti-spam, auto-clean history, original-edited bubble UI.
+
+---
+
+## v5 — 2026-07-24 (nameless hub + branding)
+
+### Settings hub (как Whitegram, бренд nameless)
+- В настройках пункт **«nameless»** (не «Функции nameless») → `luxGramSettingsController`
+- Хаб с полками: Внешний вид, Уведомления, Liquid Glass, Сообщения, Камера, Режим призрака, Конфиденциальность, Информация, Дополнительно, Разделы меню, Вкладки, Локальные звёзды, Шрифты, Перевод, Трафик, VirusTotal, Смена голоса
+- Каждая полка открывает tab-controller со своими toggles
+- Header: **nameless** (не LuxGram/Swiftgram)
+
+### Branding
+- Dynamic Island badge → `NamelessAppBadge` / `Components/AppBadge` = namelessBadge.png
+- Debug title → nameless Debug
+- About text без Swiftgram

@@ -215,23 +215,25 @@ private final class NimbusHeaderView: UIView {
         // Frosted pill behind logo
         logoBlurView.clipsToBounds = true
 
-        // Logo
+        // Logo — nameless branding
         logoImageView.contentMode = .scaleAspectFit
         logoImageView.clipsToBounds = true
-        if let img = UIImage(bundleImageName: "LuxGramSettings") {
+        if let img = UIImage(bundleImageName: "NamelessSettings")
+            ?? UIImage(bundleImageName: "nameless")
+            ?? UIImage(bundleImageName: "LuxGramSettings") {
             logoImageView.image = img
         }
 
         // Title
-        titleLabel.text = "LuxGram"
+        titleLabel.text = "nameless"
         titleLabel.textColor = .white
         titleLabel.font = UIFont.systemFont(ofSize: 28, weight: .heavy)
         titleLabel.textAlignment = .center
 
         // Subtitle
         let sub = lang == "ru"
-            ? "Следующий уровень общения"
-            : "Next-level messenger"
+            ? "Кастомный клиент Telegram"
+            : "Custom Telegram client"
         subtitleLabel.text = sub
         subtitleLabel.textColor = UIColor.white.withAlphaComponent(0.72)
         subtitleLabel.font = UIFont.systemFont(ofSize: 13, weight: .regular)

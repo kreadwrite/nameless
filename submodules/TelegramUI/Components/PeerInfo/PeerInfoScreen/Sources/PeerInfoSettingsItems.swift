@@ -209,8 +209,9 @@ func settingsItems(showProfileId: Bool, data: PeerInfoScreenData?, context: Acco
         swiftgramLabel = .none
     }
 
-    items[.swiftgram]!.append(PeerInfoScreenDisclosureItem(id: 0, label: swiftgramLabel, text: "Функции nameless", icon: PresentationResourcesSettings.nameless, action: {
-        interaction.openSettings(.namelessFeatures)
+    // Hub entry: opens categorized nameless settings (not a flat "features" dump)
+    items[.swiftgram]!.append(PeerInfoScreenDisclosureItem(id: 0, label: swiftgramLabel, text: "nameless", icon: PresentationResourcesSettings.nameless, action: {
+        interaction.openSettings(.nameless)
     }))
     items[.swiftgram]!.append(PeerInfoScreenDisclosureItem(id: 1, text: "О nameless", icon: PresentationResourcesSettings.language, action: {
         interaction.openSettings(.namelessAbout)

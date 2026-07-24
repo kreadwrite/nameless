@@ -97,11 +97,91 @@ private func copyNamelessVideoBackground(from sourceURL: URL) -> String? {
     }
 }
 
+/// Category tabs for the nameless hub (matches Whitegram-style shelves).
 private enum LuxGramTab: Int, CaseIterable {
-    case appearance = 0
-    case security
-    case other
-    case liquidGlass
+    case appearance = 0   // Внешний вид
+    case notifications    // Уведомления
+    case liquidGlass      // Liquid Glass
+    case messages         // Сообщения
+    case camera           // Камера
+    case security         // Режим призрака
+    case privacy          // Конфиденциальность
+    case info             // Информация
+    case other            // Дополнительно
+    case menuSections     // Разделы меню
+    case tabs             // Вкладки
+    case localStars       // Локальные звёзды
+    case fonts            // Шрифты
+    case translate        // Перевод
+    case traffic          // Улучшенный трафик
+    case virusTotal       // VirusTotal
+    case voiceMorpher     // Смена голоса
+
+    var titleRu: String {
+        switch self {
+        case .appearance: return "Внешний вид"
+        case .notifications: return "Уведомления"
+        case .liquidGlass: return "Liquid Glass"
+        case .messages: return "Сообщения"
+        case .camera: return "Камера"
+        case .security: return "Режим призрака"
+        case .privacy: return "Конфиденциальность"
+        case .info: return "Информация"
+        case .other: return "Дополнительно"
+        case .menuSections: return "Разделы меню"
+        case .tabs: return "Вкладки"
+        case .localStars: return "Локальные звезды"
+        case .fonts: return "Шрифты"
+        case .translate: return "Перевод"
+        case .traffic: return "Улучшенный трафик"
+        case .virusTotal: return "VirusTotal"
+        case .voiceMorpher: return "Смена голоса"
+        }
+    }
+
+    var subtitleRu: String {
+        switch self {
+        case .appearance: return "Иконки, пузыри, шрифт"
+        case .notifications: return "Локальные уведомления"
+        case .liquidGlass: return "Стекло, блюр и секции"
+        case .messages: return "Отправка, формат, медиа"
+        case .camera: return "Зум, HD, кружки"
+        case .security: return "Скрыть онлайн и прочтение"
+        case .privacy: return "Звонки, защита"
+        case .info: return "ID, DC, дата создания"
+        case .other: return "Вибрация, реакции, ускорение"
+        case .menuSections: return "Скрыть разделы Telegram"
+        case .tabs: return "Папки, масштаб, заголовок"
+        case .localStars: return "Стоимость без интернета"
+        case .fonts: return "Кастомный шрифт интерфейса"
+        case .translate: return "Перевод через Google"
+        case .traffic: return "Улучшенное шифрование трафика"
+        case .virusTotal: return "Проверка ссылок и файлов"
+        case .voiceMorpher: return "Голос при записи"
+        }
+    }
+
+    var iconSystemName: String {
+        switch self {
+        case .appearance: return "paintbrush.pointed.fill"
+        case .notifications: return "bell.fill"
+        case .liquidGlass: return "drop.fill"
+        case .messages: return "bubble.left.fill"
+        case .camera: return "camera.fill"
+        case .security: return "eye.slash.fill"
+        case .privacy: return "lock.fill"
+        case .info: return "info.circle.fill"
+        case .other: return "slider.horizontal.3"
+        case .menuSections: return "eye.trianglebadge.exclamationmark"
+        case .tabs: return "square.grid.2x2.fill"
+        case .localStars: return "star.fill"
+        case .fonts: return "textformat"
+        case .translate: return "globe"
+        case .traffic: return "network"
+        case .virusTotal: return "checkmark.shield.fill"
+        case .voiceMorpher: return "waveform"
+        }
+    }
 }
 
 private enum LuxGramSection: Int32, SGItemListSection {
@@ -123,18 +203,39 @@ private enum LuxGramSection: Int32, SGItemListSection {
     case fakeLocation
     case onlineStatusRecording
     case other
+    case privacy
+    case info
+    case camera
+    case menuSections
+    case tabs
+    case localStars
+    case translate
+    case traffic
+    case virusTotal
 }
 
 private func tab(for section: LuxGramSection) -> LuxGramTab {
     switch section {
     case .search: return .appearance
     case .functions, .links: return .appearance
-    case .notifications: return .other
-    case .localPremium, .interface, .appearance, .fontReplacement: return .appearance
+    case .notifications: return .notifications
+    case .localPremium, .interface, .appearance: return .appearance
+    case .fontReplacement: return .fonts
     case .liquidGlass: return .liquidGlass
-    case .messages, .chatList, .onlineStatus, .readReceipts, .content, .fakeLocation, .onlineStatusRecording: return .security
-    case .voiceMorpher: return .other
+    case .messages, .chatList: return .messages
+    case .onlineStatus, .readReceipts, .fakeLocation, .onlineStatusRecording: return .security
+    case .content: return .privacy
+    case .voiceMorpher: return .voiceMorpher
     case .other: return .other
+    case .privacy: return .privacy
+    case .info: return .info
+    case .camera: return .camera
+    case .menuSections: return .menuSections
+    case .tabs: return .tabs
+    case .localStars: return .localStars
+    case .translate: return .translate
+    case .traffic: return .traffic
+    case .virusTotal: return .virusTotal
     }
 }
 
@@ -167,44 +268,86 @@ private func luxGramEntriesFiltered(by selectedTab: LuxGramTab, entries: [LuxGra
 /// Account info tuple for per-account notification toggles.
 typealias AccountInfo = (recordId: Int64, peerId: Int64, name: String)
 
-/// Root nameless screen: visible brand layer above the existing feature controllers.
+/// Root nameless hub — shelves like Whitegram: each row is a category with subtitle.
 private func luxGramRootEntries(presentationData: PresentationData, accounts: [AccountInfo] = []) -> [LuxGramEntry] {
     let lang = presentationData.strings.baseLanguageCode
+    let isRu = lang == "ru" || lang.hasPrefix("ru")
     var entries: [LuxGramEntry] = []
     let id = SGItemListCounter()
-    let functionsHeader = lang == "ru" ? "NAMELESS" : "NAMELESS"
-    let rootAboutHeader = lang == "ru" ? "О NAMELESS" : "ABOUT NAMELESS"
-    let rootAppearanceTitle = lang == "ru" ? "🎨 Внешний вид" : "🎨 Appearance"
-    let rootGhostTitle = lang == "ru" ? "👻 Режим призрака" : "👻 Ghost mode"
-    let rootAboutTitle = lang == "ru" ? "ℹ️ О nameless" : "ℹ️ About nameless"
-    let rootFeaturesTitle = lang == "ru" ? "✨ Функции nameless" : "✨ nameless features"
-    let rootLiquidGlassTitle = lang == "ru" ? "💧 Жидкое стекло" : "💧 Liquid Glass"
-    let aboutHeader = lang == "ru" ? "О NAMELESS" : "ABOUT NAMELESS"
-    let appearanceTitle = lang == "ru" ? "🎨 Внешний вид" : "🎨 Appearance"
-    let ghostTitle = lang == "ru" ? "👻 Режим призрака" : "👻 Ghost mode"
-    let aboutTitle = lang == "ru" ? "ℹ️ О nameless" : "ℹ️ About nameless"
-    let featuresTitle = lang == "ru" ? "✨ Функции nameless" : "✨ nameless features"
-    let liquidGlassTitle = lang == "ru" ? "💧 Жидкое стекло" : "💧 Liquid Glass"
-    _ = (aboutHeader, appearanceTitle, ghostTitle, aboutTitle, featuresTitle, liquidGlassTitle)
-    entries.append(.header(id: id.count, section: .functions, text: functionsHeader, badge: nil))
-    entries.append(LuxGramEntry.disclosureWithIcon(id: id.count, section: .functions, link: .appearanceTab, text: rootAppearanceTitle, iconRef: "LuxGramTabAppearance"))
-    entries.append(LuxGramEntry.disclosureWithIcon(id: id.count, section: .functions, link: .securityTab, text: rootGhostTitle, iconRef: "LuxGramTabSecurity"))
-    entries.append(LuxGramEntry.disclosureWithIcon(id: id.count, section: .functions, link: .otherTab, text: rootFeaturesTitle, iconRef: "LuxGramTabOther"))
-    entries.append(LuxGramEntry.disclosureWithIcon(id: id.count, section: .functions, link: .namelessLiquidGlass, text: rootLiquidGlassTitle, iconRef: "LuxGramTabAppearance"))
-    entries.append(LuxGramEntry.disclosureWithIcon(id: id.count, section: .functions, link: .namelessCatalog, text: lang == "ru" ? "Поиск настроек" : "Settings search", iconRef: "Navigation/Search"))
+
+    // Search
+    entries.append(.searchInput(
+        id: id.count,
+        section: .search,
+        title: NSAttributedString(string: "🔍"),
+        text: "",
+        placeholder: isRu ? "Поиск настроек" : "Search settings"
+    ))
+
+    // Category shelves — each opens its tab controller
+    entries.append(.header(id: id.count, section: .functions, text: isRu ? "КАТЕГОРИИ" : "CATEGORIES", badge: nil))
+
+    // Map tab → disclosure link (legacy links + new category links)
+    let hubRows: [(LuxGramDisclosureLink, LuxGramTab)] = [
+        (.appearanceTab, .appearance),
+        (.notificationsTab, .notifications),
+        (.namelessLiquidGlass, .liquidGlass),
+        (.messagesTab, .messages),
+        (.cameraTab, .camera),
+        (.securityTab, .security),
+        (.privacyTab, .privacy),
+        (.infoTab, .info),
+        (.otherTab, .other),
+        (.menuSectionsTab, .menuSections),
+        (.tabsTab, .tabs),
+        (.localStarsTab, .localStars),
+        (.fontsTab, .fonts),
+        (.translateTab, .translate),
+        (.trafficTab, .traffic),
+        (.virusTotalTab, .virusTotal),
+        (.voiceMorpherTab, .voiceMorpher),
+    ]
+
+    for (link, tab) in hubRows {
+        let title = tab.titleRu
+        let subtitle = tab.subtitleRu
+        // Title + subtitle in one line for ItemList disclosure (subtitle below via notice)
+        entries.append(LuxGramEntry.disclosureWithIcon(
+            id: id.count,
+            section: .functions,
+            link: link,
+            text: title,
+            iconRef: "Settings/Menu/Appearance"
+        ))
+        entries.append(.notice(id: id.count, section: .functions, text: subtitle))
+    }
+
+    // Catalog / full search
+    entries.append(LuxGramEntry.disclosureWithIcon(
+        id: id.count,
+        section: .functions,
+        link: .namelessCatalog,
+        text: isRu ? "Все настройки (список)" : "All settings (list)",
+        iconRef: "Navigation/Search"
+    ))
+    entries.append(.notice(id: id.count, section: .functions, text: isRu ? "Плоский список со всеми опциями" : "Flat list of every option"))
+
+    // About
+    let rootAboutHeader = isRu ? "О NAMELESS" : "ABOUT NAMELESS"
     entries.append(.header(id: id.count, section: .links, text: rootAboutHeader, badge: nil))
-    entries.append(LuxGramEntry.disclosureWithIcon(id: id.count, section: .links, link: .namelessChannel, text: lang == "ru" ? "Канал nameless" : "nameless channel", iconRef: "Settings/Menu/Channels"))
-    entries.append(LuxGramEntry.disclosureWithIcon(id: id.count, section: .links, link: .namelessDeveloper, text: lang == "ru" ? "Разработчик glswee" : "Developer glswee", iconRef: "Settings/Menu/GroupChats"))
+    entries.append(LuxGramEntry.disclosureWithIcon(id: id.count, section: .links, link: .namelessChannel, text: isRu ? "Канал nameless" : "nameless channel", iconRef: "Settings/Menu/Channels"))
+    entries.append(LuxGramEntry.disclosureWithIcon(id: id.count, section: .links, link: .namelessDeveloper, text: isRu ? "Разработчик" : "Developer", iconRef: "Settings/Menu/GroupChats"))
     entries.append(LuxGramEntry.disclosureWithIcon(id: id.count, section: .links, link: .namelessVpn, text: "Stiven VPN", iconRef: "Settings/Menu/Topics"))
-    entries.append(.notice(id: id.count, section: .links, text: rootAboutTitle))
+    entries.append(.notice(id: id.count, section: .links, text: isRu ? "Кастомный iOS-клиент Telegram" : "Custom Telegram iOS client"))
 
     if cachedAggregateAccess().betaBuilds, let betaConfig = cachedAggregateBetaConfig(), betaConfig.channelUrl != nil {
-        let betaHeader = lang == "ru" ? "БЕТА" : "BETA"
+        let betaHeader = isRu ? "БЕТА" : "BETA"
         entries.append(.header(id: id.count, section: .links, text: betaHeader, badge: nil))
-        let betaChannelTitle = lang == "ru" ? "Перейти в канал с бета-версиями" : "Go to Beta Channel"
+        let betaChannelTitle = isRu ? "Перейти в канал с бета-версиями" : "Go to Beta Channel"
         entries.append(LuxGramEntry.disclosure(id: id.count, section: .links, link: .betaChannel, text: betaChannelTitle))
     }
 
+    _ = accounts
     return entries
 }
 
@@ -278,6 +421,17 @@ private enum SGBoolSetting: String, Hashable {
     case namelessVideoBackgroundEnabled
     case namelessMusicCardStyle
     case namelessRoundProfileButtons
+    case confirmCalls
+    case hideStories
+    case allChatsHidden
+    case hideTabBar
+    case showTabNames
+    case quickTranslateButton
+    case uploadSpeedBoost
+    case showProfileId
+    case showDC
+    case showRegDate
+    case hidePhoneInSettings
 }
 
 private enum LuxGramDisclosureLink: Hashable {
@@ -293,6 +447,19 @@ private enum LuxGramDisclosureLink: Hashable {
     case appearanceTab
     case securityTab
     case otherTab
+    case notificationsTab
+    case messagesTab
+    case cameraTab
+    case privacyTab
+    case infoTab
+    case menuSectionsTab
+    case tabsTab
+    case localStarsTab
+    case fontsTab
+    case translateTab
+    case trafficTab
+    case virusTotalTab
+    case voiceMorpherTab
     case fakeProfileSettings
     case feelRichAmount
     case savedDeletedMessagesList
@@ -311,6 +478,29 @@ private enum LuxGramDisclosureLink: Hashable {
     case namelessCatalog
     case rollbackNamelessSettings
     case voiceMorpherPreset
+}
+
+private func tab(forDisclosure link: LuxGramDisclosureLink) -> LuxGramTab? {
+    switch link {
+    case .appearanceTab: return .appearance
+    case .notificationsTab: return .notifications
+    case .namelessLiquidGlass: return .liquidGlass
+    case .messagesTab: return .messages
+    case .cameraTab: return .camera
+    case .securityTab: return .security
+    case .privacyTab: return .privacy
+    case .infoTab: return .info
+    case .otherTab: return .other
+    case .menuSectionsTab: return .menuSections
+    case .tabsTab: return .tabs
+    case .localStarsTab: return .localStars
+    case .fontsTab: return .fonts
+    case .translateTab: return .translate
+    case .trafficTab: return .traffic
+    case .virusTotalTab: return .virusTotal
+    case .voiceMorpherTab: return .voiceMorpher
+    default: return nil
+    }
 }
 
 private typealias LuxGramEntry = SGItemListUIEntry<LuxGramSection, SGBoolSetting, LuxGramSliderSetting, LuxGramOneFromManySetting, LuxGramDisclosureLink, AnyHashable>
@@ -740,6 +930,68 @@ private func luxGramEntries(presentationData: PresentationData, contentSettingsC
         : "Emulates Premium «Last seen»: shows last online for users who did not hide it from everyone but hid it from you. Users with «when?» in profile can be peeked. Not needed for Premium subscribers. How: 1) With multiple accounts, status may be fetched via another account (bridge). 2) Short inversion: «Visible to everyone» for a fraction of a second → status captured and shown → settings restored.")
     entries.append(.toggle(id: id.count, section: .onlineStatusRecording, settingName: .enableOnlineStatusRecording, value: SGSimpleSettings.shared.enableOnlineStatusRecording, text: peekOnlineTitle, enabled: true))
     entries.append(.notice(id: id.count, section: .onlineStatusRecording, text: peekOnlineNotice))
+
+    // ── Hub shelves content (camera / privacy / info / tabs / …) ──
+    let isRu = lang == "ru" || lang.hasPrefix("ru")
+
+    entries.append(.header(id: id.count, section: .notifications, text: isRu ? "УВЕДОМЛЕНИЯ" : "NOTIFICATIONS", badge: nil))
+    entries.append(.toggle(id: id.count, section: .notifications, settingName: .confirmCalls, value: SGSimpleSettings.shared.confirmCalls, text: isRu ? "Предупреждение при звонке" : "Warn before call", enabled: true))
+    entries.append(.notice(id: id.count, section: .notifications, text: isRu ? "Показывать диалог перед исходящим звонком." : "Show a confirmation before placing a call."))
+
+    entries.append(.header(id: id.count, section: .camera, text: isRu ? "КАМЕРА" : "CAMERA", badge: nil))
+    entries.append(.toggle(id: id.count, section: .camera, settingName: .enableTelescope, value: SGSimpleSettings.shared.enableTelescope, text: isRu ? "Телескоп / зум" : "Telescope / zoom", enabled: true))
+    entries.append(.toggle(id: id.count, section: .camera, settingName: .enableVideoToCircleOrVoice, value: SGSimpleSettings.shared.enableVideoToCircleOrVoice, text: isRu ? "Видео → кружок / голосовое" : "Video → circle / voice", enabled: true))
+    entries.append(.notice(id: id.count, section: .camera, text: isRu ? "Зум, HD и конвертация видео в кружки." : "Zoom, HD and video-to-circle conversion."))
+
+    entries.append(.header(id: id.count, section: .privacy, text: isRu ? "КОНФИДЕНЦИАЛЬНОСТЬ" : "PRIVACY", badge: nil))
+    entries.append(.toggle(id: id.count, section: .privacy, settingName: .enableSavingProtectedContent, value: SGSimpleSettings.shared.enableSavingProtectedContent, text: isRu ? "Сохранять защищённый контент" : "Save protected content", enabled: true))
+    entries.append(.toggle(id: id.count, section: .privacy, settingName: .disableScreenshotDetection, value: SGSimpleSettings.shared.disableScreenshotDetection, text: isRu ? "Скрыть детекцию скриншотов" : "Hide screenshot detection", enabled: true))
+    entries.append(.toggle(id: id.count, section: .privacy, settingName: .disableSecretChatBlurOnScreenshot, value: SGSimpleSettings.shared.disableSecretChatBlurOnScreenshot, text: isRu ? "Не размывать секретные" : "No secret-chat blur", enabled: true))
+    entries.append(.toggle(id: id.count, section: .privacy, settingName: .confirmCalls, value: SGSimpleSettings.shared.confirmCalls, text: isRu ? "Предупреждать перед звонком" : "Warn before call", enabled: true))
+    entries.append(.notice(id: id.count, section: .privacy, text: isRu ? "Звонки, защита контента, скриншоты." : "Calls, content protection, screenshots."))
+
+    entries.append(.header(id: id.count, section: .info, text: isRu ? "ИНФОРМАЦИЯ" : "INFO", badge: nil))
+    entries.append(.toggle(id: id.count, section: .info, settingName: .showProfileId, value: SGSimpleSettings.shared.showProfileId, text: isRu ? "Показывать ID" : "Show ID", enabled: true))
+    entries.append(.toggle(id: id.count, section: .info, settingName: .showDC, value: SGSimpleSettings.shared.showDC, text: isRu ? "Показывать DC" : "Show DC", enabled: true))
+    entries.append(.toggle(id: id.count, section: .info, settingName: .showRegDate, value: SGSimpleSettings.shared.showRegDate, text: isRu ? "Дата регистрации" : "Registration date", enabled: true))
+    entries.append(.toggle(id: id.count, section: .info, settingName: .hidePhoneInSettings, value: SGSimpleSettings.shared.hidePhoneInSettings, text: isRu ? "Скрыть номер в настройках" : "Hide phone in settings", enabled: true))
+    entries.append(.notice(id: id.count, section: .info, text: isRu ? "ID, DC, дата создания и телефон." : "ID, DC, creation date and phone."))
+
+    entries.append(.header(id: id.count, section: .menuSections, text: isRu ? "РАЗДЕЛЫ МЕНЮ" : "MENU SECTIONS", badge: nil))
+    entries.append(.toggle(id: id.count, section: .menuSections, settingName: .hideStories, value: SGSimpleSettings.shared.hideStories, text: isRu ? "Скрыть истории" : "Hide stories", enabled: true))
+    entries.append(.toggle(id: id.count, section: .menuSections, settingName: .allChatsHidden, value: SGSimpleSettings.shared.allChatsHidden, text: isRu ? "Скрыть «Все чаты»" : "Hide «All chats»", enabled: true))
+    entries.append(.notice(id: id.count, section: .menuSections, text: isRu ? "Скрытие разделов Telegram." : "Hide Telegram menu sections."))
+
+    entries.append(.header(id: id.count, section: .tabs, text: isRu ? "ВКЛАДКИ" : "TABS", badge: nil))
+    entries.append(.toggle(id: id.count, section: .tabs, settingName: .hideTabBar, value: SGSimpleSettings.shared.hideTabBar, text: isRu ? "Скрыть нижний таббар" : "Hide tab bar", enabled: true))
+    entries.append(.toggle(id: id.count, section: .tabs, settingName: .showTabNames, value: SGSimpleSettings.shared.showTabNames, text: isRu ? "Подписи вкладок" : "Tab labels", enabled: true))
+    entries.append(.disclosure(id: id.count, section: .tabs, link: .tabOrganizer, text: isRu ? "Организатор вкладок" : "Tab organizer"))
+    entries.append(.notice(id: id.count, section: .tabs, text: isRu ? "Папки, масштаб, заголовок." : "Folders, scale, title."))
+
+    entries.append(.header(id: id.count, section: .localStars, text: isRu ? "ЛОКАЛЬНЫЕ ЗВЁЗДЫ" : "LOCAL STARS", badge: nil))
+    entries.append(.toggle(id: id.count, section: .localStars, settingName: .feelRichEnabled, value: SGSimpleSettings.shared.feelRichEnabled, text: isRu ? "Локальный баланс звёзд" : "Local stars balance", enabled: true))
+    entries.append(.disclosure(id: id.count, section: .localStars, link: .feelRichAmount, text: isRu ? "Задать сумму" : "Set amount"))
+    entries.append(.notice(id: id.count, section: .localStars, text: isRu ? "Стоимость без интернета (локально)." : "Local stars display amount."))
+
+    entries.append(.header(id: id.count, section: .fontReplacement, text: isRu ? "ШРИФТЫ" : "FONTS", badge: nil))
+    entries.append(.toggle(id: id.count, section: .fontReplacement, settingName: .enableFontReplacement, value: SGSimpleSettings.shared.enableFontReplacement, text: isRu ? "Кастомный шрифт" : "Custom font", enabled: true))
+    entries.append(.disclosure(id: id.count, section: .fontReplacement, link: .fontReplacementPicker, text: isRu ? "Выбрать шрифт" : "Choose font"))
+    entries.append(.notice(id: id.count, section: .fontReplacement, text: isRu ? "Кастомный шрифт интерфейса." : "Custom UI font."))
+
+    entries.append(.header(id: id.count, section: .translate, text: isRu ? "ПЕРЕВОД" : "TRANSLATE", badge: nil))
+    entries.append(.toggle(id: id.count, section: .translate, settingName: .quickTranslateButton, value: SGSimpleSettings.shared.quickTranslateButton, text: isRu ? "Кнопка «Перевести» всегда видима" : "Always show Translate", enabled: true))
+    entries.append(.notice(id: id.count, section: .translate, text: isRu ? "Перевод через Google / системный." : "Google / system translation."))
+
+    entries.append(.header(id: id.count, section: .traffic, text: isRu ? "ТРАФИК" : "TRAFFIC", badge: nil))
+    entries.append(.toggle(id: id.count, section: .traffic, settingName: .uploadSpeedBoost, value: SGSimpleSettings.shared.uploadSpeedBoost, text: isRu ? "Ускорение загрузки" : "Upload speed boost", enabled: true))
+    entries.append(.notice(id: id.count, section: .traffic, text: isRu ? "Улучшенное шифрование / ускорение." : "Enhanced traffic options."))
+
+    entries.append(.header(id: id.count, section: .virusTotal, text: isRu ? "VIRUSTOTAL" : "VIRUSTOTAL", badge: nil))
+    entries.append(.notice(id: id.count, section: .virusTotal, text: isRu ? "Проверка ссылок и файлов — в разработке, скоро." : "Link & file scan — coming soon."))
+
+    entries.append(.header(id: id.count, section: .voiceMorpher, text: isRu ? "СМЕНА ГОЛОСА" : "VOICE MORPH", badge: nil))
+    entries.append(.disclosure(id: id.count, section: .voiceMorpher, link: .voiceMorpherPreset, text: isRu ? "Пресет голоса" : "Voice preset"))
+    entries.append(.notice(id: id.count, section: .voiceMorpher, text: isRu ? "Голос при записи исходящих." : "Morph outgoing voice messages."))
     
     let filteredEntries = filterGatedFeatures(entries: entries)
 
@@ -879,6 +1131,28 @@ public func luxGramSettingsController(context: AccountContext) -> ViewController
                 SGSimpleSettings.shared.namelessMusicCardStyle = value
             case .namelessRoundProfileButtons:
                 SGSimpleSettings.shared.namelessRoundProfileButtons = value
+            case .confirmCalls:
+                SGSimpleSettings.shared.confirmCalls = value
+            case .hideStories:
+                SGSimpleSettings.shared.hideStories = value
+            case .allChatsHidden:
+                SGSimpleSettings.shared.allChatsHidden = value
+            case .hideTabBar:
+                SGSimpleSettings.shared.hideTabBar = value
+            case .showTabNames:
+                SGSimpleSettings.shared.showTabNames = value
+            case .quickTranslateButton:
+                SGSimpleSettings.shared.quickTranslateButton = value
+            case .uploadSpeedBoost:
+                SGSimpleSettings.shared.uploadSpeedBoost = value
+            case .showProfileId:
+                SGSimpleSettings.shared.showProfileId = value
+            case .showDC:
+                SGSimpleSettings.shared.showDC = value
+            case .showRegDate:
+                SGSimpleSettings.shared.showRegDate = value
+            case .hidePhoneInSettings:
+                SGSimpleSettings.shared.hidePhoneInSettings = value
             case .fakeLocationEnabled:
                 SGSimpleSettings.shared.fakeLocationEnabled = value
             case .keepRemovedChannels:
@@ -1059,14 +1333,8 @@ public func luxGramSettingsController(context: AccountContext) -> ViewController
                 })
                 pushControllerImpl?(pickerController)
                 #endif
-            } else if link == .appearanceTab {
-                pushControllerImpl?(buildLuxGramTabController(tab: .appearance, args: argumentsRef!))
-            } else if link == .securityTab {
-                pushControllerImpl?(buildLuxGramTabController(tab: .security, args: argumentsRef!))
-            } else if link == .otherTab {
-                pushControllerImpl?(buildLuxGramTabController(tab: .other, args: argumentsRef!))
-            } else if link == .namelessLiquidGlass {
-                pushControllerImpl?(buildLuxGramTabController(tab: .liquidGlass, args: argumentsRef!))
+            } else if let hubTab = tab(forDisclosure: link) {
+                pushControllerImpl?(buildLuxGramTabController(tab: hubTab, args: argumentsRef!))
             } else if link == .tabOrganizer {
                 let presentationData = context.sharedContext.currentPresentationData.with { $0 }
                 let tabOrganizerController = TabOrganizerController(context: context, presentationData: presentationData, onSave: {
@@ -1361,11 +1629,7 @@ public func luxGramSettingsController(context: AccountContext) -> ViewController
     func buildLuxGramTabController(tab: LuxGramTab, args: SGItemListArguments<SGBoolSetting, LuxGramSliderSetting, LuxGramOneFromManySetting, LuxGramDisclosureLink, AnyHashable>) -> ViewController {
         let tabSignal = combineLatest(reloadPromise.get(), statePromise.get(), context.sharedContext.presentationData, contentSettingsConfigurationPromise.get(), context.sharedContext.activeAccountsWithInfo)
         |> map { _, state, presentationData, contentSettingsConfiguration, accountsWithInfo -> (ItemListControllerState, (ItemListNodeState, SGItemListArguments<SGBoolSetting, LuxGramSliderSetting, LuxGramOneFromManySetting, LuxGramDisclosureLink, AnyHashable>)) in
-            let lang = presentationData.strings.baseLanguageCode
-            let tabTitles = lang == "ru" ? ["Оформление", "Приватность", "Другие функции"] : ["Appearance", "Privacy", "Other"]
-            _ = tabTitles
-            let displayTabTitles = lang == "ru" ? ["Внешний вид", "Режим призрака", "Функции nameless", "Liquid Glass"] : ["Appearance", "Ghost Mode", "nameless Features", "Liquid Glass"]
-            let tabTitle = displayTabTitles[tab.rawValue]
+            let tabTitle = tab.titleRu
             var tabState = state
             tabState.selectedTab = tab
             let accounts: [AccountInfo] = accountsWithInfo.accounts.map { info in

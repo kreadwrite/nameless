@@ -1,5 +1,6 @@
 import SGDebugUI
 import SGSettingsUI
+import SGSimpleSettings
 import UndoUI
 //
 import ContactListUI
@@ -373,6 +374,22 @@ private func makeTelegramUrl(_ path: String, queryItems: [URLQueryItem] = []) ->
 }
 
 func openExternalUrlImpl(context: AccountContext, urlContext: OpenURLContext, url: String, forceExternal: Bool, presentationData: PresentationData, navigationController: NavigationController?, dismissInput: @escaping () -> Void) {
+    // nameless: simple anti-scam gate
+    if NamelessFeatureRuntime.looksSuspicious(urlOrText: url) {
+        let lang = presentationData.strings.baseLanguageCode
+        let title = lang.hasPrefix("ru") ? "Подозрительная ссылка" : "Suspicious link"
+        let text = lang.hasPrefix("ru")
+            ? "nameless считает эту ссылку подозрительной. Открыть всё равно?"
+            : "nameless thinks this link looks suspicious. Open anyway?"
+        context.sharedContext.presentGlobalController(textAlertController(context: context, title: title, text: text, actions: [
+            TextAlertAction(type: .genericAction, title: presentationData.strings.Common_Cancel, action: {}),
+            TextAlertAction(type: .destructiveAction, title: lang.hasPrefix("ru") ? "Открыть" : "Open", action: {
+                context.sharedContext.applicationBindings.openUrl(url)
+            }),
+        ]), nil)
+        return
+    }
+
     if forceExternal || url.lowercased().hasPrefix("tel:") || url.lowercased().hasPrefix("calshow:") {
         if url.lowercased().hasPrefix("tel:+888") {
             context.sharedContext.presentGlobalController(textAlertController(context: context, title: nil, text: presentationData.strings.Conversation_CantPhoneCallAnonymousNumberError, actions: [

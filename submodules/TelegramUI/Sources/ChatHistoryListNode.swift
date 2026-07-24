@@ -831,7 +831,10 @@ public final class ChatHistoryListNodeImpl: ListViewImpl, ChatHistoryNode, ChatH
         
         self.adMessagesContext = adMessagesContext
         var adMessages: Signal<(interPostInterval: Int32?, messages: [Message], startDelay: Int32?, betweenDelay: Int32?), NoError>
-        if case .bubbles = mode, let adMessagesContext {
+        // nameless: disable all channel/chat ads
+        if SGSimpleSettings.shared.disableAllAds {
+            adMessages = .single((nil, [], nil, nil))
+        } else if case .bubbles = mode, let adMessagesContext {
             let peerId = adMessagesContext.peerId
             if peerId.namespace == Namespaces.Peer.CloudUser {
                 adMessages = .single((nil, [], nil, nil))

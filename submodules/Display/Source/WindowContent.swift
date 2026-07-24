@@ -349,10 +349,14 @@ public class Window1 {
     public init(hostView: WindowHostView, statusBarHost: StatusBarHost?) {
         self.hostView = hostView
         self.badgeView = UIImageView()
-        if SGSimpleSettings.shared.status > 1, let image = UIImage(bundleImageName: SGSimpleSettings.shared.customAppBadge) {
+        // Prefer nameless badge assets over legacy Swiftgram/AppBadge
+        let customName = SGSimpleSettings.shared.customAppBadge
+        if !customName.isEmpty, let image = UIImage(bundleImageName: customName) {
             self.badgeView.image = image
-        } else {
-        self.badgeView.image = UIImage(bundleImageName: "Components/AppBadge")
+        } else if let image = UIImage(bundleImageName: "NamelessAppBadge") {
+            self.badgeView.image = image
+        } else if let image = UIImage(bundleImageName: "Components/AppBadge") {
+            self.badgeView.image = image
         }
         self.badgeView.isHidden = true
         

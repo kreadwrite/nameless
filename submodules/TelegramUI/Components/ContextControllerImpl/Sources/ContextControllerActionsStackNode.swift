@@ -1469,16 +1469,26 @@ private final class LensTransitionContainerEffectViewImpl: UIView, LensTransitio
     
     func update(theme: PresentationTheme) {
         self.theme = theme
+        // Always keep container transparent — opaque white fill was the long-press white blob bug
+        self.backgroundColor = .clear
+        self.glassView.backgroundColor = .clear
         if #available(iOS 26.0, *) {
             let glassEffectValue: UIGlassEffect
             if theme.overallDarkAppearance {
-                glassEffectValue = UIGlassEffect(style: .regular)
-                //glassEffectValue.tintColor = UIColor(white: 1.0, alpha: 0.025)
+                // Clear glass + light tint so menu is frosted, not solid white/black
+                glassEffectValue = UIGlassEffect(style: .clear)
+                glassEffectValue.tintColor = UIColor(white: 0.12, alpha: 0.35)
             } else {
-                glassEffectValue = UIGlassEffect(style: .regular)
-                //glassEffectValue.tintColor = UIColor(white: 1.0, alpha: 0.1)
+                glassEffectValue = UIGlassEffect(style: .clear)
+                glassEffectValue.tintColor = UIColor(white: 1.0, alpha: 0.28)
             }
+            glassEffectValue.isInteractive = true
             self.glassView.effect = glassEffectValue
+        } else {
+            self.glassView.effect = UIBlurEffect(style: theme.overallDarkAppearance ? .systemUltraThinMaterialDark : .systemUltraThinMaterialLight)
+        }
+        if let contentView = self.contentView {
+            contentView.backgroundColor = .clear
         }
     }
     

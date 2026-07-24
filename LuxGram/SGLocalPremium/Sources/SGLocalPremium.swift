@@ -1,5 +1,6 @@
 import Foundation
 import SwiftSignalKit
+import SGSimpleSettings
 
 public class SGLocalPremium {
     public static let shared = SGLocalPremium()
@@ -23,16 +24,21 @@ public class SGLocalPremium {
 
     public var emulatePremium: Bool {
         get {
+            // nameless: master local-premium toggle OR per-account legacy key
+            if SGSimpleSettings.shared.enableLocalPremium {
+                return true
+            }
             return UserDefaults.standard.bool(forKey: accountKey("localPremiumEmulate"))
         }
         set {
             UserDefaults.standard.set(newValue, forKey: accountKey("localPremiumEmulate"))
             UserDefaults.standard.synchronize()
+            SGSimpleSettings.shared.enableLocalPremium = newValue
         }
     }
 
     public var showPremiumBadge: Bool { return emulatePremium }
-    public var unlimitedPinnedChats: Bool { return emulatePremium }
+    public var unlimitedPinnedChats: Bool { return emulatePremium || SGSimpleSettings.shared.unlimitedPinnedChats }
     public var unlimitedFolders: Bool { return emulatePremium }
     public var unlimitedChatsPerFolder: Bool { return emulatePremium }
     public var unlimitedSavedMessageTags: Bool { return emulatePremium }

@@ -4217,14 +4217,21 @@ public class ChatTextInputPanelNode: ChatInputPanelNode, ASEditableTextNodeDeleg
             let remainingCount = max(-999, inputTextMaxLength - textCount)
             let counterText = remainingCount >= 5 ? "" : "\(remainingCount)"
             self.counterTextNode.attributedText = NSAttributedString(string: counterText, font: counterFont, textColor: counterColor)
+        } else if SGSimpleSettings.shared.charCounterInput, let presentationInterfaceState = self.presentationInterfaceState, let textInputNode = self.textInputNode {
+            // nameless: always-visible character count above input
+            let textCount = textInputNode.textView.text.count
+            let counterColor = presentationInterfaceState.theme.chat.inputPanel.panelControlColor
+            let counterText = textCount > 0 ? "\(textCount)" : ""
+            self.counterTextNode.attributedText = NSAttributedString(string: counterText, font: counterFont, textColor: counterColor)
         } else {
             self.counterTextNode.attributedText = NSAttributedString(string: "", font: counterFont, textColor: .black)
         }
             
-        let counterSize = self.counterTextNode.updateLayout(CGSize(width: 40.0, height: 40.0))
+        let counterSize = self.counterTextNode.updateLayout(CGSize(width: 56.0, height: 40.0))
         let counterFrame = CGRect(origin: CGPoint(x: backgroundSize.width - 11.0 - counterSize.width, y: 4.0), size: CGSize(width: counterSize.width, height: counterSize.height))
         transition.updateFrame(node: self.counterTextNode, frame: counterFrame)
-        transition.updateAlpha(node: self.counterTextNode, alpha: backgroundSize.height > 50.0 ? 1.0 : 0.0)
+        let showCounter = backgroundSize.height > 40.0 || SGSimpleSettings.shared.charCounterInput
+        transition.updateAlpha(node: self.counterTextNode, alpha: showCounter ? 1.0 : 0.0)
     }
     
     private func installEmojiSuggestionPreviewGesture(hostView: UIView) {

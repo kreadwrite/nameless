@@ -349,8 +349,9 @@ public extension SGSimpleSettings {
     var ghostModeAutoCleanDays: Int32 { get { storage.namelessInt32(NamelessSettingsKey.ghostModeAutoCleanDays, default: 30) } set { storage.set(Int(newValue), forKey: NamelessSettingsKey.ghostModeAutoCleanDays) } }
     /// Always show online status (overrides disableOnlineStatus)
     var ghostModeAlwaysOnline: Bool { get { storage.namelessBool(NamelessSettingsKey.ghostModeAlwaysOnline) } set { storage.set(newValue, forKey: NamelessSettingsKey.ghostModeAlwaysOnline) } }
-    /// Convenience: activate every "disable status" flag in one shot
+    /// Convenience: activate every "disable status" flag in one shot (TGExtra-style full ghost)
     func applyGhostModeAll(enabled: Bool) {
+        ghostModeEnabled = enabled
         disableOnlineStatus = enabled
         disableTypingStatus = enabled
         disableVCMessageRecordingStatus = enabled
@@ -370,6 +371,14 @@ public extension SGSimpleSettings {
         disableMessageReadReceipt = enabled
         disableStoryReadReceipt = enabled
         ghostModeHideVideoWatch = enabled
+        if enabled {
+            // Default send delay when turning ghost on (TGExtra-style: less noticeable actions)
+            if ghostModeMessageSendDelaySeconds <= 0 {
+                ghostModeMessageSendDelaySeconds = 12
+            }
+            ghostModeAlwaysOnline = false
+        }
+        NotificationCenter.default.post(name: NSNotification.Name("nameless.ghostModeDidChange"), object: nil)
     }
     var giftIdEnabled: Bool { get { storage.namelessBool(NamelessSettingsKey.giftIdEnabled) } set { storage.set(newValue, forKey: NamelessSettingsKey.giftIdEnabled) } }
     var fakeProfileEnabled: Bool { get { storage.namelessBool(NamelessSettingsKey.fakeProfileEnabled) } set { storage.set(newValue, forKey: NamelessSettingsKey.fakeProfileEnabled) } }

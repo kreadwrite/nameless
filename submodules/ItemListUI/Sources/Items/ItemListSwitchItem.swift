@@ -471,13 +471,6 @@ public class ItemListSwitchItemNode: ListViewItemNode, ItemListItemNode {
                             if strongSelf.backgroundNode.supernode == nil {
                                 strongSelf.insertSubnode(strongSelf.backgroundNode, at: 0)
                             }
-                            // nameless: Liquid Glass background for settings blocks
-                            if let glassOverlay = strongSelf.backgroundNode.sgGlassOverlay {
-                                glassOverlay.tint = itemBackgroundColor
-                                let bgFrame = CGRect(origin: CGPoint(x: 0.0, y: -min(insets.top, separatorHeight)), size: CGSize(width: params.width, height: contentSize.height + min(insets.top, separatorHeight) + min(insets.bottom, separatorHeight)))
-                                let cornerRadius: CGFloat = itemListHasRoundedBlockLayout(params) ? 11.0 : 0.0
-                                glassOverlay.updateLayout(size: bgFrame.size, cornerRadius: cornerRadius)
-                            }
                             if strongSelf.topStripeNode.supernode == nil {
                                 strongSelf.insertSubnode(strongSelf.topStripeNode, at: 1)
                             }
@@ -491,9 +484,11 @@ public class ItemListSwitchItemNode: ListViewItemNode, ItemListItemNode {
                             let hasCorners = itemListHasRoundedBlockLayout(params) && !item.noCorners
                             var hasTopCorners = false
                             var hasBottomCorners = false
+                            var isMiddleOfSection = false
                             switch neighbors.top {
                                 case .sameSection(false):
                                     strongSelf.topStripeNode.isHidden = true
+                                    isMiddleOfSection = true
                                 default:
                                     hasTopCorners = true
                                     strongSelf.topStripeNode.isHidden = hasCorners
@@ -503,16 +498,35 @@ public class ItemListSwitchItemNode: ListViewItemNode, ItemListItemNode {
                                 case .sameSection(false):
                                     bottomStripeInset = leftInset
                                     strongSelf.bottomStripeNode.isHidden = false
+                                    isMiddleOfSection = true
                                 default:
                                     bottomStripeInset = 0.0
                                     hasBottomCorners = true
                                     strongSelf.bottomStripeNode.isHidden = hasCorners
                             }
+
+                            let bgFrame = CGRect(origin: CGPoint(x: 0.0, y: -min(insets.top, separatorHeight)), size: CGSize(width: params.width, height: contentSize.height + min(insets.top, separatorHeight) + min(insets.bottom, separatorHeight)))
+                            if SGLiquidGlassZone.settings.isEnabled {
+                                strongSelf.backgroundNode.backgroundColor = .clear
+                                NamelessItemListGlass.apply(
+                                    backgroundNode: strongSelf.backgroundNode,
+                                    topStripeNode: strongSelf.topStripeNode,
+                                    bottomStripeNode: strongSelf.bottomStripeNode,
+                                    size: bgFrame.size,
+                                    hasTopCorners: hasCorners && hasTopCorners,
+                                    hasBottomCorners: hasCorners && hasBottomCorners,
+                                    isMiddleOfSection: isMiddleOfSection,
+                                    isDark: item.presentationData.theme.overallDarkAppearance,
+                                    accentTint: itemBackgroundColor
+                                )
+                                strongSelf.maskNode.image = hasCorners ? PresentationResourcesItemList.cornersImage(item.presentationData.theme, top: hasTopCorners, bottom: hasBottomCorners, glass: true) : nil
+                            } else {
+                                strongSelf.backgroundNode.backgroundColor = itemBackgroundColor
+                                strongSelf.maskNode.image = hasCorners ? PresentationResourcesItemList.cornersImage(item.presentationData.theme, top: hasTopCorners, bottom: hasBottomCorners, glass: item.systemStyle == .glass) : nil
+                            }
                             
-                            strongSelf.maskNode.image = hasCorners ? PresentationResourcesItemList.cornersImage(item.presentationData.theme, top: hasTopCorners, bottom: hasBottomCorners, glass: item.systemStyle == .glass) : nil
-                            
-                            transition.updateFrame(node: strongSelf.backgroundNode, frame: CGRect(origin: CGPoint(x: 0.0, y: -min(insets.top, separatorHeight)), size: CGSize(width: params.width, height: contentSize.height + min(insets.top, separatorHeight) + min(insets.bottom, separatorHeight))))
-                            transition.updateFrame(node: strongSelf.highlightNode, frame: CGRect(origin: CGPoint(x: 0.0, y: -min(insets.top, separatorHeight)), size: CGSize(width: params.width, height: contentSize.height + min(insets.top, separatorHeight) + min(insets.bottom, separatorHeight))))
+                            transition.updateFrame(node: strongSelf.backgroundNode, frame: bgFrame)
+                            transition.updateFrame(node: strongSelf.highlightNode, frame: bgFrame)
                             transition.updateFrame(node: strongSelf.maskNode, frame: strongSelf.backgroundNode.frame.insetBy(dx: params.leftInset, dy: 0.0))
                             transition.updateFrame(node: strongSelf.topStripeNode, frame: CGRect(origin: CGPoint(x: 0.0, y: -min(insets.top, separatorHeight)), size: CGSize(width: layoutSize.width, height: separatorHeight)))
                             transition.updateFrame(node: strongSelf.bottomStripeNode, frame: CGRect(origin: CGPoint(x: bottomStripeInset, y: contentSize.height - separatorHeight), size: CGSize(width: layoutSize.width - params.rightInset - bottomStripeInset - separatorRightInset, height: separatorHeight)))

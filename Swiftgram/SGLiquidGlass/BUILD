@@ -14,6 +14,8 @@ swift_library(
         "//Swiftgram/SGLiquidGlassCore:SGLiquidGlassCore",
         "//submodules/AsyncDisplayKit:AsyncDisplayKit",
         "//submodules/Display:Display",
+        "//submodules/ComponentFlow:ComponentFlow",
+        "//submodules/TelegramUI/Components/GlassBackgroundComponent:GlassBackgroundComponent",
     ],
     visibility = [
         "//visibility:public",

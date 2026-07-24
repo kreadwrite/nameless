@@ -5,6 +5,7 @@ import Display
 import TelegramPresentationData
 import WallpaperBackgroundNode
 import SGLiquidGlassCore
+import SGSimpleSettings
 import GlassBackgroundComponent
 import ComponentFlow
 
@@ -563,14 +564,48 @@ public final class ChatMessageBubbleBackdrop: ASDisplayNode, SGLiquidGlassContai
     }
 
     private func updateGlass(size: CGSize, isDark: Bool, zone: SGLiquidGlassZone, transition: ComponentTransition = .immediate) {
+        let enabled = zone.isEnabled && size.width > 0.5 && size.height > 0.5
+        // Real iOS 26 Liquid Glass: clear glass that refracts wallpaper behind the bubble.
         let tint: GlassBackgroundView.TintColor
         if zone.isTinted && self.currentBubbleColor != .clear {
-            tint = .init(kind: .custom(style: .clear, color: self.currentBubbleColor.withAlphaComponent(0.16)))
+            tint = .init(kind: .custom(style: .clear, color: self.currentBubbleColor.withAlphaComponent(0.18)))
+        } else if isDark {
+            // Subtle dark glass so white text stays readable over busy wallpapers
+            tint = .init(kind: .custom(style: .clear, color: UIColor(white: 0.0, alpha: 0.22)))
         } else {
             tint = .init(kind: .clear)
         }
-        self.glassView.update(size: size, cornerRadii: self.currentGlassRadii, isDark: isDark, tintColor: tint, isInteractive: false, isVisible: zone.isEnabled, transition: transition)
-        self.glassView.isHidden = !zone.isEnabled
+        if enabled {
+            if self.glassView.superview !== self.view {
+                self.view.insertSubview(self.glassView, at: 0)
+            }
+            self.glassView.frame = CGRect(origin: .zero, size: size)
+            // Keep glass as the only visible surface of the bubble backdrop
+            self.glassView.update(size: size, cornerRadii: self.currentGlassRadii, isDark: isDark, tintColor: tint, isInteractive: false, isVisible: true, transition: transition)
+            self.glassView.isHidden = false
+            self.glassView.alpha = 1.0
+            // Hide opaque wallpaper-sampled fill — this was covering glass and made it look "not liquid"
+            self.backgroundContent?.isHidden = true
+            self.backgroundContent?.alpha = 0.0
+        } else {
+            self.glassView.isHidden = true
+            self.backgroundContent?.isHidden = false
+            // nameless: transparent / semi-transparent / outline message styles
+            var alpha: CGFloat = 1.0
+            if SGSimpleSettings.shared.messageTransparent {
+                alpha = 0.35
+            } else if SGSimpleSettings.shared.messageSemiTransparent {
+                alpha = 0.65
+            }
+            self.backgroundContent?.alpha = alpha
+            if SGSimpleSettings.shared.messageOutline {
+                self.view.layer.borderWidth = UIScreen.main.scale > 0 ? (1.0 / UIScreen.main.scale) * 2.0 : 1.0
+                self.view.layer.borderColor = (isDark ? UIColor.white : UIColor.black).withAlphaComponent(0.22).cgColor
+            } else {
+                self.view.layer.borderWidth = 0.0
+                self.view.layer.borderColor = nil
+            }
+        }
     }
 
     private func glassCorners() -> (topLeftRadius: CGFloat, topRightRadius: CGFloat, bottomLeftRadius: CGFloat, bottomRightRadius: CGFloat)? {
@@ -709,6 +744,10 @@ public final class ChatMessageBubbleBackdrop: ASDisplayNode, SGLiquidGlassContai
                         }
                         self.backgroundContent = backgroundContent
                         self.insertSubnode(backgroundContent, at: 0)
+                        // nameless: solid fill only when liquid glass is off
+                        let glassOn = glassZone.isEnabled
+                        backgroundContent.isHidden = glassOn
+                        backgroundContent.alpha = glassOn ? 0.0 : 1.0
                     }
                 case .outgoing:
                     if let backgroundContent = backgroundNode?.makeBubbleBackground(for: .outgoing) {
@@ -721,9 +760,15 @@ public final class ChatMessageBubbleBackdrop: ASDisplayNode, SGLiquidGlassContai
                         }
                         self.backgroundContent = backgroundContent
                         self.insertSubnode(backgroundContent, at: 0)
+                        let glassOn = glassZone.isEnabled
+                        backgroundContent.isHidden = glassOn
+                        backgroundContent.alpha = glassOn ? 0.0 : 1.0
                     }
                 }
             }
+
+            // Ensure glass is re-applied after solid fill changes
+            self.updateGlass(size: self.bounds.size, isDark: theme.theme.overallDarkAppearance, zone: glassZone)
             
             if let maskView = self.maskView {
                 maskView.image = self.overrideMask ? nil : bubbleMaskForType(type, graphics: essentialGraphics)

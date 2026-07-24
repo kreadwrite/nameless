@@ -1,5 +1,6 @@
 import SGStrings
 import SGSimpleSettings
+import SGDeletedMessages
 import TranslateUI
 import Foundation
 import UIKit
@@ -2661,10 +2662,11 @@ public class ChatMessageBubbleItemNode: ChatMessageItemView, ChatMessagePreviewI
                     isReplyThread = true
                 }
                 
+                let isNamelessDeleted = message.sgDeletedAttribute.isDeleted
                 let statusSuggestedWidthAndContinue = mosaicStatusLayout(ChatMessageDateAndStatusNode.Arguments(
                     context: item.context,
                     presentationData: item.presentationData,
-                    edited: edited && !item.presentationData.isPreview,
+                    edited: edited && !item.presentationData.isPreview && !isNamelessDeleted,
                     impressionCount: !item.presentationData.isPreview ? viewCount : nil,
                     dateText: dateText,
                     type: statusType,
@@ -2684,7 +2686,8 @@ public class ChatMessageBubbleItemNode: ChatMessageItemView, ChatMessagePreviewI
                     hasAutoremove: message.isSelfExpiring,
                     canViewReactionList: canViewMessageReactionList(message: EngineMessage(message)),
                     animationCache: item.controllerInteraction.presentationContext.animationCache,
-                    animationRenderer: item.controllerInteraction.presentationContext.animationRenderer
+                    animationRenderer: item.controllerInteraction.presentationContext.animationRenderer,
+                    deleted: isNamelessDeleted
                 ))
                 
                 mosaicStatusSizeAndApply = statusSuggestedWidthAndContinue.1(statusSuggestedWidthAndContinue.0)

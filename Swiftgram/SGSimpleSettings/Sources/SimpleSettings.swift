@@ -320,7 +320,8 @@ public class SGSimpleSettings {
         Keys.duckyAppIconAvailable.rawValue: true,
         Keys.transcriptionBackend.rawValue: TranscriptionBackend.default.rawValue,
         Keys.translationBackend.rawValue: TranslationBackend.default.rawValue,
-        Keys.customAppBadge.rawValue: "",
+        // Default Dynamic Island / status-bar badge = nameless (not Swiftgram)
+        Keys.customAppBadge.rawValue: "NamelessAppBadge",
         Keys.canUseNY.rawValue: false,
         Keys.nyStyle.rawValue: NYStyle.default.rawValue,
         Keys.wideTabBar.rawValue: false,

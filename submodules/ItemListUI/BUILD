@@ -12,6 +12,7 @@ swift_library(
     deps = [
         "//Swiftgram/SGLiquidGlass:SGLiquidGlass",
         "//Swiftgram/SGLiquidGlassCore:SGLiquidGlassCore",
+        "//Swiftgram/SGSimpleSettings:SGSimpleSettings",
         "//submodules/SSignalKit/SwiftSignalKit:SwiftSignalKit",
         "//submodules/AsyncDisplayKit:AsyncDisplayKit",
         "//submodules/Display:Display",

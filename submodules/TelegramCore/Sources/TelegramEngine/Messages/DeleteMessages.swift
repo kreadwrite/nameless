@@ -2,6 +2,8 @@ import Foundation
 import Postbox
 import SwiftSignalKit
 import TelegramApi
+import SGSimpleSettings
+import SGDeletedMessages
 
 func addMessageMediaResourceIdsToRemove(media: Media, resourceIds: inout [MediaResourceId]) {
     if let image = media as? TelegramMediaImage {
@@ -23,9 +25,41 @@ func addMessageMediaResourceIdsToRemove(message: Message, resourceIds: inout [Me
 }
 
 public func _internal_deleteMessages(transaction: Transaction, mediaBox: MediaBox, ids: [MessageId], deleteMedia: Bool = true, manualAddMessageThreadStatsDifference: ((MessageThreadKey, Int, Int) -> Void)? = nil) {
+    // nameless: keep deleted messages visible (mark + optional snapshot)
+    var idsToErase = ids
+    if SGSimpleSettings.shared.showDeletedMessages {
+        var keepLocal: [MessageId] = []
+        for id in ids {
+            guard let message = transaction.getMessage(id) else { continue }
+            if SGSimpleSettings.shared.hideMyDeleted && !message.flags.contains(.Incoming) { continue }
+            if SGSimpleSettings.shared.hideBotDeleted, let author = message.author as? TelegramUser, author.botInfo != nil { continue }
+
+            transaction.updateSGDeletedAttribute(messageId: id) { attr in
+                attr.isDeleted = true
+                if attr.originalText == nil { attr.originalText = message.text }
+                attr.originalNamespace = id.namespace
+                attr.originalId = id.id
+            }
+            keepLocal.append(id)
+        }
+        _ = SGDeletedMessages.saveSnapshots(
+            ids: keepLocal,
+            transaction: transaction,
+            transformMedia: { _, media in
+                SGSimpleSettings.shared.saveDeletedMessagesMedia ? media : []
+            }
+        )
+        // Keep marked messages in history (show 🗑). Only erase ones we skipped.
+        let keepSet = Set(keepLocal)
+        idsToErase = ids.filter { !keepSet.contains($0) }
+        if idsToErase.isEmpty {
+            return
+        }
+    }
+
     var resourceIds: [MediaResourceId] = []
     if deleteMedia {
-        for id in ids {
+        for id in idsToErase {
             if id.peerId.namespace == Namespaces.Peer.SecretChat {
                 if let message = transaction.getMessage(id) {
                     addMessageMediaResourceIdsToRemove(message: message, resourceIds: &resourceIds)
@@ -36,7 +70,7 @@ public func _internal_deleteMessages(transaction: Transaction, mediaBox: MediaBo
     if !resourceIds.isEmpty {
         let _ = mediaBox.removeCachedResources(Array(Set(resourceIds)), force: true).start()
     }
-    for id in ids {
+    for id in idsToErase {
         if id.peerId.namespace == Namespaces.Peer.CloudChannel && id.namespace == Namespaces.Message.Cloud {
             if let message = transaction.getMessage(id) {
                 if let threadId = message.threadId {
@@ -52,7 +86,7 @@ public func _internal_deleteMessages(transaction: Transaction, mediaBox: MediaBo
             }
         }
     }
-    transaction.deleteMessages(ids, forEachMedia: { _ in
+    transaction.deleteMessages(idsToErase, forEachMedia: { _ in
     })
 }
 

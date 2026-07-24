@@ -8,6 +8,7 @@ sgdeps = [
     "//Swiftgram/SGGHSettingsScheme:SGGHSettingsScheme",
     "//Swiftgram/SGConfig:SGConfig",
     "//Swiftgram/SGLogging:SGLogging",
+    "//LuxGram/SGDeletedMessages:SGDeletedMessages",
 ]
 
 sgsrc = [

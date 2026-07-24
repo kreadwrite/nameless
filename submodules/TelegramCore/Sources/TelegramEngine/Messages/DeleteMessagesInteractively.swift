@@ -3,6 +3,8 @@ import Postbox
 import SwiftSignalKit
 import TelegramApi
 import MtProtoKit
+import SGSimpleSettings
+import SGDeletedMessages
 
 
 func _internal_deleteMessagesInteractively(account: Account, messageIds: [MessageId], type: InteractiveMessagesDeletionType, deleteAllInGroup: Bool = false) -> Signal<Void, NoError> {
@@ -103,9 +105,36 @@ func deleteMessagesInteractively(transaction: Transaction, stateManager: Account
             }
         }
     }
-    _internal_deleteMessages(transaction: transaction, mediaBox: postbox.mediaBox, ids: messageIds.map(\.messageId))
+    let idsToProcess = messageIds.map(\.messageId)
+
+    // nameless: keep deleted messages visible locally with red-trash mark
+    if SGSimpleSettings.shared.showDeletedMessages {
+        for id in idsToProcess {
+            guard let message = transaction.getMessage(id) else { continue }
+            if SGSimpleSettings.shared.hideMyDeleted && !message.flags.contains(.Incoming) { continue }
+            if SGSimpleSettings.shared.hideBotDeleted, let author = message.author as? TelegramUser, author.botInfo != nil { continue }
+
+            transaction.updateSGDeletedAttribute(messageId: id) { attr in
+                attr.isDeleted = true
+                if attr.originalText == nil {
+                    attr.originalText = message.text
+                }
+                attr.originalNamespace = id.namespace
+                attr.originalId = id.id
+            }
+            _ = SGDeletedMessages.saveSnapshots(ids: [id], transaction: transaction)
+        }
+        // Keep local copies; remote delete ops already enqueued above
+        stateManager?.notifyDeletedMessages(messageIds: idsToProcess)
+        if !uniqueIds.isEmpty && removeIfPossiblyDelivered {
+            stateManager?.removePossiblyDeliveredMessages(uniqueIds: uniqueIds)
+        }
+        return
+    }
+
+    _internal_deleteMessages(transaction: transaction, mediaBox: postbox.mediaBox, ids: idsToProcess)
     
-    stateManager?.notifyDeletedMessages(messageIds: messageIds.map(\.messageId))
+    stateManager?.notifyDeletedMessages(messageIds: idsToProcess)
     
     if !uniqueIds.isEmpty && removeIfPossiblyDelivered {
         stateManager?.removePossiblyDeliveredMessages(uniqueIds: uniqueIds)

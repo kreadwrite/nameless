@@ -74,7 +74,7 @@ private enum NAEntry: ItemListNodeEntry {
                 }
             })
         case .infoText:
-            return ItemListTextItem(presentationData: presentationData, text: .plain("nameless — кастомный Telegram-клиент на базе Swiftgram с расширенными функциями приватности и кастомизации."), sectionId: self.section)
+            return ItemListTextItem(presentationData: presentationData, text: .plain("nameless — кастомный iOS-клиент Telegram с Liquid Glass, режимом призрака и расширенными функциями."), sectionId: self.section)
         }
     }
 }

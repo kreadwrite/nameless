@@ -687,7 +687,12 @@ public func namelessFeaturesController(context: AccountContext) -> ViewControlle
             case .hideMyEdited: s.hideMyEdited = value
             case .hideBotEdited: s.hideBotEdited = value
             case .hideBotDeleted: s.hideBotDeleted = value
-            case .doubleTapToEdit: s.doubleTapToEdit = value
+            case .doubleTapToEdit:
+                s.doubleTapToEdit = value
+                // Wire to real double-tap action used by ChatMessageBubbleItemNode
+                s.messageDoubleTapActionOutgoing = value
+                    ? SGSimpleSettings.MessageDoubleTapAction.edit.rawValue
+                    : SGSimpleSettings.MessageDoubleTapAction.default.rawValue
             // Camera
             case .cameraDefaultBack: s.cameraDefaultBack = value
             case .cameraUseDeviceMicrophone: s.cameraUseDeviceMicrophone = value

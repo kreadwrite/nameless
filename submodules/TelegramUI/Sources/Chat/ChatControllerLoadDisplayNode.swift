@@ -38,6 +38,7 @@ import DeleteChatPeerActionSheetItem
 import HashtagSearchUI
 import LegacyMediaPickerUI
 import Emoji
+import SGSimpleSettings
 import PeerAvatarGalleryUI
 import PeerInfoUI
 import RaiseToListen
@@ -1040,7 +1041,13 @@ extension ChatControllerImpl {
                 }
                 
                 let effectiveSilentPosting = silentPosting ?? strongSelf.presentationInterfaceState.interfaceState.silentPosting
-                let transformedMessages = strongSelf.transformEnqueueMessages(messages, silentPosting: effectiveSilentPosting, scheduleTime: scheduleTime, repeatPeriod: repeatPeriod, postpone: postpone)
+                // nameless / TGExtra-style: ghost mode delayed send
+                var effectiveScheduleTime = scheduleTime
+                let ghostDelay = SGSimpleSettings.shared.ghostModeMessageSendDelaySeconds
+                if effectiveScheduleTime == nil, ghostDelay > 0 {
+                    effectiveScheduleTime = Int32(Date().timeIntervalSince1970) + ghostDelay
+                }
+                let transformedMessages = strongSelf.transformEnqueueMessages(messages, silentPosting: effectiveSilentPosting, scheduleTime: effectiveScheduleTime, repeatPeriod: repeatPeriod, postpone: postpone)
                 
                 var forwardedMessages: [[EnqueueMessage]] = []
                 var forwardSourcePeerIds = Set<PeerId>()

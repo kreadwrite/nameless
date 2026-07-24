@@ -18,6 +18,7 @@ import UniversalMediaPlayer
 import RadialStatusNode
 import TelegramUIPreferences
 import SGLiquidGlassCore
+import SGSimpleSettings
 import PeerInfoAvatarListNode
 import AnimationUI
 import ContextUI
@@ -615,8 +616,17 @@ final class PeerInfoHeaderNode: ASDisplayNode {
                 currentSavedMusic = cachedUserData.savedMusic
             }
         }
-        let musicHeight: CGFloat = hasBackground || self.isAvatarExpanded ? 24.0 : 16.0
-        let bottomInset: CGFloat = currentSavedMusic != nil ? musicHeight : 0.0
+        // nameless: card style music is taller (cover + title/artist + lyric line)
+        let useMusicCard = SGSimpleSettings.shared.namelessMusicCardStyle
+        let musicHeight: CGFloat
+        if currentSavedMusic != nil && useMusicCard {
+            musicHeight = 72.0
+        } else if hasBackground || self.isAvatarExpanded {
+            musicHeight = 24.0
+        } else {
+            musicHeight = 16.0
+        }
+        let bottomInset: CGFloat = currentSavedMusic != nil ? musicHeight + (useMusicCard ? 8.0 : 0.0) : 0.0
         
         let isLandscape = containerInset > 16.0
         
@@ -2721,14 +2731,83 @@ final class PeerInfoHeaderNode: ASDisplayNode {
                 return componentView
             }()
             
-            let musicString = NSMutableAttributedString()
             let isOverlay = self.isAvatarExpanded || hasBackground
-            musicString.append(NSAttributedString(string: track ?? "", font: Font.semibold(12.0), textColor: isOverlay ? .white : presentationData.theme.list.itemAccentColor))
-            musicString.append(NSAttributedString(string: " - \(artist)", font: Font.regular(12.0), textColor: isOverlay ? UIColor.white.withAlphaComponent(0.7) : presentationData.theme.list.itemSecondaryTextColor))
-            
-            let musicSize = music.update(
-                transition: .immediate,
-                component: AnyComponent(
+            let useMusicCard = SGSimpleSettings.shared.namelessMusicCardStyle
+            let sideInset: CGFloat = 16.0
+            let cardWidth = max(0.0, backgroundFrame.width - sideInset * 2.0)
+            let trackTitle = track ?? presentationData.strings.MediaPlayer_UnknownTrack
+
+            let musicContent: AnyComponent<Empty>
+            if useMusicCard {
+                // Card: [cover] title / artist / lyric — matches reference UI
+                let titleColor: UIColor = isOverlay ? .white : presentationData.theme.list.itemPrimaryTextColor
+                let artistColor: UIColor = isOverlay ? UIColor.white.withAlphaComponent(0.72) : presentationData.theme.list.itemSecondaryTextColor
+                let lyricColor: UIColor = isOverlay ? UIColor.white.withAlphaComponent(0.55) : presentationData.theme.list.itemSecondaryTextColor.withAlphaComponent(0.9)
+                let coverColor = UIColor(white: isOverlay ? 0.22 : 0.14, alpha: 1.0)
+                let cardBgColor = isOverlay ? UIColor(white: 0.0, alpha: 0.48) : presentationData.theme.list.itemBlocksBackgroundColor
+
+                musicContent = AnyComponent(
+                    PlainButtonComponent(
+                        content: AnyComponent(
+                            ZStack([
+                                AnyComponentWithIdentity(
+                                    id: "cardBg",
+                                    component: AnyComponent(RoundedRectangle(color: cardBgColor, cornerRadius: 16.0, size: CGSize(width: cardWidth, height: musicHeight)))
+                                ),
+                                AnyComponentWithIdentity(
+                                    id: "row",
+                                    component: AnyComponent(
+                                        HStack([
+                                            AnyComponentWithIdentity(
+                                                id: "cover",
+                                                component: AnyComponent(
+                                                    ZStack([
+                                                        AnyComponentWithIdentity(
+                                                            id: "coverBg",
+                                                            component: AnyComponent(RoundedRectangle(color: coverColor, cornerRadius: 10.0, size: CGSize(width: 52.0, height: 52.0)))
+                                                        ),
+                                                        AnyComponentWithIdentity(
+                                                            id: "coverIcon",
+                                                            component: AnyComponent(BundleIconComponent(name: "Media Editor/SmallAudio", tintColor: isOverlay ? .white : presentationData.theme.list.itemAccentColor))
+                                                        )
+                                                    ])
+                                                )
+                                            ),
+                                            AnyComponentWithIdentity(
+                                                id: "texts",
+                                                component: AnyComponent(
+                                                    VStack([
+                                                        AnyComponentWithIdentity(
+                                                            id: "title",
+                                                            component: AnyComponent(MultilineTextComponent(text: .plain(NSAttributedString(string: trackTitle, font: Font.semibold(15.0), textColor: titleColor)), maximumNumberOfLines: 1))
+                                                        ),
+                                                        AnyComponentWithIdentity(
+                                                            id: "artist",
+                                                            component: AnyComponent(MultilineTextComponent(text: .plain(NSAttributedString(string: artist, font: Font.regular(13.0), textColor: artistColor)), maximumNumberOfLines: 1))
+                                                        ),
+                                                        AnyComponentWithIdentity(
+                                                            id: "lyric",
+                                                            component: AnyComponent(MultilineTextComponent(text: .plain(NSAttributedString(string: trackTitle, font: Font.regular(12.0), textColor: lyricColor)), maximumNumberOfLines: 1))
+                                                        )
+                                                    ], alignment: .left, spacing: 2.0)
+                                                )
+                                            )
+                                        ], spacing: 12.0)
+                                    )
+                                )
+                            ])
+                        ),
+                        minSize: CGSize(width: cardWidth, height: musicHeight),
+                        action: { [weak self] in
+                            self?.displaySavedMusic?()
+                        }
+                    )
+                )
+            } else {
+                let musicString = NSMutableAttributedString()
+                musicString.append(NSAttributedString(string: trackTitle, font: Font.semibold(12.0), textColor: isOverlay ? .white : presentationData.theme.list.itemAccentColor))
+                musicString.append(NSAttributedString(string: " - \(artist)", font: Font.regular(12.0), textColor: isOverlay ? UIColor.white.withAlphaComponent(0.7) : presentationData.theme.list.itemSecondaryTextColor))
+                musicContent = AnyComponent(
                     PlainButtonComponent(
                         content: AnyComponent(
                             HStack([
@@ -2751,11 +2830,17 @@ final class PeerInfoHeaderNode: ASDisplayNode {
                             self?.displaySavedMusic?()
                         }
                     )
-                ),
+                )
+            }
+
+            let musicSize = music.update(
+                transition: .immediate,
+                component: musicContent,
                 environment: {},
-                containerSize: CGSize(width: backgroundFrame.width, height: musicHeight)
+                containerSize: CGSize(width: useMusicCard ? cardWidth : backgroundFrame.width, height: musicHeight)
             )
-            let musicFrame = CGRect(origin: CGPoint(x: 0.0, y: (apparentBackgroundHeight - backgroundHeight) + backgroundHeight - musicHeight - (hasBackground || self.isAvatarExpanded ? 0.0 : 4.0)), size: musicSize)
+            let musicX: CGFloat = useMusicCard ? sideInset : 0.0
+            let musicFrame = CGRect(origin: CGPoint(x: musicX, y: (apparentBackgroundHeight - backgroundHeight) + backgroundHeight - musicHeight - (hasBackground || self.isAvatarExpanded ? 0.0 : 4.0)), size: musicSize)
             if let musicView = music.view {
                 if musicView.superview == nil {
                     self.regularContentNode.view.addSubview(musicView)

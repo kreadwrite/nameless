@@ -1944,6 +1944,9 @@ public class ChatListItemNode: ItemListRevealOptionsItemNode {
                 avatarClipStyle = .bubble
             } else if isForumAvatar {
                 avatarClipStyle = .roundedRect
+            } else if SGSimpleSettings.shared.squareAvatars {
+                // nameless: square avatars
+                avatarClipStyle = .roundedRect
             } else {
                 avatarClipStyle = .round
             }
