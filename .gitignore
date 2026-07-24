@@ -89,3 +89,7 @@ xcode-files
 /buildbox/*
 **/node_modules/
 tools/sim-watcher/dist/
+
+build-fail.log
+*.log
+
