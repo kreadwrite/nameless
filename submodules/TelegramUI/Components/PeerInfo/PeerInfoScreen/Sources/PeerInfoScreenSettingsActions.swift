@@ -1,6 +1,5 @@
 import SGStrings
 import SGSettingsUI
-import LuxSettingsUI
 import Foundation
 import UIKit
 import Display
@@ -48,15 +47,15 @@ extension PeerInfoScreenNode {
         }
         switch section {
         case .nameless:
-            // Categorized hub (Внешний вид / Liquid Glass / Призрак / …)
-            self.controller?.push(luxGramSettingsController(context: self.context))
+            // namelessFeaturesController lives in SGSettingsUI (always linked).
+            // luxGramSettingsController is excluded from LuxSettingsUI BUILD until its deps compile.
+            self.controller?.push(namelessFeaturesController(context: self.context))
         case .namelessFeatures:
-            // Same hub — flat list is no longer the primary entry
-            self.controller?.push(luxGramSettingsController(context: self.context))
+            self.controller?.push(namelessFeaturesController(context: self.context))
         case .namelessAbout:
             self.controller?.push(namelessAboutController(context: self.context))
         case .swiftgram:
-            self.controller?.push(luxGramSettingsController(context: self.context))
+            self.controller?.push(namelessFeaturesController(context: self.context))
         case .swiftgramPro:
             if self.context.sharedContext.immediateSGStatus.status > 1 {
                 self.controller?.push(self.context.sharedContext.makeSGProController(context: self.context))

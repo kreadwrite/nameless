@@ -61,7 +61,7 @@ jobs:
           set -euo pipefail
           SOURCE_DIR=/Users/Shared/telegram-ios
           sed -i '' '/reordered_opaque/d' "$SOURCE_DIR/third-party/webrtc/webrtc/modules/video_coding/codecs/h264/h264_decoder_impl.cc"
-          # Keep LuxSettingsUI / luxGramSettingsController — nameless hub depends on them
+          # PeerInfo uses namelessFeaturesController (SGSettingsUI); luxGram hub stays excluded until BUILD-ready
           sed -i '' 's/PresentationResourcesSettings.nameless.withRenderingMode(.alwaysOriginal)/PresentationResourcesSettings.nameless?.withRenderingMode(.alwaysOriginal)/' "$SOURCE_DIR/submodules/TelegramUI/Components/PeerInfo/PeerInfoScreen/Sources/ListItems/PeerInfoScreenCommentItem.swift"
           sed -i '' 's/sgWebSettings\.global\.canGrant/(context.currentAppConfiguration.with { $0 }).sgWebSettings.global.canGrant/' "$SOURCE_DIR/submodules/TelegramUI/Components/PeerInfo/PeerInfoScreen/Sources/PeerInfoSettingsItems.swift"
 
