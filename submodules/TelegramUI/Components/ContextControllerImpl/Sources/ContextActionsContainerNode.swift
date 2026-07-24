@@ -12,6 +12,8 @@ import TextNodeWithEntities
 import SwiftSignalKit
 import ContextUI
 import GlassBackgroundComponent
+import SGLiquidGlass
+import SGLiquidGlassCore
 import ComponentFlow
 import ComponentDisplayAdapters
 
@@ -55,6 +57,7 @@ private final class InnerActionsContainerNode: ASDisplayNode {
     private let blurBackground: Bool
     private let presentationData: PresentationData
     private let containerNode: ASDisplayNode
+    private var liquidGlassView: SGLiquidGlassView?
     private var effectView: UIVisualEffectView?
     private var itemNodes: [ContextItemNode]
     private let feedbackTap: () -> Void
@@ -87,7 +90,7 @@ private final class InnerActionsContainerNode: ASDisplayNode {
         self.containerNode = ASDisplayNode()
         self.containerNode.clipsToBounds = true
         self.containerNode.cornerRadius = 14.0
-        self.containerNode.backgroundColor = presentationData.theme.contextMenu.backgroundColor
+        self.containerNode.backgroundColor = presentationData.theme.contextMenu.backgroundColor.withAlphaComponent(0.0)
 
         var requestUpdateAction: ((AnyHashable, ContextMenuActionItem) -> Void)?
         
@@ -111,6 +114,15 @@ private final class InnerActionsContainerNode: ASDisplayNode {
         self.itemNodes = itemNodes
         
         super.init()
+
+        if SGLiquidGlassZone.contextMenu.isEnabled {
+            let glass = SGLiquidGlassView()
+            glass.cornerRadii = GlassRadii(radius: 14.0)
+            glass.isUserInteractionEnabled = false
+            self.containerNode.view.insertSubview(glass, at: 0)
+            self.liquidGlassView = glass
+            SGLiquidGlassCoordinator.shared.register(node: glass, zone: .contextMenu)
+        }
 
         requestUpdateAction = { [weak self] id, action in
             guard let strongSelf = self else {
@@ -194,7 +206,7 @@ private final class InnerActionsContainerNode: ASDisplayNode {
                 effectView.removeFromSuperview()
             }
         case .regular:
-            if self.effectView == nil {
+            if self.effectView == nil && self.liquidGlassView == nil {
                 let effectView: UIVisualEffectView
                 if #available(iOS 13.0, *) {
                     if self.presentationData.theme.rootController.keyboardColor == .dark {
@@ -284,6 +296,9 @@ private final class InnerActionsContainerNode: ASDisplayNode {
         let bounds = CGRect(origin: CGPoint(), size: size)
         
         transition.updateFrame(node: self.containerNode, frame: bounds)
+        if let liquidGlassView = self.liquidGlassView {
+            transition.updateFrame(view: liquidGlassView, frame: bounds)
+        }
         if let effectView = self.effectView {
             transition.updateFrame(view: effectView, frame: bounds)
         }
@@ -761,6 +776,9 @@ final class ContextActionsContainerNode: ASDisplayNode {
     
     deinit {
         self.textSelectionTipNodeDisposable?.dispose()
+        if let liquidGlassView = self.actionsNode.liquidGlassView {
+            SGLiquidGlassCoordinator.shared.unregister(node: liquidGlassView)
+        }
     }
     
     func updateLayout(widthClass: ContainerViewLayoutSizeClass, presentation: ContextControllerActionsStackNode.Presentation, constrainedWidth: CGFloat, constrainedHeight: CGFloat, transition: ContainedViewLayoutTransition) -> CGSize {

@@ -22,6 +22,8 @@ swift_library(
         "//submodules/TelegramUI/Components/EmojiStatusComponent",
         "//submodules/TelegramUI/Components/EntityKeyboard",
         "//submodules/TelegramUI/Components/GlassBackgroundComponent",
+        "//Swiftgram/SGLiquidGlass:SGLiquidGlass",
+        "//Swiftgram/SGLiquidGlassCore:SGLiquidGlassCore",
         "//submodules/TelegramUI/Components/LottieComponent",
         "//submodules/Markdown",
         "//submodules/TelegramUI/Components/MultiAnimationRenderer",
