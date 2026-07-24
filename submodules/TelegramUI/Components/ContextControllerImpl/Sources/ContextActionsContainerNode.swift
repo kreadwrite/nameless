@@ -57,7 +57,7 @@ private final class InnerActionsContainerNode: ASDisplayNode {
     private let blurBackground: Bool
     private let presentationData: PresentationData
     private let containerNode: ASDisplayNode
-    private var liquidGlassView: SGLiquidGlassView?
+    fileprivate var liquidGlassView: SGLiquidGlassView?
     private var effectView: UIVisualEffectView?
     private var itemNodes: [ContextItemNode]
     private let feedbackTap: () -> Void
