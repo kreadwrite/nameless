@@ -591,7 +591,7 @@ public final class ChatMessageBubbleBackdrop: ASDisplayNode, SGLiquidGlassContai
             incoming = false
             mergeType = value
         }
-        let arguments: MessageBubbleArguments
+        let arguments: (topLeftRadius: CGFloat, topRightRadius: CGFloat, bottomLeftRadius: CGFloat, bottomRightRadius: CGFloat, drawTail: Bool)
         switch mergeType {
         case .None:
             arguments = messageBubbleArguments(maxCornerRadius: maxRadius, minCornerRadius: minRadius, incoming: incoming, neighbors: .none)
