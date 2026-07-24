@@ -17,6 +17,9 @@ import AccountContext
 import PremiumUI
 import LegacyChatHeaderPanelComponent
 import AppBundle
+import SGSimpleSettings
+import SGLiquidGlassCore
+import SGLiquidGlass
 
 private enum ChatReportPeerTitleButton: Equatable {
     case block
@@ -66,6 +69,21 @@ private func peerButtons(_ state: ChatPresentationInterfaceState) -> [ChatReport
     if let _ = state.renderedPeer?.chatMainPeer as? TelegramUser, state.isManagedBot {
         buttons.append(.setPhoto)
     } else if let peer = state.renderedPeer?.chatMainPeer as? TelegramUser, let contactStatus = state.contactStatus, let peerStatusSettings = contactStatus.peerStatusSettings {
+        // nameless anti-scam: always show Block + Add for non-contacts when enabled
+        if SGSimpleSettings.shared.antiScamEnabled,
+           contactStatus.canAddContact,
+           !state.peerIsBlocked {
+            var forced: [ChatReportPeerTitleButton] = []
+            if peerStatusSettings.contains(.canBlock) || peerStatusSettings.contains(.canReport) {
+                forced.append(.block)
+            }
+            if peerStatusSettings.contains(.canAddContact) {
+                forced.append(.addContact(nil, false))
+            }
+            if !forced.isEmpty {
+                return forced
+            }
+        }
         if peerStatusSettings.contains(.autoArchived) {
             if peerStatusSettings.contains(.canBlock) || peerStatusSettings.contains(.canReport) {
                 if peer.isDeleted {
@@ -254,6 +272,7 @@ final class ChatReportPeerTitlePanelNode: ChatTitleAccessoryPanelNode {
     private let animationRenderer: MultiAnimationRenderer
         
     private let separatorNode: ASDisplayNode
+    private let glassBackgroundNode: ASDisplayNode
     
     private let closeButton: HighlightableButtonNode
     private var buttons: [(ChatReportPeerTitleButton, UIButton)] = []
@@ -282,6 +301,12 @@ final class ChatReportPeerTitlePanelNode: ChatTitleAccessoryPanelNode {
         self.separatorNode = ASDisplayNode()
         self.separatorNode.isLayerBacked = true
         
+        self.glassBackgroundNode = ASDisplayNode()
+        self.glassBackgroundNode.isLayerBacked = false
+        self.glassBackgroundNode.backgroundColor = .clear
+        self.glassBackgroundNode.clipsToBounds = true
+        self.glassBackgroundNode.cornerRadius = 16.0
+        
         self.emojiSeparatorNode = ASDisplayNode()
         self.emojiSeparatorNode.isLayerBacked = true
         
@@ -296,6 +321,7 @@ final class ChatReportPeerTitlePanelNode: ChatTitleAccessoryPanelNode {
         
         super.init()
 
+        self.insertSubnode(self.glassBackgroundNode, at: 0)
         self.addSubnode(self.separatorNode)
         self.addSubnode(self.emojiSeparatorNode)
         self.addSubnode(self.textNode)
@@ -359,8 +385,14 @@ final class ChatReportPeerTitlePanelNode: ChatTitleAccessoryPanelNode {
             self.theme = interfaceState.theme
             
             self.closeButton.setImage(PresentationResourcesChat.chatInputPanelEncircledCloseIconImage(interfaceState.theme), for: [])
-            self.separatorNode.backgroundColor = interfaceState.theme.rootController.navigationBar.separatorColor
-            self.emojiSeparatorNode.backgroundColor = interfaceState.theme.rootController.navigationBar.separatorColor
+            // Soft separator under liquid glass
+            if SGSimpleSettings.shared.liquidGlassEnabled {
+                self.separatorNode.backgroundColor = UIColor(white: 1.0, alpha: 0.08)
+                self.emojiSeparatorNode.backgroundColor = UIColor(white: 1.0, alpha: 0.08)
+            } else {
+                self.separatorNode.backgroundColor = interfaceState.theme.rootController.navigationBar.separatorColor
+                self.emojiSeparatorNode.backgroundColor = interfaceState.theme.rootController.navigationBar.separatorColor
+            }
         }
         self.presentationInterfaceState = interfaceState
         
@@ -675,6 +707,30 @@ final class ChatReportPeerTitlePanelNode: ChatTitleAccessoryPanelNode {
                 inviteInfoNode?.removeFromSupernode()
             })
         }
+        // nameless: liquid glass cloud behind Block/Add banner
+        let glassOn = SGSimpleSettings.shared.liquidGlassEnabled
+        let glassFrame = CGRect(origin: CGPoint(x: 12.0 + leftInset * 0.25, y: 4.0), size: CGSize(width: max(0.0, width - 24.0 - leftInset * 0.5), height: max(0.0, initialPanelHeight - 4.0)))
+        transition.updateFrame(node: self.glassBackgroundNode, frame: glassFrame)
+        self.glassBackgroundNode.cornerRadius = min(16.0, glassFrame.height * 0.5)
+        self.glassBackgroundNode.isHidden = !glassOn
+        if glassOn {
+            self.glassBackgroundNode.backgroundColor = .clear
+            if let glass = self.glassBackgroundNode.sgGlassOverlay {
+                glass.tint = .clear
+                glass.updateLayout(
+                    size: glassFrame.size,
+                    topLeft: self.glassBackgroundNode.cornerRadius,
+                    topRight: self.glassBackgroundNode.cornerRadius,
+                    bottomLeft: self.glassBackgroundNode.cornerRadius,
+                    bottomRight: self.glassBackgroundNode.cornerRadius,
+                    isDark: interfaceState.theme.overallDarkAppearance
+                )
+            }
+            self.separatorNode.alpha = 0.0
+        } else {
+            self.separatorNode.alpha = 1.0
+        }
+
         return LayoutResult(backgroundHeight: initialPanelHeight, insetHeight: panelHeight + panelInset, hitTestSlop: hitTestSlop)
     }
     

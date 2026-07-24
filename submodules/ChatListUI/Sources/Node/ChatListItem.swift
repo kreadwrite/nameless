@@ -5243,6 +5243,14 @@ public class ChatListItemNode: ItemListRevealOptionsItemNode {
                     
                     if let peerPresence = peerPresence {
                         strongSelf.peerPresenceManager?.reset(presence: EnginePeer.Presence(status: peerPresence.status, lastActivity: 0), isOnline: online)
+                        // nameless: record online/offline history for «История онлайна»
+                        if SGSimpleSettings.shared.enableOnlineStatusRecording,
+                           case let .peer(peerData) = item.content,
+                           let chatPeer = peerData.peer.chatMainPeer {
+                            let name = chatPeer.debugDisplayTitle
+                            let pid = chatPeer.id.id._internalGetInt64Value()
+                            NamelessOnlineHistory.append(peerId: pid, name: name, isOnline: online)
+                        }
                     }
                     
                     strongSelf.updateLayout(size: CGSize(width: layout.contentSize.width, height: itemHeight), leftInset: params.leftInset, rightInset: params.rightInset)

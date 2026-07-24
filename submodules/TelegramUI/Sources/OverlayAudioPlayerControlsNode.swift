@@ -23,6 +23,9 @@ import BundleIconComponent
 import ButtonComponent
 import Markdown
 import TextFormat
+import SGSimpleSettings
+import SGLiquidGlassCore
+import SGLiquidGlass
 
 private func normalizeValue(_ value: CGFloat) -> CGFloat {
     return round(value * 10.0) / 10.0
@@ -146,6 +149,7 @@ final class OverlayAudioPlayerControlsNode: ASDisplayNode {
     private let source: ChatHistoryListSource
     
     private let backgroundNode: ASImageNode
+    private let glassNode: SGLiquidGlassNode
     
     let albumArtNode: TransformImageNode
     private let titleNode: TextNode
@@ -243,6 +247,12 @@ final class OverlayAudioPlayerControlsNode: ASDisplayNode {
         self.backgroundNode.displayWithoutProcessing = true
         self.backgroundNode.displaysAsynchronously = false
         self.backgroundNode.image = generateBackground(theme: presentationData.theme)
+
+        self.glassNode = SGLiquidGlassNode()
+        self.glassNode.glassTintColor = .clear
+        self.glassNode.glassCornerRadii = GlassRadii(radius: 18.0)
+        self.glassNode.interactive = true
+        self.glassNode.glassVisible = SGSimpleSettings.shared.liquidGlassEnabled
                 
         self.albumArtNode = TransformImageNode()
         
@@ -307,6 +317,7 @@ final class OverlayAudioPlayerControlsNode: ASDisplayNode {
         super.init()
         
         self.addSubnode(self.backgroundNode)
+        self.insertSubnode(self.glassNode, aboveSubnode: self.backgroundNode)
                 
         self.addSubnode(self.albumArtNode)
         //self.addSubnode(self.titleNode)
@@ -878,7 +889,22 @@ final class OverlayAudioPlayerControlsNode: ASDisplayNode {
         let rateRightOffset = timestampLabelWidthForDuration(self.currentDuration)
         transition.updateFrame(node: self.rateButton, frame: CGRect(origin: CGPoint(x: width - sideInset - rightInset - rateRightOffset - 38.0, y: scrubberVerticalOrigin + 10.0 + rightLabelVerticalOffset - 6.0 + UIScreenPixel), size: CGSize(width: 24.0, height: 44.0)))
         
-        transition.updateFrame(node: self.backgroundNode, frame: CGRect(origin: CGPoint(x: 0.0, y: -8.0), size: CGSize(width: width, height: finalPanelHeight + 8.0)))
+        let bgFrame = CGRect(origin: CGPoint(x: 0.0, y: -8.0), size: CGSize(width: width, height: finalPanelHeight + 8.0))
+        transition.updateFrame(node: self.backgroundNode, frame: bgFrame)
+        // nameless: floating glass mini-player card (as in Whitegram chat screenshot)
+        let glassOn = SGSimpleSettings.shared.liquidGlassEnabled
+        self.glassNode.glassVisible = glassOn
+        if glassOn {
+            self.backgroundNode.alpha = 0.0
+            let cardInset: CGFloat = 10.0
+            let cardFrame = CGRect(origin: CGPoint(x: cardInset, y: 0.0), size: CGSize(width: max(0.0, width - cardInset * 2.0), height: finalPanelHeight))
+            transition.updateFrame(node: self.glassNode, frame: cardFrame)
+            self.glassNode.glassCornerRadii = GlassRadii(radius: 18.0)
+            self.glassNode.refreshGlass(zone: .popup)
+        } else {
+            self.backgroundNode.alpha = 1.0
+            self.glassNode.frame = .zero
+        }
         
         let buttonSize = CGSize(width: 64.0, height: 64.0)
         let buttonsWidth = min(width - leftInset - rightInset - sideButtonsInset * 2.0, 320.0)

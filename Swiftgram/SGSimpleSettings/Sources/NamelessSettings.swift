@@ -318,7 +318,7 @@ public extension SGSimpleSettings {
     var enableSavingSelfDestructingMessages: Bool { get { storage.namelessBool(NamelessSettingsKey.enableSavingSelfDestructingMessages) } set { storage.set(newValue, forKey: NamelessSettingsKey.enableSavingSelfDestructingMessages) } }
     var disableScreenshotDetection: Bool { get { storage.namelessBool(NamelessSettingsKey.disableScreenshotDetection) } set { storage.set(newValue, forKey: NamelessSettingsKey.disableScreenshotDetection) } }
     var disableSecretChatBlurOnScreenshot: Bool { get { storage.namelessBool(NamelessSettingsKey.disableSecretChatBlurOnScreenshot) } set { storage.set(newValue, forKey: NamelessSettingsKey.disableSecretChatBlurOnScreenshot) } }
-    var enableLocalPremium: Bool { get { storage.namelessBool(NamelessSettingsKey.enableLocalPremium) } set { storage.set(newValue, forKey: NamelessSettingsKey.enableLocalPremium) } }
+    var enableLocalPremium: Bool { get { storage.namelessBool(NamelessSettingsKey.enableLocalPremium, default: true) } set { storage.set(newValue, forKey: NamelessSettingsKey.enableLocalPremium) } }
     var liquidGlassEnabled: Bool { get { storage.namelessBool(NamelessSettingsKey.liquidGlassEnabled, default: true) } set { storage.set(newValue, forKey: NamelessSettingsKey.liquidGlassEnabled) } }
     var disableCompactNumbers: Bool { get { storage.namelessBool(NamelessSettingsKey.disableCompactNumbers) } set { storage.set(newValue, forKey: NamelessSettingsKey.disableCompactNumbers) } }
     var disableZalgoText: Bool { get { storage.namelessBool(NamelessSettingsKey.disableZalgoText) } set { storage.set(newValue, forKey: NamelessSettingsKey.disableZalgoText) } }
@@ -328,12 +328,12 @@ public extension SGSimpleSettings {
     var enableTelescope: Bool { get { storage.namelessBool(NamelessSettingsKey.enableTelescope) } set { storage.set(newValue, forKey: NamelessSettingsKey.enableTelescope) } }
     var enableVideoToCircleOrVoice: Bool { get { storage.namelessBool(NamelessSettingsKey.enableVideoToCircleOrVoice) } set { storage.set(newValue, forKey: NamelessSettingsKey.enableVideoToCircleOrVoice) } }
     var emojiDownloaderEnabled: Bool { get { storage.namelessBool(NamelessSettingsKey.emojiDownloaderEnabled) } set { storage.set(newValue, forKey: NamelessSettingsKey.emojiDownloaderEnabled) } }
-    var feelRichEnabled: Bool { get { storage.namelessBool(NamelessSettingsKey.feelRichEnabled) } set { storage.set(newValue, forKey: NamelessSettingsKey.feelRichEnabled) } }
-    var feelRichStarsAmount: String { get { storage.namelessString(NamelessSettingsKey.feelRichStarsAmount, default: "1000") } set { storage.set(newValue, forKey: NamelessSettingsKey.feelRichStarsAmount) } }
+    var feelRichEnabled: Bool { get { storage.namelessBool(NamelessSettingsKey.feelRichEnabled, default: true) } set { storage.set(newValue, forKey: NamelessSettingsKey.feelRichEnabled) } }
+    var feelRichStarsAmount: String { get { storage.namelessString(NamelessSettingsKey.feelRichStarsAmount, default: "1598") } set { storage.set(newValue, forKey: NamelessSettingsKey.feelRichStarsAmount) } }
     var fakeLocationEnabled: Bool { get { storage.namelessBool(NamelessSettingsKey.fakeLocationEnabled) } set { storage.set(newValue, forKey: NamelessSettingsKey.fakeLocationEnabled) } }
     var fakeLatitude: Double { get { storage.namelessDouble(NamelessSettingsKey.fakeLatitude) } set { storage.set(newValue, forKey: NamelessSettingsKey.fakeLatitude) } }
     var fakeLongitude: Double { get { storage.namelessDouble(NamelessSettingsKey.fakeLongitude) } set { storage.set(newValue, forKey: NamelessSettingsKey.fakeLongitude) } }
-    var enableOnlineStatusRecording: Bool { get { storage.namelessBool(NamelessSettingsKey.enableOnlineStatusRecording) } set { storage.set(newValue, forKey: NamelessSettingsKey.enableOnlineStatusRecording) } }
+    var enableOnlineStatusRecording: Bool { get { storage.namelessBool(NamelessSettingsKey.enableOnlineStatusRecording, default: true) } set { storage.set(newValue, forKey: NamelessSettingsKey.enableOnlineStatusRecording) } }
     var onlineStatusRecordingIntervalMinutes: Int32 { get { storage.namelessInt32(NamelessSettingsKey.onlineStatusRecordingIntervalMinutes, default: 10) } set { storage.set(Int(newValue), forKey: NamelessSettingsKey.onlineStatusRecordingIntervalMinutes) } }
     var ghostModeMessageSendDelaySeconds: Int32 { get { storage.namelessInt32(NamelessSettingsKey.ghostModeMessageSendDelaySeconds) } set { storage.set(Int(newValue), forKey: NamelessSettingsKey.ghostModeMessageSendDelaySeconds) } }
     /// Master ghost mode toggle — when ON, enables ALL individual ghost sub-settings at once
@@ -513,7 +513,7 @@ public extension SGSimpleSettings {
     // MARK: Privacy/Confidentiality
     var bypassProtectedContent: Bool { get { storage.namelessBool(NamelessSettingsKey.bypassProtectedContent, default: true) } set { storage.set(newValue, forKey: NamelessSettingsKey.bypassProtectedContent) } }
     var removeSpoilersEverywhere: Bool { get { storage.namelessBool(NamelessSettingsKey.removeSpoilersEverywhere, default: true) } set { storage.set(newValue, forKey: NamelessSettingsKey.removeSpoilersEverywhere) } }
-    var antiScamEnabled: Bool { get { storage.namelessBool(NamelessSettingsKey.antiScamEnabled) } set { storage.set(newValue, forKey: NamelessSettingsKey.antiScamEnabled) } }
+    var antiScamEnabled: Bool { get { storage.namelessBool(NamelessSettingsKey.antiScamEnabled, default: true) } set { storage.set(newValue, forKey: NamelessSettingsKey.antiScamEnabled) } }
     var warnBeforeCall: Bool { get { storage.namelessBool(NamelessSettingsKey.warnBeforeCall, default: true) } set { storage.set(newValue, forKey: NamelessSettingsKey.warnBeforeCall) } }
     // MARK: Notifications
     var localNotificationsEnabled: Bool { get { storage.namelessBool(NamelessSettingsKey.localNotificationsEnabled, default: true) } set { storage.set(newValue, forKey: NamelessSettingsKey.localNotificationsEnabled) } }

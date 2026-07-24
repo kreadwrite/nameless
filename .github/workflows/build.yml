@@ -7,7 +7,8 @@ on:
 
 concurrency:
   group: build-${{ github.ref }}
-  cancel-in-progress: true
+  # Keep previous builds running so two IPA builds can finish in parallel
+  cancel-in-progress: false
 
 jobs:
   build:

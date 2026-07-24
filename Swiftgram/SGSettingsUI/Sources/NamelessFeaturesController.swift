@@ -234,6 +234,7 @@ private enum NLDisclosureLink: String {
     case hubInfo
     case hubMedia
     case hubExtra
+    case onlineHistory
 }
 
 private enum NLAction: Int, CaseIterable {
@@ -308,7 +309,7 @@ private enum NLHubCategory: String, CaseIterable {
         case .hubInfo: return .info
         case .hubMedia: return .media
         case .hubExtra: return .extra
-        case .none: return nil
+        case .none, .onlineHistory: return nil
         }
     }
 }
@@ -337,8 +338,9 @@ private func nlBuildEntries(presentationData: PresentationData, state: NLControl
     // Hub root: only category shelves (unless searching or inside a category)
     if !searching, state.hubCategory == nil {
         entries.append(.searchInput(id: id.count, section: .search, title: NSAttributedString(string: "🔍"), text: state.searchQuery ?? "", placeholder: "Поиск настроек"))
-        entries.append(.header(id: id.count, section: .items, text: "NAMELESS", badge: nil))
+        entries.append(.header(id: id.count, section: .items, text: "nameless", badge: nil))
         for cat in NLHubCategory.allCases {
+            // Glass-style disclosure shelves (Whitegram layout, nameless branding)
             entries.append(.disclosure(id: id.count, section: .items, link: cat.disclosure, text: cat.titleRu))
             entries.append(.notice(id: id.count, section: .items, text: cat.subtitleRu))
         }
@@ -541,6 +543,7 @@ private func nlBuildEntries(presentationData: PresentationData, state: NLControl
     entries.append(.toggle(id: id.count, section: sec, settingName: .ghostModeAntiSpam, value: s.ghostModeAntiSpam, text: "Анти-спам входящих", enabled: true))
     entries.append(.toggle(id: id.count, section: sec, settingName: .ghostModeAutoCleanHistory, value: s.ghostModeAutoCleanHistory, text: "Авто-очистка истории", enabled: true))
     entries.append(.toggle(id: id.count, section: sec, settingName: .enableOnlineStatusRecording, value: s.enableOnlineStatusRecording, text: "История онлайна собеседников", enabled: true))
+    entries.append(.disclosure(id: id.count, section: sec, link: .onlineHistory, text: "Открыть историю онлайна"))
     entries.append(.toggle(id: id.count, section: sec, settingName: .fakeLocationEnabled, value: s.fakeLocationEnabled, text: "Подмена геолокации", enabled: true))
 
     } // end ghost
@@ -590,10 +593,14 @@ private func nlBuildEntries(presentationData: PresentationData, state: NLControl
     entries.append(.toggle(id: id.count, section: sec, settingName: .contextShowMessageReplies, value: s.contextShowMessageReplies, text: "Ответы на сообщение", enabled: true))
     entries.append(.toggle(id: id.count, section: sec, settingName: .contextShowJson, value: s.contextShowJson, text: "JSON", enabled: true))
 
+    // ЛОКАЛЬНЫЕ ЗВЁЗДЫ (feel rich) — как Whitegram «Локальные звёзды»
+    entries.append(.header(id: id.count, section: sec, text: "ЛОКАЛЬНЫЕ ЗВЁЗДЫ", badge: nil))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .enableLocalPremium, value: s.enableLocalPremium, text: "Локальный премиум", enabled: true))
+    entries.append(.notice(id: id.count, section: sec, text: "Локальный баланс: \(s.feelRichStarsAmount) ⭐ (настройка feel rich)"))
+
     // ДОПОЛНИТЕЛЬНО
     entries.append(.header(id: id.count, section: sec, text: "ДОПОЛНИТЕЛЬНО", badge: nil))
-    entries.append(.toggle(id: id.count, section: sec, settingName: .enableLocalPremium, value: s.enableLocalPremium, text: "Локальный премиум", enabled: true))
-    entries.append(.toggle(id: id.count, section: sec, settingName: .quickTranslateButton, value: s.quickTranslateButton, text: "Кнопка «Перевести» видима", enabled: true))
+    entries.append(.toggle(id: id.count, section: sec, settingName: .quickTranslateButton, value: s.quickTranslateButton, text: "Кнопка «Перевести» / глоб у исходящих", enabled: true))
     entries.append(.toggle(id: id.count, section: sec, settingName: .disableZalgoText, value: s.disableZalgoText, text: "Zalgo-фильтр", enabled: true))
     entries.append(.toggle(id: id.count, section: sec, settingName: .uploadSpeedBoost, value: s.uploadSpeedBoost, text: "Ускорение отправки", enabled: true))
     entries.append(.oneFromManySelector(id: id.count, section: sec, settingName: .downloadSpeedBoost, text: "Ускорение загрузки", value: s.downloadSpeedBoost, enabled: true))
@@ -934,6 +941,10 @@ public func namelessFeaturesController(context: AccountContext, initialCategory:
             presentControllerImpl?(actionSheet, ViewControllerPresentationArguments(presentationAnimation: .modalSheet))
         },
         openDisclosureLink: { link in
+            if link == .onlineHistory {
+                pushControllerImpl?(namelessOnlineHistoryController(context: context))
+                return
+            }
             guard let category = NLHubCategory.from(link: link) else { return }
             pushControllerImpl?(namelessFeaturesCategoryController(context: context, category: category))
         },

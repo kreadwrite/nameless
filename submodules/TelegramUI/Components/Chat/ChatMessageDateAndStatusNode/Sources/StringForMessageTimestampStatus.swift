@@ -6,6 +6,7 @@ import TelegramStringFormatting
 import TextFormat
 import LocalizedPeerData
 import AccountContext
+import SGSimpleSettings
 
 public enum MessageTimestampStatusFormat {
     case full
@@ -216,6 +217,14 @@ public func stringForMessageTimestampStatus(accountPeerId: EnginePeer.Id, messag
     } else {
         if let authorTitle = authorTitle, !authorTitle.isEmpty {
             dateText = "\(authorTitle), \(dateText)"
+        }
+    }
+
+    // nameless: character counter in chat bubbles like "[6] 16:09"
+    if SGSimpleSettings.shared.charCounterInChat {
+        let textLen = message.text.count
+        if textLen > 0 {
+            dateText = "[\(textLen)] \(dateText)"
         }
     }
     
