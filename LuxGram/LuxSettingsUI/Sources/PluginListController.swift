@@ -205,7 +205,6 @@ private func pluginListEntries(presentationData: PresentationData, plugins: [Plu
 public func PluginListController(context: AccountContext, onPluginsChanged: @escaping () -> Void) -> ViewController {
     let reloadPromise = ValuePromise(true, ignoreRepeated: false)
     var presentDocumentPicker: (() -> Void)?
-    var pushControllerImpl: ((ViewController) -> Void)?
     var backAction: (() -> Void)?
     
     var presentDebPicker: (() -> Void)?
@@ -335,7 +334,6 @@ public func PluginListController(context: AccountContext, onPluginsChanged: @esc
         objc_setAssociatedObject(picker, &documentPickerDelegateKey, delegate, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
         controller.present(picker, animated: true)
     }
-    pushControllerImpl = { [weak controller] vc in controller?.push(vc) }
     let showNoAppAlert: () -> Void = { [weak controller] in
         guard let ctrl = controller, let window = ctrl.view.window, let root = window.rootViewController else { return }
         let lang = context.sharedContext.currentPresentationData.with { $0 }.strings.baseLanguageCode

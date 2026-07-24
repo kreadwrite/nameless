@@ -158,7 +158,7 @@ public enum PluginMetadataParser {
             if CharacterSet.alphanumerics.contains(scalar) {
                 return Character(scalar)
             }
-            if scalar == UnicodeScalar("-")! || scalar == UnicodeScalar("_")! {
+            if scalar == UnicodeScalar(45) || scalar == UnicodeScalar(95) { // '-' or '_'
                 return Character(scalar)
             }
             return "-"
