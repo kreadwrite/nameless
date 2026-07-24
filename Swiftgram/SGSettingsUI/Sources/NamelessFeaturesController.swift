@@ -246,8 +246,9 @@ private enum NLAction: Int, CaseIterable {
     case applyTrashHex
 }
 
-/// Hub shelves (Whitegram-style). Root shows only these; toggles live inside.
-private enum NLHubCategory: String, CaseIterable {
+/// Hub shelves. Root shows only these; toggles live inside.
+/// Internal (not private) — used as param of public namelessFeaturesController.
+enum NLHubCategory: String, CaseIterable {
     case appearance
     case liquidGlass
     case ghost
@@ -658,10 +659,14 @@ private func nlBuildEntries(presentationData: PresentationData, state: NLControl
 
 /// Category shelf screen — same toggles, pre-filtered by hub category.
 private func namelessFeaturesCategoryController(context: AccountContext, category: NLHubCategory) -> ViewController {
-    return namelessFeaturesController(context: context, initialCategory: category)
+    return namelessFeaturesControllerImpl(context: context, initialCategory: category)
 }
 
-public func namelessFeaturesController(context: AccountContext, initialCategory: NLHubCategory? = nil) -> ViewController {
+public func namelessFeaturesController(context: AccountContext) -> ViewController {
+    return namelessFeaturesControllerImpl(context: context, initialCategory: nil)
+}
+
+func namelessFeaturesControllerImpl(context: AccountContext, initialCategory: NLHubCategory?) -> ViewController {
     var presentControllerImpl: ((ViewController, ViewControllerPresentationArguments?) -> Void)?
     var pushControllerImpl: ((ViewController) -> Void)?
     var askForRestart: (() -> Void)?

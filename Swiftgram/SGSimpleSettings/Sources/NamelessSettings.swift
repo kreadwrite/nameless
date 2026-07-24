@@ -546,13 +546,13 @@ public extension SGSimpleSettings {
     }
 
     /// Parsed UIColor from deletedTrashColorHex
-    public func deletedTrashUIColor() -> UIColor {
+    func deletedTrashUIColor() -> UIColor {
         return NamelessColorParse.color(fromHex: deletedTrashColorHex) ?? UIColor(red: 1, green: 0.23, blue: 0.19, alpha: 1)
     }
 
-    /// Compatibility alias
-    public typealias AutoFormatMode = NamelessAutoFormatMode
-    public static func color(fromHex hex: String) -> UIColor? {
+    /// Compatibility alias (public extension members are already public)
+    typealias AutoFormatMode = NamelessAutoFormatMode
+    static func color(fromHex hex: String) -> UIColor? {
         NamelessColorParse.color(fromHex: hex)
     }
     var showOriginalEdited: Bool { get { storage.namelessBool(NamelessSettingsKey.showOriginalEdited, default: true) } set { storage.set(newValue, forKey: NamelessSettingsKey.showOriginalEdited) } }
