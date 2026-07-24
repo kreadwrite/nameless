@@ -1028,15 +1028,16 @@ public final class NavigationBarImpl: ASDisplayNode, NavigationBar {
             leftButtonsBackgroundTransition.setFrame(view: leftButtonsBackgroundView.container, frame: CGRect(origin: CGPoint(), size: leftButtonsBackgroundFrame.size))
             ComponentTransition(transition).setAlpha(view: leftButtonsBackgroundView.background, alpha: leftButtonsWidth == 0.0 ? 0.0 : 1.0)
             
+            // nameless: clear glass nav buttons — never solid black/gray wash
             var leftButtonsColor: GlassBackgroundView.TintColor = .init(kind: .clear)
             switch self.leftButtonNodeImpl.commonContentType {
             case .accent:
-                leftButtonsColor = .init(kind: .custom(style: .clear, color: self.presentationData.theme.accentButtonColor.withAlphaComponent(0.35)))
+                leftButtonsColor = .init(kind: .custom(style: .clear, color: self.presentationData.theme.accentButtonColor.withAlphaComponent(0.28)))
             case .accentDisabled:
-                leftButtonsColor = .init(kind: .custom(style: .clear, color: self.presentationData.theme.accentDisabledButtonColor.withAlphaComponent(0.35)))
+                leftButtonsColor = .init(kind: .custom(style: .clear, color: self.presentationData.theme.accentDisabledButtonColor.withAlphaComponent(0.28)))
             case .generic:
                 if self.presentationData.theme.overallDarkAppearance {
-                    leftButtonsColor = .init(kind: .custom(style: .clear, color: UIColor(white: 0.0, alpha: 0.22)))
+                    leftButtonsColor = .init(kind: .custom(style: .clear, color: UIColor(white: 1.0, alpha: 0.10)))
                 } else {
                     leftButtonsColor = .init(kind: .clear)
                 }
@@ -1083,15 +1084,16 @@ public final class NavigationBarImpl: ASDisplayNode, NavigationBar {
                     })
                 }
                 
+                // nameless: clear glass nav buttons — never solid black/gray wash
                 var rightButtonsColor: GlassBackgroundView.TintColor = .init(kind: .clear)
                 switch self.rightButtonNodeImpl.commonContentType {
                 case .accent:
-                    rightButtonsColor = .init(kind: .custom(style: .clear, color: self.presentationData.theme.accentButtonColor.withAlphaComponent(0.35)))
+                    rightButtonsColor = .init(kind: .custom(style: .clear, color: self.presentationData.theme.accentButtonColor.withAlphaComponent(0.28)))
                 case .accentDisabled:
-                    rightButtonsColor = .init(kind: .custom(style: .clear, color: self.presentationData.theme.accentDisabledButtonColor.withAlphaComponent(0.35)))
+                    rightButtonsColor = .init(kind: .custom(style: .clear, color: self.presentationData.theme.accentDisabledButtonColor.withAlphaComponent(0.28)))
                 case .generic:
                     if self.presentationData.theme.overallDarkAppearance {
-                        rightButtonsColor = .init(kind: .custom(style: .clear, color: UIColor(white: 0.0, alpha: 0.22)))
+                        rightButtonsColor = .init(kind: .custom(style: .clear, color: UIColor(white: 1.0, alpha: 0.10)))
                     } else {
                         rightButtonsColor = .init(kind: .clear)
                     }

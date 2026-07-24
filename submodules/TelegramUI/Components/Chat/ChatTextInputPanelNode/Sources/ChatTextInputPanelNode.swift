@@ -1466,11 +1466,20 @@ public class ChatTextInputPanelNode: ChatInputPanelNode, ASEditableTextNodeDeleg
         let previousAdditionalSideInsets = self.validLayout?.4
         self.validLayout = (width, leftInset, rightInset, bottomInset, additionalSideInsets, maxHeight, maxOverlayHeight, metrics, isSecondary, isMediaInputExpanded, deviceMetrics)
         
+        // nameless: always clear liquid glass on input (never solid gray .panel fills).
+        // Dark: light specular tint (not black 0.28 wash). Light: pure clear.
         let defaultGlassTintColor: GlassBackgroundView.TintColor
         let defaultGlassTintWithInnerColor: GlassBackgroundView.TintColor
-        if case .clear = interfaceState.preferredGlassType {
-            defaultGlassTintColor = .init(kind: .clear)
-            defaultGlassTintWithInnerColor = .init(kind: .clear, innerColor: interfaceState.theme.list.itemCheckColors.fillColor)
+        let forceClearGlass = SGSimpleSettings.shared.liquidGlassEnabled || interfaceState.preferredGlassType == .clear
+        if forceClearGlass {
+            if interfaceState.theme.overallDarkAppearance {
+                // Subtle white film = true iOS 26 glass; black tint was muddy gray
+                defaultGlassTintColor = .init(kind: .custom(style: .clear, color: UIColor(white: 1.0, alpha: 0.08)))
+                defaultGlassTintWithInnerColor = .init(kind: .custom(style: .clear, color: UIColor(white: 1.0, alpha: 0.08)), innerColor: interfaceState.theme.list.itemCheckColors.fillColor)
+            } else {
+                defaultGlassTintColor = .init(kind: .clear)
+                defaultGlassTintWithInnerColor = .init(kind: .clear, innerColor: interfaceState.theme.list.itemCheckColors.fillColor)
+            }
         } else {
             defaultGlassTintColor = .init(kind: .panel)
             defaultGlassTintWithInnerColor = .init(kind: .panel, innerColor: interfaceState.theme.list.itemCheckColors.fillColor)
@@ -3356,10 +3365,11 @@ public class ChatTextInputPanelNode: ChatInputPanelNode, ASEditableTextNodeDeleg
             transition.updateFrame(layer: self.searchLayoutClearButtonIcon.layer, frame: clearIconFrame.offsetBy(dx: clearButtonFrame.minX, dy: clearButtonFrame.minY))
         }
         
-        // nameless: attach is always a perfect circle (profile-style caps)
-        let attachD: CGFloat = SGSimpleSettings.shared.namelessRoundButtonsEverywhere ? 40.0 : 40.0
+        // nameless: attach circle — same clear glass as text field (no gray panel, minimal gap = no stripes)
+        let attachD: CGFloat = 40.0
         let attachmentButtonFrame = CGRect(origin: CGPoint(x: attachmentButtonX, y: textInputFrame.maxY - attachD), size: CGSize(width: attachD, height: attachD))
-        attachmentButtonX += attachD + 6.0
+        // Tighter gap (3pt) so attach + field read as one glass row without dark seams
+        attachmentButtonX += attachD + 3.0
         self.attachmentButtonBackground.update(size: attachmentButtonFrame.size, cornerRadius: attachD * 0.5, isDark: interfaceState.theme.overallDarkAppearance, tintColor: defaultGlassTintColor, isInteractive: true, transition: ComponentTransition(transition))
         
         transition.updateFrame(layer: self.attachmentButtonBackground.layer, frame: attachmentButtonFrame)

@@ -787,9 +787,15 @@ final class PeerInfoHeaderNode: ASDisplayNode {
         let editingEdgeEffectHeight: CGFloat = 40.0
         let editingEdgeEffectFrame = CGRect(origin: CGPoint(x: 0.0, y: 0.0), size: CGSize(width: width, height: navigationHeight + 10.0))
         transition.updateFrame(view: self.editingEdgeEffectView, frame: editingEdgeEffectFrame)
-        self.editingEdgeEffectView.update(content: presentationData.theme.list.blocksBackgroundColor, blur: true, rect: editingEdgeEffectFrame, edge: .top, edgeSize: editingEdgeEffectHeight, transition: ComponentTransition(transition))
+        // nameless: no solid gray editing header strip
+        let glassChrome = SGLiquidGlassZone.profile.isEnabled || SGSimpleSettings.shared.liquidGlassEnabled
+        if glassChrome {
+            self.editingEdgeEffectView.update(content: .clear, blur: false, alpha: 0.0, rect: editingEdgeEffectFrame, edge: .top, edgeSize: editingEdgeEffectHeight, transition: ComponentTransition(transition))
+        } else {
+            self.editingEdgeEffectView.update(content: presentationData.theme.list.blocksBackgroundColor, blur: true, rect: editingEdgeEffectFrame, edge: .top, edgeSize: editingEdgeEffectHeight, transition: ComponentTransition(transition))
+        }
         let editingBackgroundAlpha: CGFloat
-        if state.isEditing {
+        if state.isEditing && !glassChrome {
             editingBackgroundAlpha = max(0.0, min(1.0, contentOffset / 20.0))
         } else {
             editingBackgroundAlpha = 0.0
@@ -2439,7 +2445,11 @@ final class PeerInfoHeaderNode: ASDisplayNode {
         
         transition.updateFrameAdditive(node: self.buttonsBackgroundNode, frame: CGRect(origin: CGPoint(x: 0.0, y: buttonRightOrigin.y), size: CGSize(width: width, height: buttonSize.height + 40.0)))
         self.buttonsBackgroundNode.update(size: self.buttonsBackgroundNode.bounds.size, transition: transition)
-        self.buttonsBackgroundNode.updateColor(color: contentButtonBackgroundColor, enableBlur: true, transition: transition)
+        // nameless: no solid gray bar under profile action buttons — clear glass only
+        let glassButtons = SGLiquidGlassZone.profile.isEnabled || SGSimpleSettings.shared.liquidGlassEnabled
+        self.buttonsBackgroundNode.enableLiquidGlass = glassButtons
+        self.buttonsBackgroundNode.glassTintColor = .clear
+        self.buttonsBackgroundNode.updateColor(color: glassButtons ? .clear : contentButtonBackgroundColor, enableBlur: !glassButtons, transition: transition)
         if isReduceTransparencyEnabled() {
             self.buttonsBackgroundNode.alpha = 0.1
         }
@@ -2694,9 +2704,16 @@ final class PeerInfoHeaderNode: ASDisplayNode {
             self.updateUnderHeaderContentsAlpha?(1.0 - realAreaExpansionFraction, transition)
         }
         
-        self.headerEdgeEffectView.update(content: presentationData.theme.list.plainBackgroundColor, blur: true, rect: edgeEffectFrame, edge: .top, edgeSize: edgeEffectHeight, transition: ComponentTransition(transition))
+        // nameless: kill solid gray header strip — use clear fade over avatar wallpaper
+        // (plainBackgroundColor was opaque dark gray on every profile/settings top)
+        let glassHeader = SGLiquidGlassZone.profile.isEnabled || SGSimpleSettings.shared.liquidGlassEnabled
+        if glassHeader {
+            self.headerEdgeEffectView.update(content: .clear, blur: false, alpha: 0.0, rect: edgeEffectFrame, edge: .top, edgeSize: edgeEffectHeight, transition: ComponentTransition(transition))
+        } else {
+            self.headerEdgeEffectView.update(content: presentationData.theme.list.plainBackgroundColor, blur: true, rect: edgeEffectFrame, edge: .top, edgeSize: edgeEffectHeight, transition: ComponentTransition(transition))
+        }
         
-        navigationTransition.updateAlpha(layer: self.headerEdgeEffectView.layer, alpha: state.isEditing ? 0.0 : 1.0)
+        navigationTransition.updateAlpha(layer: self.headerEdgeEffectView.layer, alpha: (state.isEditing || glassHeader) ? 0.0 : 1.0)
         
         if !state.isEditing {
             if !isSettings && !isMyProfile {
@@ -2783,13 +2800,12 @@ final class PeerInfoHeaderNode: ASDisplayNode {
 
             let musicContent: AnyComponent<Empty>
             if useMusicCard {
-                // Full-bleed album-style card: cover fills entire card (with corner radius),
-                // title/artist sit on a bottom gradient scrim (blur-text overlay look).
+                // Full-bleed cover + title/artist centered on card (not bottom-left)
                 let titleColor: UIColor = .white
-                let artistColor: UIColor = UIColor.white.withAlphaComponent(0.82)
-                let coverColor = UIColor(white: 0.14, alpha: 1.0)
-                let scrimColor = UIColor(white: 0.0, alpha: 0.52)
-                let cardRadius: CGFloat = 18.0
+                let artistColor: UIColor = UIColor.white.withAlphaComponent(0.85)
+                let coverColor = UIColor(white: 0.12, alpha: 1.0)
+                let scrimColor = UIColor(white: 0.0, alpha: 0.38)
+                let cardRadius: CGFloat = 20.0
 
                 musicContent = AnyComponent(
                     PlainButtonComponent(
@@ -2800,47 +2816,33 @@ final class PeerInfoHeaderNode: ASDisplayNode {
                                     id: "coverFill",
                                     component: AnyComponent(RoundedRectangle(color: coverColor, cornerRadius: cardRadius, size: CGSize(width: cardWidth, height: musicHeight)))
                                 ),
-                                // Center note icon (placeholder until real album art binding)
+                                // Soft center scrim so white text stays readable on any cover
                                 AnyComponentWithIdentity(
-                                    id: "coverIcon",
-                                    component: AnyComponent(BundleIconComponent(name: "Media Editor/SmallAudio", tintColor: UIColor.white.withAlphaComponent(0.85)))
+                                    id: "centerScrim",
+                                    component: AnyComponent(RoundedRectangle(color: scrimColor, cornerRadius: cardRadius, size: CGSize(width: cardWidth, height: musicHeight)))
                                 ),
-                                // Bottom text scrim overlay
+                                // Title + artist dead-center
                                 AnyComponentWithIdentity(
-                                    id: "scrim",
+                                    id: "centerTexts",
                                     component: AnyComponent(
                                         VStack([
                                             AnyComponentWithIdentity(
-                                                id: "scrimPad",
-                                                component: AnyComponent(Rectangle(color: .clear, height: max(0.0, musicHeight - 48.0)))
+                                                id: "title",
+                                                component: AnyComponent(MultilineTextComponent(
+                                                    text: .plain(NSAttributedString(string: trackTitle, font: Font.semibold(16.0), textColor: titleColor)),
+                                                    horizontalAlignment: .center,
+                                                    maximumNumberOfLines: 1
+                                                ))
                                             ),
                                             AnyComponentWithIdentity(
-                                                id: "scrimBar",
-                                                component: AnyComponent(
-                                                    ZStack([
-                                                        AnyComponentWithIdentity(
-                                                            id: "scrimBg",
-                                                            component: AnyComponent(RoundedRectangle(color: scrimColor, cornerRadius: cardRadius, size: CGSize(width: cardWidth, height: 48.0)))
-                                                        ),
-                                                        AnyComponentWithIdentity(
-                                                            id: "texts",
-                                                            component: AnyComponent(
-                                                                VStack([
-                                                                    AnyComponentWithIdentity(
-                                                                        id: "title",
-                                                                        component: AnyComponent(MultilineTextComponent(text: .plain(NSAttributedString(string: trackTitle, font: Font.semibold(15.0), textColor: titleColor)), maximumNumberOfLines: 1))
-                                                                    ),
-                                                                    AnyComponentWithIdentity(
-                                                                        id: "artist",
-                                                                        component: AnyComponent(MultilineTextComponent(text: .plain(NSAttributedString(string: artist, font: Font.regular(13.0), textColor: artistColor)), maximumNumberOfLines: 1))
-                                                                    )
-                                                                ], alignment: .left, spacing: 2.0)
-                                                            )
-                                                        )
-                                                    ])
-                                                )
+                                                id: "artist",
+                                                component: AnyComponent(MultilineTextComponent(
+                                                    text: .plain(NSAttributedString(string: artist, font: Font.regular(13.0), textColor: artistColor)),
+                                                    horizontalAlignment: .center,
+                                                    maximumNumberOfLines: 1
+                                                ))
                                             )
-                                        ], alignment: .left, spacing: 0.0)
+                                        ], alignment: .center, spacing: 4.0)
                                     )
                                 )
                             ])

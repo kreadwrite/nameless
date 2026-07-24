@@ -338,8 +338,9 @@ public extension SGSimpleSettings {
         return true
     }
 
-    var showDeletedMessages: Bool { get { storage.namelessBool(NamelessSettingsKey.showDeletedMessages) } set { storage.set(newValue, forKey: NamelessSettingsKey.showDeletedMessages) } }
-    var saveDeletedMessagesMedia: Bool { get { storage.namelessBool(NamelessSettingsKey.saveDeletedMessagesMedia) } set { storage.set(newValue, forKey: NamelessSettingsKey.saveDeletedMessagesMedia) } }
+    // Default ON — anti-delete must work out of the box (was false → feature appeared broken)
+    var showDeletedMessages: Bool { get { storage.namelessBool(NamelessSettingsKey.showDeletedMessages, default: true) } set { storage.set(newValue, forKey: NamelessSettingsKey.showDeletedMessages) } }
+    var saveDeletedMessagesMedia: Bool { get { storage.namelessBool(NamelessSettingsKey.saveDeletedMessagesMedia, default: true) } set { storage.set(newValue, forKey: NamelessSettingsKey.saveDeletedMessagesMedia) } }
     var saveDeletedMessagesReactions: Bool { get { storage.namelessBool(NamelessSettingsKey.saveDeletedMessagesReactions) } set { storage.set(newValue, forKey: NamelessSettingsKey.saveDeletedMessagesReactions) } }
     var saveDeletedMessagesForBots: Bool { get { storage.namelessBool(NamelessSettingsKey.saveDeletedMessagesForBots) } set { storage.set(newValue, forKey: NamelessSettingsKey.saveDeletedMessagesForBots) } }
     var saveEditHistory: Bool { get { storage.namelessBool(NamelessSettingsKey.saveEditHistory) } set { storage.set(newValue, forKey: NamelessSettingsKey.saveEditHistory) } }

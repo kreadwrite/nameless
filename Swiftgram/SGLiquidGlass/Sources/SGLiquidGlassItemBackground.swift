@@ -96,14 +96,13 @@ public final class SGLiquidGlassItemBackground {
         self.glassView.isHidden = !enabled
         guard enabled, self.currentSize.width > 0.5, self.currentSize.height > 0.5 else { return }
 
-        // MAX liquid glass: use `.panel` → UIGlassEffect(.regular) — strongest system glass.
-        // Optional accent tint only when user enabled tinting.
+        // Official Telegram iOS 26: `.clear` → UIGlassEffect(style: .clear) — true liquid glass,
+        // not the gray opaque `.panel` fill that made every settings block look solid gray.
         let tint: GlassBackgroundView.TintColor
         if SGLiquidGlassZone.settings.isTinted, self._tint != .clear {
-            tint = .init(kind: .custom(style: .default, color: self._tint.withAlphaComponent(0.18)))
+            tint = .init(kind: .custom(style: .clear, color: self._tint.withAlphaComponent(0.12)))
         } else {
-            // Regular panel glass = maximum blur + specular, almost no solid fill
-            tint = .init(kind: .panel)
+            tint = .init(kind: .clear)
         }
 
         self.glassView.update(
@@ -164,12 +163,12 @@ public enum NamelessItemListGlass {
     /// Glass corner radius — large cloud sections (Кошелёк / Избранное / …)
     public static let sectionCornerRadius: CGFloat = 28.0
 
-    /// Soft separator used inside glass sections (not the thick gray stripe).
+    /// Soft separator used inside glass sections (near-invisible — no gray bars).
     public static func softSeparatorColor(isDark: Bool) -> UIColor {
         if isDark {
-            return UIColor(white: 1.0, alpha: 0.08)
+            return UIColor(white: 1.0, alpha: 0.04)
         } else {
-            return UIColor(white: 0.0, alpha: 0.08)
+            return UIColor(white: 0.0, alpha: 0.04)
         }
     }
 
@@ -210,16 +209,17 @@ public enum NamelessItemListGlass {
             )
         }
 
-        // Soft / hidden separators — kills the "gray bars" bug
+        // Hide all solid separator stripes — glass sections are seamless
         topStripeNode.isHidden = true
-        if isMiddleOfSection || (!hasBottomCorners && !hasTopCorners) {
+        topStripeNode.alpha = 0.0
+        if isMiddleOfSection {
+            // Ultra-soft hairline only between middle rows (not a gray bar)
             bottomStripeNode.backgroundColor = softSeparatorColor(isDark: isDark)
             bottomStripeNode.isHidden = false
-            bottomStripeNode.alpha = 1.0
-        } else if hasBottomCorners {
-            bottomStripeNode.isHidden = true
+            bottomStripeNode.alpha = 0.55
         } else {
-            bottomStripeNode.backgroundColor = softSeparatorColor(isDark: isDark)
+            bottomStripeNode.isHidden = true
+            bottomStripeNode.alpha = 0.0
         }
     }
 }

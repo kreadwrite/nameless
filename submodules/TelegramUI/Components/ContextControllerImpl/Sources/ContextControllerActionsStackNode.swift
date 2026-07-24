@@ -1473,15 +1473,12 @@ private final class LensTransitionContainerEffectViewImpl: UIView, LensTransitio
         self.backgroundColor = .clear
         self.glassView.backgroundColor = .clear
         if #available(iOS 26.0, *) {
-            let glassEffectValue: UIGlassEffect
+            // Official Telegram: UIGlassEffect(style: .clear) — true liquid glass, zero solid fill
+            let glassEffectValue = UIGlassEffect(style: .clear)
             if theme.overallDarkAppearance {
-                // Strong regular liquid glass on long-press menu (not solid white)
-                glassEffectValue = UIGlassEffect(style: .regular)
-                glassEffectValue.tintColor = UIColor(white: 0.12, alpha: 0.25)
+                glassEffectValue.tintColor = UIColor(white: 0.0, alpha: 0.18)
             } else {
-                glassEffectValue = UIGlassEffect(style: .regular)
-                // Light mode: frosted glass, not opaque white fill
-                glassEffectValue.tintColor = UIColor(white: 1.0, alpha: 0.12)
+                glassEffectValue.tintColor = nil
             }
             glassEffectValue.isInteractive = true
             self.glassView.effect = glassEffectValue

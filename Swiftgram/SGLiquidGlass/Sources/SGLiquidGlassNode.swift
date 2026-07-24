@@ -106,12 +106,17 @@ public final class SGLiquidGlassNode: ASDisplayNode, SGLiquidGlassContainer {
 
         let ev: UIVisualEffectView
         if #available(iOS 26.0, *) {
-            // .regular = strongest liquid glass blur (input panel, nav, chrome)
-            let g = UIGlassEffect(style: .regular)
+            // Official Telegram clear liquid glass (not .regular gray panel)
+            let g = UIGlassEffect(style: .clear)
             g.isInteractive = _interactive
+            if _tintColor == .clear {
+                g.tintColor = nil
+            } else {
+                g.tintColor = _tintColor.withAlphaComponent(0.18)
+            }
             ev = UIVisualEffectView(effect: g)
         } else {
-            ev = UIVisualEffectView(effect: UIBlurEffect(style: .systemChromeMaterial))
+            ev = UIVisualEffectView(effect: UIBlurEffect(style: .systemUltraThinMaterial))
         }
         ev.backgroundColor = .clear
         ev.frame = bounds
@@ -137,9 +142,10 @@ public final class SGLiquidGlassNode: ASDisplayNode, SGLiquidGlassContainer {
     private func applyTint() {
         guard isNodeLoaded, let ev = effectView else { return }
         if #available(iOS 26.0, *), let g = ev.effect as? UIGlassEffect {
-            g.tintColor = _tintColor == .clear ? nil : _tintColor.withAlphaComponent(0.35)
+            // Never apply heavy tint — gray wash was the main liquid-glass bug
+            g.tintColor = _tintColor == .clear ? nil : _tintColor.withAlphaComponent(0.18)
         } else {
-            ev.backgroundColor = _tintColor == .clear ? .clear : _tintColor.withAlphaComponent(0.15)
+            ev.backgroundColor = _tintColor == .clear ? .clear : _tintColor.withAlphaComponent(0.10)
         }
     }
 
@@ -291,11 +297,13 @@ public final class SGLiquidGlassView: UIView, SGLiquidGlassViewProtocol, SGLiqui
 
         let ev: UIVisualEffectView
         if #available(iOS 26.0, *) {
-            let g = UIGlassEffect(style: .regular)
+            // Official clear liquid glass (not muddy .regular gray)
+            let g = UIGlassEffect(style: .clear)
             g.isInteractive = _interactive
+            g.tintColor = _tintColor == .clear ? nil : _tintColor.withAlphaComponent(0.18)
             ev = UIVisualEffectView(effect: g)
         } else {
-            ev = UIVisualEffectView(effect: UIBlurEffect(style: .systemChromeMaterial))
+            ev = UIVisualEffectView(effect: UIBlurEffect(style: .systemUltraThinMaterial))
         }
         ev.backgroundColor = .clear
         ev.frame = bounds
@@ -314,9 +322,9 @@ public final class SGLiquidGlassView: UIView, SGLiquidGlassViewProtocol, SGLiqui
     private func applyTint() {
         guard let ev = effectView else { return }
         if #available(iOS 26.0, *), let g = ev.effect as? UIGlassEffect {
-            g.tintColor = _tintColor == .clear ? nil : _tintColor.withAlphaComponent(0.35)
+            g.tintColor = _tintColor == .clear ? nil : _tintColor.withAlphaComponent(0.18)
         } else {
-            ev.backgroundColor = _tintColor == .clear ? .clear : _tintColor.withAlphaComponent(0.15)
+            ev.backgroundColor = _tintColor == .clear ? .clear : _tintColor.withAlphaComponent(0.10)
         }
     }
 

@@ -756,11 +756,12 @@ public final class ChatControllerImpl: TelegramBaseController, ChatController, G
             }
             self.updateStatusBarPresentation(animated: false)
             
+            // nameless: always clear liquid glass when enabled — never gray .panel chrome
             var preferredGlassType: ChatPresentationInterfaceState.GlassType = self.chatBackgroundNode.contentStats?.isSaturated == true ? .clear : .default
             if !self.presentationData.theme.overallDarkAppearance {
                 preferredGlassType = .default
             }
-            if self.context.sharedContext.immediateExperimentalUISettings.forceClearGlass {
+            if self.context.sharedContext.immediateExperimentalUISettings.forceClearGlass || SGSimpleSettings.shared.liquidGlassEnabled {
                 preferredGlassType = .clear
             }
             if self.presentationInterfaceState.preferredGlassType != preferredGlassType {
@@ -7047,11 +7048,12 @@ public final class ChatControllerImpl: TelegramBaseController, ChatController, G
         self.navigationItem.backBarButtonItem = UIBarButtonItem(title: self.presentationData.strings.Common_Back, style: .plain, target: nil, action: nil)
         self.updateStatusBarPresentation()
         self.updateNavigationBarPresentation()
+        // nameless: force clear liquid glass (kills gray panel fills on input + nav)
         var preferredGlassType: ChatPresentationInterfaceState.GlassType = self.chatBackgroundNode.contentStats?.isSaturated == true ? .clear : .default
         if !self.presentationData.theme.overallDarkAppearance {
             preferredGlassType = .default
         }
-        if self.context.sharedContext.immediateExperimentalUISettings.forceClearGlass {
+        if self.context.sharedContext.immediateExperimentalUISettings.forceClearGlass || SGSimpleSettings.shared.liquidGlassEnabled {
             preferredGlassType = .clear
         }
         self.updateChatPresentationInterfaceState(animated: false, interactive: false, { state in

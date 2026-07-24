@@ -78,6 +78,8 @@ public final class NavigationBackgroundNode: ASDisplayNode, SGLiquidGlassContain
     private func updateGlass() {
         let shouldHave = self.enableLiquidGlass && SGLiquidGlassZone.navigationBar.isEnabled
         if shouldHave {
+            // Kill solid gray fill under glass — host must be transparent
+            self.backgroundNode.backgroundColor = .clear
             if self.glassView == nil {
                 guard let proto = SGLiquidGlassFactory.shared.create?() else {
                     return
@@ -85,7 +87,8 @@ public final class NavigationBackgroundNode: ASDisplayNode, SGLiquidGlassContain
                 guard let v = proto as? UIView else {
                     return
                 }
-                proto.tintColorGlass = self.glassTintColor ?? self._color.withAlphaComponent(0.5)
+                // Clear glass: no solid gray tint (was _color.withAlphaComponent(0.5) → gray blob)
+                proto.tintColorGlass = self.glassTintColor ?? .clear
                 self.view.addSubview(v)
                 self.glassView = v
                 self.glassViewProtocol = proto
@@ -98,8 +101,12 @@ public final class NavigationBackgroundNode: ASDisplayNode, SGLiquidGlassContain
                     SGLiquidGlassCoordinator.shared.register(node: proto, zone: .navigationBar)
                 }
             } else {
-                self.glassViewProtocol?.tintColorGlass = (self.glassTintColor ?? self._color.withAlphaComponent(0.5))
+                self.glassViewProtocol?.tintColorGlass = self.glassTintColor ?? .clear
                 self.glassViewProtocol?.refreshGlass(zone: .navigationBar)
+            }
+            // Hide legacy blur while liquid glass is active (double-stack = muddy gray)
+            if let effectView = self.effectView {
+                effectView.isHidden = true
             }
         } else if let v = self.glassView {
             v.removeFromSuperview()
@@ -109,6 +116,7 @@ public final class NavigationBackgroundNode: ASDisplayNode, SGLiquidGlassContain
             }
             self.glassView = nil
             self.glassViewProtocol = nil
+            self.effectView?.isHidden = false
         }
     }
 
@@ -192,16 +200,20 @@ public final class NavigationBackgroundNode: ASDisplayNode, SGLiquidGlassContain
         self.enableBlur = effectiveEnableBlur
         self.enableSaturation = effectiveEnableSaturation
 
-        if sharedIsReduceTransparencyEnabled {
+        // When liquid glass is on, never paint solid gray — glass is the only surface
+        let glassActive = self.enableLiquidGlass && SGLiquidGlassZone.navigationBar.isEnabled
+        if glassActive {
+            transition.updateBackgroundColor(node: self.backgroundNode, color: .clear)
+        } else if sharedIsReduceTransparencyEnabled {
             transition.updateBackgroundColor(node: self.backgroundNode, color: self._color.withAlphaComponent(1.0))
         } else {
             transition.updateBackgroundColor(node: self.backgroundNode, color: self._color)
         }
 
         self.updateBackgroundBlur(forceKeepBlur: forceKeepBlur)
-        // nameless: refresh tint after color change
+        // nameless: clear glass tint (no gray wash from theme background color)
         if let v = self.glassViewProtocol {
-            v.tintColorGlass = self.glassTintColor ?? self._color.withAlphaComponent(0.5)
+            v.tintColorGlass = self.glassTintColor ?? .clear
         }
         self.updateGlass()
     }

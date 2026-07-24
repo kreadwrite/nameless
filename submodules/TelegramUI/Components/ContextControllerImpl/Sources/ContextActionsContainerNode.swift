@@ -90,7 +90,8 @@ private final class InnerActionsContainerNode: ASDisplayNode {
         self.containerNode = ASDisplayNode()
         self.containerNode.clipsToBounds = true
         self.containerNode.cornerRadius = 14.0
-        self.containerNode.backgroundColor = presentationData.theme.contextMenu.backgroundColor.withAlphaComponent(0.0)
+        // Never solid white/gray — glass or blur only (long-press white-screen bug)
+        self.containerNode.backgroundColor = .clear
 
         var requestUpdateAction: ((AnyHashable, ContextMenuActionItem) -> Void)?
         
@@ -106,7 +107,7 @@ private final class InnerActionsContainerNode: ASDisplayNode {
                 itemNodes.append(.custom(itemNode))
             case .separator:
                 let separatorNode = ASDisplayNode()
-                separatorNode.backgroundColor = presentationData.theme.contextMenu.itemSeparatorColor
+                separatorNode.backgroundColor = presentationData.theme.contextMenu.itemSeparatorColor.withAlphaComponent(0.35)
                 itemNodes.append(.separator(separatorNode))
             }
         }
@@ -115,9 +116,11 @@ private final class InnerActionsContainerNode: ASDisplayNode {
         
         super.init()
 
+        // Always attach clear liquid glass when zone is on (compact iPhone path had white blob without it)
         if SGLiquidGlassZone.contextMenu.isEnabled {
             let glass = SGLiquidGlassView()
             glass.cornerRadii = GlassRadii(radius: 14.0)
+            glass.tintColorGlass = .clear
             glass.isUserInteractionEnabled = false
             self.containerNode.view.insertSubview(glass, at: 0)
             self.liquidGlassView = glass
@@ -313,13 +316,16 @@ private final class InnerActionsContainerNode: ASDisplayNode {
             case let .custom(item):
                 item.updateTheme(presentationData: presentationData)
             case let .separator(separator):
-                separator.backgroundColor = presentationData.theme.contextMenu.sectionSeparatorColor
+                separator.backgroundColor = presentationData.theme.contextMenu.sectionSeparatorColor.withAlphaComponent(0.35)
             case let .itemSeparator(itemSeparator):
-                itemSeparator.backgroundColor = presentationData.theme.contextMenu.itemSeparatorColor
+                itemSeparator.backgroundColor = presentationData.theme.contextMenu.itemSeparatorColor.withAlphaComponent(0.35)
             }
         }
         
-        self.containerNode.backgroundColor = presentationData.theme.contextMenu.backgroundColor
+        // Keep transparent — solid theme.contextMenu.backgroundColor caused white long-press menu
+        self.containerNode.backgroundColor = .clear
+        self.liquidGlassView?.tintColorGlass = .clear
+        self.liquidGlassView?.refreshGlass(zone: .contextMenu)
     }
     
     func actionNode(at point: CGPoint) -> ContextActionNodeProtocol? {

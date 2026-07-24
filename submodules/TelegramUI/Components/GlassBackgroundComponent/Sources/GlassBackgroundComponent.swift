@@ -763,9 +763,10 @@ public class GlassBackgroundView: UIView {
                                     glassEffectValue.tintColor = color
                                 }
                             case .clear:
+                                // nameless: pure clear liquid glass — black 0.28 tint made every surface solid gray
                                 glassEffectValue = UIGlassEffect(style: .clear)
                                 if isDark {
-                                    glassEffectValue.tintColor = UIColor(white: 0.0, alpha: 0.28)
+                                    glassEffectValue.tintColor = UIColor(white: 1.0, alpha: 0.06)
                                 } else {
                                     glassEffectValue.tintColor = nil
                                 }
