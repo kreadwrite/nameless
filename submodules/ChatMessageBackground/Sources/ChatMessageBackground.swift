@@ -565,15 +565,14 @@ public final class ChatMessageBubbleBackdrop: ASDisplayNode, SGLiquidGlassContai
 
     private func updateGlass(size: CGSize, isDark: Bool, zone: SGLiquidGlassZone, transition: ComponentTransition = .immediate) {
         let enabled = zone.isEnabled && size.width > 0.5 && size.height > 0.5
-        // Real iOS 26 Liquid Glass: clear glass that refracts wallpaper behind the bubble.
+        // MAX liquid glass bubbles: panel/regular glass so effect is obvious over wallpaper
         let tint: GlassBackgroundView.TintColor
         if zone.isTinted && self.currentBubbleColor != .clear {
-            tint = .init(kind: .custom(style: .clear, color: self.currentBubbleColor.withAlphaComponent(0.18)))
+            tint = .init(kind: .custom(style: .default, color: self.currentBubbleColor.withAlphaComponent(0.22)))
         } else if isDark {
-            // Deep liquid glass — slightly stronger so glass is clearly visible
-            tint = .init(kind: .custom(style: .clear, color: UIColor(white: 0.0, alpha: 0.28)))
+            tint = .init(kind: .custom(style: .clear, color: UIColor(white: 1.0, alpha: 0.10)))
         } else {
-            tint = .init(kind: .custom(style: .clear, color: UIColor(white: 1.0, alpha: 0.12)))
+            tint = .init(kind: .panel)
         }
         if enabled {
             if self.glassView.superview !== self.view {
@@ -584,7 +583,7 @@ public final class ChatMessageBubbleBackdrop: ASDisplayNode, SGLiquidGlassContai
             self.glassView.update(size: size, cornerRadii: self.currentGlassRadii, isDark: isDark, tintColor: tint, isInteractive: false, isVisible: true, transition: transition)
             self.glassView.isHidden = false
             let intensity = CGFloat(SGSimpleSettings.shared.namelessLiquidGlassIntensity)
-            self.glassView.alpha = max(0.9, min(1.0, intensity <= 0.01 ? 1.0 : intensity))
+            self.glassView.alpha = max(0.95, min(1.0, intensity <= 0.01 ? 1.0 : intensity))
             // Hide opaque wallpaper-sampled fill — this was covering glass and made it look "not liquid"
             self.backgroundContent?.isHidden = true
             self.backgroundContent?.alpha = 0.0

@@ -65,8 +65,11 @@ open class ChatInputPanelNode: ASDisplayNode, SGLiquidGlassContainer {
         self.glassSetupDone = true
         let g = SGLiquidGlassNode()
         g.glassTintColor = .clear
+        g.glassCornerRadii = GlassRadii(radius: 22.0)
+        g.interactive = true
         g.glassVisible = SGLiquidGlassZone.inputPanel.isEnabled
-        self.addSubnode(g)
+        // Glass sits behind text/buttons so controls stay tappable
+        self.insertSubnode(g, at: 0)
         self._glassNode = g
         if !self.glassRegistered {
             self.glassRegistered = true
@@ -90,7 +93,9 @@ open class ChatInputPanelNode: ASDisplayNode, SGLiquidGlassContainer {
         self.ensureGlassSetup()
         if let g = self._glassNode {
             g.frame = self.bounds
+            g.glassCornerRadii = GlassRadii(radius: min(22.0, self.bounds.height * 0.5))
             g.glassVisible = SGLiquidGlassZone.inputPanel.isEnabled
+            g.refreshGlass(zone: .inputPanel)
         }
     }
 
@@ -98,7 +103,9 @@ open class ChatInputPanelNode: ASDisplayNode, SGLiquidGlassContainer {
         self.frame = frame
         if let g = self._glassNode {
             transition.updateFrame(node: g, frame: self.bounds)
+            g.glassCornerRadii = GlassRadii(radius: min(22.0, self.bounds.height * 0.5))
             g.glassVisible = SGLiquidGlassZone.inputPanel.isEnabled
+            g.refreshGlass(zone: .inputPanel)
         }
     }
 

@@ -96,12 +96,14 @@ public final class SGLiquidGlassItemBackground {
         self.glassView.isHidden = !enabled
         guard enabled, self.currentSize.width > 0.5, self.currentSize.height > 0.5 else { return }
 
+        // MAX liquid glass: use `.panel` → UIGlassEffect(.regular) — strongest system glass.
+        // Optional accent tint only when user enabled tinting.
         let tint: GlassBackgroundView.TintColor
         if SGLiquidGlassZone.settings.isTinted, self._tint != .clear {
-            tint = .init(kind: .custom(style: .clear, color: self._tint.withAlphaComponent(0.12)))
+            tint = .init(kind: .custom(style: .default, color: self._tint.withAlphaComponent(0.18)))
         } else {
-            // Real clear glass — content behind must bleed through (like reference screenshots)
-            tint = .init(kind: .clear)
+            // Regular panel glass = maximum blur + specular, almost no solid fill
+            tint = .init(kind: .panel)
         }
 
         self.glassView.update(
@@ -109,13 +111,13 @@ public final class SGLiquidGlassItemBackground {
             cornerRadii: self.currentRadii,
             isDark: self.currentIsDark,
             tintColor: tint,
-            isInteractive: false,
+            isInteractive: true,
             isVisible: true,
             transition: .immediate
         )
-        // Max clear glass by default — floor raised so glass is always clearly visible
+        // Always full strength unless user lowered the slider
         let intensity = CGFloat(SGSimpleSettings.shared.namelessLiquidGlassIntensity)
-        self.glassView.alpha = max(0.88, min(1.0, intensity <= 0.01 ? 1.0 : intensity))
+        self.glassView.alpha = max(0.95, min(1.0, intensity <= 0.01 ? 1.0 : intensity))
     }
 }
 
@@ -159,8 +161,8 @@ public extension ASDisplayNode {
 // MARK: - Shared ItemList glass applicator
 
 public enum NamelessItemListGlass {
-    /// Glass corner radius matching Telegram iOS 26 glass section style.
-    public static let sectionCornerRadius: CGFloat = 26.0
+    /// Glass corner radius — large cloud sections (Кошелёк / Избранное / …)
+    public static let sectionCornerRadius: CGFloat = 28.0
 
     /// Soft separator used inside glass sections (not the thick gray stripe).
     public static func softSeparatorColor(isDark: Bool) -> UIColor {
@@ -172,7 +174,7 @@ public enum NamelessItemListGlass {
     }
 
     /// Apply real Liquid Glass to a settings block item.
-    /// - Clears solid fill
+    /// - Clears solid fill completely
     /// - Places UIGlassEffect with correct per-corner radii
     /// - Softens separators so gray bars disappear
     public static func apply(
@@ -191,6 +193,7 @@ public enum NamelessItemListGlass {
             return
         }
 
+        // Kill Telegram solid fill — glass is the only surface
         backgroundNode.backgroundColor = .clear
 
         let r = sectionCornerRadius
@@ -198,7 +201,7 @@ public enum NamelessItemListGlass {
         let bottom: CGFloat = hasBottomCorners ? r : 0
 
         if let glass = backgroundNode.sgGlassOverlay {
-            glass.tint = accentTint
+            glass.tint = .clear
             glass.updateLayout(
                 size: size,
                 topLeft: top, topRight: top,

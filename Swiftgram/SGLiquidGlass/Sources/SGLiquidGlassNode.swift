@@ -106,12 +106,12 @@ public final class SGLiquidGlassNode: ASDisplayNode, SGLiquidGlassContainer {
 
         let ev: UIVisualEffectView
         if #available(iOS 26.0, *) {
-            let g = UIGlassEffect()
+            // .regular = strongest liquid glass blur (input panel, nav, chrome)
+            let g = UIGlassEffect(style: .regular)
             g.isInteractive = _interactive
-            // Pure clear glass — maximum blur, zero tint base
             ev = UIVisualEffectView(effect: g)
         } else {
-            ev = UIVisualEffectView(effect: UIBlurEffect(style: .systemUltraThinMaterial))
+            ev = UIVisualEffectView(effect: UIBlurEffect(style: .systemChromeMaterial))
         }
         ev.backgroundColor = .clear
         ev.frame = bounds
@@ -167,19 +167,16 @@ public final class SGLiquidGlassNode: ASDisplayNode, SGLiquidGlassContainer {
 
     private func applyIntensity(zone: SGLiquidGlassZone?) {
         guard isNodeLoaded, let ev = effectView else { return }
-        let alpha: CGFloat
+        let raw: CGFloat
         if let zone = zone {
-            alpha = zone.intensity
+            raw = zone.intensity
         } else {
-            alpha = CGFloat(SGSimpleSettings.shared.namelessLiquidGlassIntensity)
+            raw = CGFloat(SGSimpleSettings.shared.namelessLiquidGlassIntensity)
         }
-        // IMPROVEMENT: if blurInsteadGlass is ON, use a stronger alpha fallback
-        if SGSimpleSettings.shared.blurInsteadGlass {
-            ev.alpha = max(alpha, 0.85)
-        } else {
-            ev.alpha = alpha
-        }
-        specularLayer?.opacity = Float(alpha * 0.8)
+        // Always strong glass — never wash out below 0.95
+        let alpha = max(0.95, min(1.0, raw <= 0.01 ? 1.0 : raw))
+        ev.alpha = alpha
+        specularLayer?.opacity = Float(min(1.0, alpha))
     }
 
     // MARK: - Layout
@@ -294,10 +291,11 @@ public final class SGLiquidGlassView: UIView, SGLiquidGlassViewProtocol, SGLiqui
 
         let ev: UIVisualEffectView
         if #available(iOS 26.0, *) {
-            let g = UIGlassEffect(); g.isInteractive = _interactive
+            let g = UIGlassEffect(style: .regular)
+            g.isInteractive = _interactive
             ev = UIVisualEffectView(effect: g)
         } else {
-            ev = UIVisualEffectView(effect: UIBlurEffect(style: .systemUltraThinMaterial))
+            ev = UIVisualEffectView(effect: UIBlurEffect(style: .systemChromeMaterial))
         }
         ev.backgroundColor = .clear
         ev.frame = bounds
@@ -335,10 +333,10 @@ public final class SGLiquidGlassView: UIView, SGLiquidGlassViewProtocol, SGLiqui
 
     private func applyIntensity(zone: SGLiquidGlassZone?) {
         guard let ev = effectView else { return }
-        let alpha = zone?.intensity ?? CGFloat(SGSimpleSettings.shared.namelessLiquidGlassIntensity)
-        let finalAlpha = SGSimpleSettings.shared.blurInsteadGlass ? max(alpha, 0.85) : alpha
+        let raw = zone?.intensity ?? CGFloat(SGSimpleSettings.shared.namelessLiquidGlassIntensity)
+        let finalAlpha = max(0.95, min(1.0, raw <= 0.01 ? 1.0 : raw))
         ev.alpha = finalAlpha
-        specularLayer?.opacity = Float(finalAlpha * 0.8)
+        specularLayer?.opacity = Float(min(1.0, finalAlpha))
     }
 
     private func updateSpecular() {

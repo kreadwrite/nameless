@@ -40,6 +40,9 @@ final class PeerInfoScreenItemSectionContainerNode: ASDisplayNode {
     func update(context: AccountContext, width: CGFloat, safeInsets: UIEdgeInsets, hasCorners: Bool, presentationData: PresentationData, items: [PeerInfoScreenItem], transition: ContainedViewLayoutTransition) -> CGFloat {
         let glassOn = SGLiquidGlassZone.settings.isEnabled || SGLiquidGlassZone.profile.isEnabled
         let isDark = presentationData.theme.overallDarkAppearance
+        // Always round glass "clouds" for Wallet / Saved / Calls / Folders sections
+        let useCorners = glassOn ? true : hasCorners
+        let r = NamelessItemListGlass.sectionCornerRadius
 
         if glassOn {
             // Clear solid fill so real UIGlassEffect can show; kill thick gray section stripes.
@@ -47,22 +50,15 @@ final class PeerInfoScreenItemSectionContainerNode: ASDisplayNode {
             self.topSeparatorNode.isHidden = true
             self.bottomSeparatorNode.isHidden = true
             self.itemContainerNode.clipsToBounds = true
-            if hasCorners {
-                self.itemContainerNode.cornerRadius = NamelessItemListGlass.sectionCornerRadius
-                self.backgroundNode.cornerRadius = NamelessItemListGlass.sectionCornerRadius
-            } else {
-                self.itemContainerNode.cornerRadius = 0
-                self.backgroundNode.cornerRadius = 0
-            }
+            self.itemContainerNode.cornerRadius = r
+            self.backgroundNode.cornerRadius = r
             if let glass = self.backgroundNode.sgGlassOverlay {
-                glass.tint = presentationData.theme.list.itemBlocksBackgroundColor
-                // size applied after height known below
+                // No solid accent tint — pure panel glass
+                glass.tint = .clear
                 glass.updateLayout(
                     size: CGSize(width: width, height: max(self.backgroundNode.bounds.height, 1)),
-                    topLeft: hasCorners ? NamelessItemListGlass.sectionCornerRadius : 0,
-                    topRight: hasCorners ? NamelessItemListGlass.sectionCornerRadius : 0,
-                    bottomLeft: hasCorners ? NamelessItemListGlass.sectionCornerRadius : 0,
-                    bottomRight: hasCorners ? NamelessItemListGlass.sectionCornerRadius : 0,
+                    topLeft: r, topRight: r,
+                    bottomLeft: r, bottomRight: r,
                     isDark: isDark
                 )
             }
@@ -163,11 +159,11 @@ final class PeerInfoScreenItemSectionContainerNode: ASDisplayNode {
         transition.updateFrame(node: self.bottomSeparatorNode, frame: CGRect(origin: CGPoint(x: 0.0, y: contentWithBackgroundHeight), size: CGSize(width: width, height: UIScreenPixel)))
 
         if glassOn, bgHeight > 0.5, let glass = self.backgroundNode.sgGlassOverlay {
-            let r = hasCorners ? NamelessItemListGlass.sectionCornerRadius : 0.0
+            let corner = useCorners ? r : 0.0
             glass.updateLayout(
                 size: bgFrame.size,
-                topLeft: r, topRight: r,
-                bottomLeft: r, bottomRight: r,
+                topLeft: corner, topRight: corner,
+                bottomLeft: corner, bottomRight: corner,
                 isDark: isDark
             )
         }

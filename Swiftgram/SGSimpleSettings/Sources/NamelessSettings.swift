@@ -420,8 +420,15 @@ public extension SGSimpleSettings {
     var namelessLiquidGlassPopup: Bool { get { storage.namelessBool(NamelessSettingsKey.liquidGlassPopup, default: true) } set { storage.set(newValue, forKey: NamelessSettingsKey.liquidGlassPopup) } }
     var namelessLiquidGlassContextMenu: Bool { get { storage.namelessBool(NamelessSettingsKey.liquidGlassContextMenu, default: true) } set { storage.set(newValue, forKey: NamelessSettingsKey.liquidGlassContextMenu) } }
     var namelessLiquidGlassSearch: Bool { get { storage.namelessBool(NamelessSettingsKey.liquidGlassSearch, default: true) } set { storage.set(newValue, forKey: NamelessSettingsKey.liquidGlassSearch) } }
-    /// Glass intensity 0.0 (off) … 1.0 (full). Default = 1.0
-    var namelessLiquidGlassIntensity: Double { get { storage.namelessDouble(NamelessSettingsKey.liquidGlassIntensity, default: 1.0) } set { storage.set(newValue, forKey: NamelessSettingsKey.liquidGlassIntensity) } }
+    /// Glass intensity 0.0 (off) … 1.0 (full). Default = 1.0 (max liquid glass)
+    var namelessLiquidGlassIntensity: Double {
+        get {
+            let v = storage.namelessDouble(NamelessSettingsKey.liquidGlassIntensity, default: 1.0)
+            // Never allow near-zero unless user explicitly set; clamp tiny leftovers to full
+            return v < 0.05 ? 1.0 : min(1.0, max(0.0, v))
+        }
+        set { storage.set(newValue, forKey: NamelessSettingsKey.liquidGlassIntensity) }
+    }
     /// Fade in/out animation when toggling glass on/off
     var namelessLiquidGlassFadeAnimation: Bool { get { storage.namelessBool(NamelessSettingsKey.liquidGlassFadeAnimation, default: true) } set { storage.set(newValue, forKey: NamelessSettingsKey.liquidGlassFadeAnimation) } }
     var namelessLiquidGlassReactions: Bool { get { storage.namelessBool(NamelessSettingsKey.liquidGlassReactions, default: true) } set { storage.set(newValue, forKey: NamelessSettingsKey.liquidGlassReactions) } }
